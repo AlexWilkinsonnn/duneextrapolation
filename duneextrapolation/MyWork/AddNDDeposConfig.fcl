@@ -1,0 +1,10 @@
+BEGIN_PROLOG
+
+AddNDDepos:
+{
+  module_type: "AddNDDepos"
+
+  NDDeposLoc: "/unix/dune/awilkinson/extrapolation/nd_fd_pairs/data/output_1-8_radi_numuCC_vtxalignment/nd_depos"
+}
+
+END_PROLOG
