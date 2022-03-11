@@ -77,6 +77,7 @@ void extrapolation::AddNDDepos::produce(art::Event& e)
 {
   // auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(e);
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
+  // std::cout << detProp.ConvertTicksToX(2000, fPID) << "\n"; = 163.705
 
   bool fileExists = false;
   while (!fileExists) {
