@@ -90,8 +90,6 @@ namespace cvn
 
     int counter = 0;
 
-    std::cout << "====================================\nWORKING=========================\n";
-
     do{ // do until it gets a correct result
         // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
         cvnResults = fTFGraph->run(vecForTF);

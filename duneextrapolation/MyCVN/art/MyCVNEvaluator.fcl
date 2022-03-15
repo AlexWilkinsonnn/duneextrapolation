@@ -15,7 +15,7 @@ standard_tfnethandler:
 
 standard_cvnevaluator:
 {
-  module_type:        CVNEvaluator
+  module_type:        MyCVNEvaluator
   #==================
   PixelMapInput: "cvnmap"
   ResultLabel: "cvnresult"
