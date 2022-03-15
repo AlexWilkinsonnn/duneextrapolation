@@ -1,0 +1,5 @@
+if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
+  add_subdirectory(art)
+endif ()
+add_subdirectory(func)
+add_subdirectory(fcl)

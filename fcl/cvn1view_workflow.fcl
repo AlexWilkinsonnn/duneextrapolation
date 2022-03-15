@@ -1,0 +1,45 @@
+#include "hitfindermodules_dune.fcl"
+#include "wirecell_dune.fcl"
+#include "SpacePointSolver_dune.fcl"
+#include "mycvn_dune.fcl"
+
+BEGIN_PROLOG
+
+cvn1view_producers:
+{
+  rns:        { module_type: RandomNumberSaver }
+  caldata:    @local::producer_adcprep_notool
+  wclsmcnfsp: @local::dune10kt_1x2x6_mc_nfsp
+  gaushit:    @local::dunefd_gaushitfinder
+  spsolve:    @local::dunefd_horizdrift_spacepointsolver
+  hitfd:      @local::dunefd_disambigfromsp
+  cvnmap:     @local::dunefd_horizdrift_cvnmapper
+  cvneva:     @local::dunefd_horizdrift_cvnevaluator
+}
+
+cvn1view_recotohits:
+[
+  wclsmcnfsp,
+  gaushit,
+  spsolve,
+  hitfd
+]
+
+cvn1view_cvn:
+[
+  cvnmap,
+  cvneva
+]
+
+cvn1view_workflow:
+[
+  @sequence::cvn1view_recotohits,
+  @sequence::cvn1view_cvn,
+  rns
+]
+
+cvn1view_producers.caldata.DigitLabel: "tpcrawdecoder:daq"
+
+cvn1view_producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss"
+
+END_PROLOG
