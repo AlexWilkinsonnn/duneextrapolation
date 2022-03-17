@@ -15,7 +15,7 @@
 #include "dunereco/CVN/func/PixelMap.h"
 #include "dunereco/CVN/func/InteractionType.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "dunereco/CVN/tf/tf_graph.h"
+#include "duneextrapolation/MyCVN/tf/Mytf_graph.h"
 
 namespace cvn
 {
@@ -48,7 +48,7 @@ namespace cvn
     unsigned int fImageWires;  ///< Number of wires for the network to classify
     unsigned int fImageTDCs;   ///< Number of tdcs for the network to classify
     std::vector<bool> fReverseViews; ///< Do we need to reverse any views?
-    std::unique_ptr<tf::Graph> fTFGraph; ///< Tensorflow graph
+    std::unique_ptr<tf::MyGraph> fTFGraph; ///< Tensorflow graph
 
   };
 

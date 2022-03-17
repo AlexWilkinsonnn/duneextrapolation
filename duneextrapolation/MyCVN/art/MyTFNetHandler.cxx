@@ -33,7 +33,12 @@ namespace cvn
     // Construct the TF Graph object. The empty vector {} is used since the protobuf
     // file gives the names of the output layer nodes
     mf::LogInfo("MyTFNetHandler") << "Loading network: " << fTFProtoBuf << std::endl;
-    fTFGraph = tf::Graph::create(fTFProtoBuf.c_str(),{},pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
+    // const std::vector<std::string> outputs = {"Identity_0", "Identity_1", "Identity_2", 
+    //   "Identity_3", "Identity_4", "Identity_5","Identity_6"};
+    const std::vector<std::string> outputs = {"resnext/is_antineutrino/Sigmoid", "resnext/flavour/Softmax",
+      "resnext/interaction/Softmax", "resnext/protons/Exp", "resnext/pions/Exp", "resnext/pizeros/Exp",
+      "resnext/neutrons/Exp"};
+    fTFGraph = tf::MyGraph::Mycreate(fTFProtoBuf.c_str(),outputs,pset.get<int>("NInputs"),pset.get<int>("NOutputs"));
     if(!fTFGraph){
       art::Exception(art::errors::Unknown) << "Tensorflow model not found or incorrect";
     }
@@ -92,7 +97,7 @@ namespace cvn
 
     do{ // do until it gets a correct result
         // std::cout << "Number of CVN result vectors " << cvnResults.size() << " with " << cvnResults[0].size() << " categories" << std::endl;
-        cvnResults = fTFGraph->run(vecForTF);
+        cvnResults = fTFGraph->Myrun(vecForTF);
         status = check(cvnResults[0]);
         //std::cout << "Status: " << status << std::endl;
         counter++;
@@ -103,6 +108,22 @@ namespace cvn
             break;
         }
     }while(status == false);
+
+    // Convert proton/pion/pizero/neutron number regression outputs to the expected CVN class outputs.
+    for (int i = 3; i < 7; i++) {
+      if ((int)(cvnResults[0][i][0] + 0.5) == 0) {
+        cvnResults[0][i] = {1.0, 0.0, 0.0, 0.0};
+      }
+      else if ((int)(cvnResults[0][i][0] + 0.5) == 1) {
+        cvnResults[0][i] = {0.0, 1.0, 0.0, 0.0};
+      }
+      else if ((int)(cvnResults[0][i][0] + 0.5) == 2) {
+        cvnResults[0][i] = {0.0, 0.0, 1.0, 0.0};
+      }
+      else if ((int)(cvnResults[0][i][0] + 0.5) > 2) {
+        cvnResults[0][i] = {0.0, 0.0, 0.0, 1.0};
+      }
+    }
 
     std::cout << "Classifier summary: ";
     std::cout << std::endl;

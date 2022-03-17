@@ -211,8 +211,8 @@ cvn::ImageVectorF cvn::MyCVNImageUtils::BuildCollectionImageVectorF(cvn::ViewVec
       // ################
       // REMEMBER TO COMMENT THESE TWO LINES OUT
       // ################
-      timeVec.push_back(v1[w][t]);
-      timeVec.push_back(v2[w][t]);
+      // timeVec.push_back(v1[w][t]);
+      // timeVec.push_back(v2[w][t]);
       wireVec.push_back(timeVec);
     } // Loop over tdcs
     image.push_back(wireVec);

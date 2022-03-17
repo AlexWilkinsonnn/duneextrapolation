@@ -42,4 +42,8 @@ cvn1view_producers.caldata.DigitLabel: "tpcrawdecoder:daq"
 
 cvn1view_producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss"
 
+cvn1view_producers.cvneva.TFNetHandler.TFProtoBuf: "collection_view_cvn_model.pb"
+cvn1view_producers.cvneva.TFNetHandler.LibPath:    "MRB_TOP"
+cvn1view_producers.cvneva.TFNetHandler.NInputs:    1
+
 END_PROLOG
