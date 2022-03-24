@@ -31,8 +31,6 @@
 
 namespace extrapolation {
   class ExportDigits;
-
-  struct DepoData;
 }
 
 class extrapolation::ExportDigits : public art::EDAnalyzer {
