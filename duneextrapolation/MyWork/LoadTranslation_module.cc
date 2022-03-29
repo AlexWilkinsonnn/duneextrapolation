@@ -29,6 +29,7 @@
 #include "TTree.h"
 #include "TBranch.h"
 #include "TLeaf.h"
+#include "TInterpreter.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
@@ -83,13 +84,13 @@ private:
   unsigned int fTIndex;
   unsigned int fPIndex;
   
-  int                                     fEntry;
-  int                                     fNEntries;
-  TTree*                                  fTree;
-  std::vector<int>                        fChannels;
-  std::vector<std::vector<int>>           fTranslatedDigs;
-  std::vector<std::vector<int>>           fTrueDigs;
-  std::vector<std::map<std::string, int>> fNDPacket;
+  int                            fEntry;
+  int                            fNEntries;
+  TTree*                         fTree;
+  std::vector<int>*              fChannels;
+  std::vector<std::vector<int>>* fTranslatedDigs;
+  std::vector<std::vector<int>>* fTrueDigs;
+  std::vector<std::vector<int>>* fNDPacket;
 
   readout::ROPID fRID;
   std::string fInputFileLoc;
@@ -114,18 +115,19 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
   auto digsTrue = std::make_unique<std::vector<raw::RawDigit>>();
   auto hitsND = std::make_unique<std::vector<recob::Hit>>();
 
+  std::cout << "hello\n";
   if (fEntry < fNEntries) {
     fTree->GetEntry(fEntry);
 
     for (unsigned int ch = 0; ch < fGeom->Nchannels(); ++ch) {
-      auto iCh = std::find(fChannels.begin(), fChannels.end(), (int)ch);
+      auto iCh = std::find(fChannels->begin(), fChannels->end(), (int)ch);
 
-      if (iCh != fChannels.end()) {
-        int chLocal = iCh - fChannels.begin();
+      if (iCh != fChannels->end()) {
+        int chLocal = iCh - fChannels->begin();
 
         raw::RawDigit::ADCvector_t adcVec(4492);
         for (int tick = 0; tick < 4492; tick++){
-          adcVec[tick] = (short)fTranslatedDigs[chLocal][tick];
+          adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick];
         }
         raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
         rawDig.SetPedestal(0);
@@ -133,7 +135,7 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
 
         adcVec = raw::RawDigit::ADCvector_t(4492);
         for (int tick = 0; tick < 4492; tick++){
-          adcVec[tick] = (short)fTrueDigs[chLocal][tick];
+          adcVec[tick] = (short)(*fTrueDigs)[chLocal][tick];
         }
         rawDig = raw::RawDigit(ch, adcVec.size(), adcVec);
         rawDig.SetPedestal(0);
@@ -148,14 +150,14 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
       }
     }
 
-    for (std::map<std::string, int> ndPacket : fNDPacket) {
-      float peakTime = ndPacket["tick"];
-      float integral = ndPacket["adc"];
-      raw::ChannelID_t channel = ndPacket["ch"];
-      geo::View_t view = fGeom->View(fGeom->ChannelToROP(ndPacket["ch"]));
+    for (std::vector<int> ndPacket : *fNDPacket) {
+      float peakTime = ndPacket[1];
+      float integral = ndPacket[2];
+      raw::ChannelID_t channel = ndPacket[0];
+      geo::View_t view = fGeom->View(fGeom->ChannelToROP(ndPacket[0]));
 
       geo::WireID wireID = geo::WireID();
-      for (geo::WireID wire : fGeom->ChannelToWire(ndPacket["ch"])) { 
+      for (geo::WireID wire : fGeom->ChannelToWire(ndPacket[0])) { 
         if (fGeom->View(wire.parentID()) == view) {
           wireID = wire;
           break;
@@ -188,7 +190,7 @@ void extrapolation::LoadTranslation::beginJob()
   fRID = fGeom->WirePlaneToROP(pID);
 
   TFile* f = new TFile(fInputFileLoc.c_str());
-  fTree = (TTree*)f->Get("tree");
+  fTree = (TTree*)f->Get("digs_hits");
   fTree->SetBranchAddress("rawdigits_translated", &fTranslatedDigs);
   fTree->SetBranchAddress("rawdigits_true", &fTrueDigs);
   fTree->SetBranchAddress("nd_packets", &fNDPacket);
