@@ -23,6 +23,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <map>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -81,14 +82,17 @@ private:
   unsigned int fCIndex;
   unsigned int fTIndex;
   unsigned int fPIndex;
+  
+  int                                     fEntry;
+  int                                     fNEntries;
+  TTree*                                  fTree;
+  std::vector<int>                        fChannels;
+  std::vector<std::vector<int>>           fTranslatedDigs;
+  std::vector<std::vector<int>>           fTrueDigs;
+  std::vector<std::map<std::string, int>> fNDPacket;
+
   readout::ROPID fRID;
   std::string fInputFileLoc;
-  int fEntry;
-  int fNEntries;
-  TTree*              fTree;
-  std::vector<digs>   fTranslatedDigs;
-  std::vector<digs>   fTrueDigs;
-  std::vector<packet> fNDPacket;
 };
 
 extrapolation::LoadTranslation::LoadTranslation(fhicl::ParameterSet const& p)
@@ -113,46 +117,45 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
   if (fEntry < fNEntries) {
     fTree->GetEntry(fEntry);
 
-    for (digs dig : fTranslatedDigs) {
-      raw::RawDigit::ADCvector_t adcVec(6000);
-      for (int tick = 0; tick < 6000; tick++){
-        adcVec[tick] = dig.digvec[tick];
-      }
-
-      raw::RawDigit rawDig(dig.ch, adcVec.size(), adcVec);
-      rawDig.SetPedestal(0);
-      digsTranslated->push_back(rawDig);
-    }
-
-    for (digs dig : fTrueDigs) {
-      raw::RawDigit::ADCvector_t adcVec(6000);
-      for (int tick = 0; tick < 6000; tick++){
-        adcVec[tick] = dig.digvec[tick];
-      }
-
-      raw::RawDigit rawDig(dig.ch, adcVec.size(), adcVec);
-      rawDig.SetPedestal(0);
-      digsTrue->push_back(rawDig);
-    }    
-
     for (unsigned int ch = 0; ch < fGeom->Nchannels(); ++ch) {
-      if (!(fGeom->ChannelToROP(ch) == fRID)) {
-        raw::RawDigit::ADCvector_t adcVec(6000, 0);
+      auto iCh = std::find(fChannels.begin(), fChannels.end(), (int)ch);
+
+      if (iCh != fChannels.end()) {
+        int chLocal = iCh - fChannels.begin();
+
+        raw::RawDigit::ADCvector_t adcVec(4492);
+        for (int tick = 0; tick < 4492; tick++){
+          adcVec[tick] = (short)fTranslatedDigs[chLocal][tick];
+        }
+        raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
+        rawDig.SetPedestal(0);
+        digsTranslated->push_back(rawDig);
+
+        adcVec = raw::RawDigit::ADCvector_t(4492);
+        for (int tick = 0; tick < 4492; tick++){
+          adcVec[tick] = (short)fTrueDigs[chLocal][tick];
+        }
+        rawDig = raw::RawDigit(ch, adcVec.size(), adcVec);
+        rawDig.SetPedestal(0);
+        digsTrue->push_back(rawDig); 
+      }
+      else {
+        raw::RawDigit::ADCvector_t adcVec(4492, 0);
         raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
         rawDig.SetPedestal(0);
         digsTrue->push_back(rawDig);
-        digsTranslated->push_back(rawDig);
+        digsTranslated->push_back(rawDig);   
       }
     }
 
-    for (packet ndPacket : fNDPacket) {
-      float peakTime = ndPacket.tick;
-      float integral = ndPacket.adc;
-      raw::ChannelID_t channel = ndPacket.ch;
-      geo::View_t view = fGeom->View(fGeom->ChannelToROP(ndPacket.ch));
+    for (std::map<std::string, int> ndPacket : fNDPacket) {
+      float peakTime = ndPacket["tick"];
+      float integral = ndPacket["adc"];
+      raw::ChannelID_t channel = ndPacket["ch"];
+      geo::View_t view = fGeom->View(fGeom->ChannelToROP(ndPacket["ch"]));
 
       geo::WireID wireID = geo::WireID();
-      for (geo::WireID wire : fGeom->ChannelToWire(ndPacket.ch)) { 
+      for (geo::WireID wire : fGeom->ChannelToWire(ndPacket["ch"])) { 
         if (fGeom->View(wire.parentID()) == view) {
           wireID = wire;
           break;
@@ -192,12 +195,6 @@ void extrapolation::LoadTranslation::beginJob()
 
   fEntry = 0;
   fNEntries = fTree->GetEntries();
-
-  // TFile* f = new TFile(fInputFileLoc.c_str());
-  // *fTReader = TTreeReader("hello/hi", f);
-  // *fTranslatedDigsRV = TTreeReaderValue<std::vector<Digs>>(*fTReader, "rawdigits_translated");
-  // *fTrueDigsRV = TTreeReaderValue<std::vector<Digs>>(*fTReader, "rawdigits_true");
-  // *fNDPacketRV = TTreeReaderValue<std::vector<Packet>>(*fTReader, "nd_packets");
 }
 
 void extrapolation::LoadTranslation::endJob()
