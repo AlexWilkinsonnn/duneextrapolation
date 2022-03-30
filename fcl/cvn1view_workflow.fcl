@@ -7,34 +7,69 @@ BEGIN_PROLOG
 
 cvn1view_producers:
 {
-  rns:        { module_type: RandomNumberSaver }
-  caldata:    @local::producer_adcprep_notool
-  wclsmcnfsp: @local::dune10kt_1x2x6_mc_nfsp
-  gaushit:    @local::dunefd_gaushitfinder
-  spsolve:    @local::dunefd_horizdrift_spacepointsolver
-  hitfd:      @local::dunefd_disambigfromsp
-  cvnmap:     @local::dunefd_horizdrift_cvnmapper
-  cvneva:     @local::dunefd_horizdrift_cvnevaluator
+  rns:           { module_type: RandomNumberSaver }
+  caldata:       @local::producer_adcprep_notool
+  wclsmcnfsp:    @local::dune10kt_1x2x6_mc_nfsp
+  gaushit:       @local::dunefd_gaushitfinder
+  spsolve:       @local::dunefd_horizdrift_spacepointsolver
+  hitfd:         @local::dunefd_disambigfromsp
+  // CVN stuff doesnt use the full art event tag properly so need to do this to have data products like cvnmapnd:cvnmapnd as this is the only format it can read from in CVNEvaluator >:(
+  cvnmaptrue:    @local::dunefd_horizdrift_cvnmapper
+  cvnmapnetwork: @local::dunefd_horizdrift_cvnmapper
+  cvnmapnd:      @local::dunefd_horizdrift_cvnmapper
+  cvneva:        @local::dunefd_horizdrift_cvnevaluator
 }
 
 cvn1view_recotohits:
 [
   wclsmcnfsp,
-  gaushit,
-  spsolve,
-  hitfd
+  gaushit
+  // spsolve,
+  // hitfd
 ]
 
-cvn1view_cvn:
+// cvn1view_recotohits_nd:
+// [
+//   spsolve,
+//   hitfd
+// ]
+
+cvn1view_cvn_true:
 [
-  cvnmap,
+  cvnmaptrue,
   cvneva
 ]
 
-cvn1view_workflow:
+cvn1view_cvn_network:
+[
+  cvnmapnetwork,
+  cvneva
+]
+
+cvn1view_cvn_nd:
+[
+  cvnmapnd,
+  cvneva
+]
+
+cvn1view_workflow_true:
 [
   @sequence::cvn1view_recotohits,
-  @sequence::cvn1view_cvn,
+  @sequence::cvn1view_cvn_true,
+  rns
+]
+
+cvn1view_workflow_network:
+[
+  @sequence::cvn1view_recotohits,
+  @sequence::cvn1view_cvn_network,
+  rns
+]
+
+cvn1view_workflow_nd:
+[
+  // @sequence::cvn1view_recotohits_nd,
+  @sequence::cvn1view_cvn_nd,
   rns
 ]
 

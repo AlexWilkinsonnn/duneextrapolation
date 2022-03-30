@@ -2,7 +2,7 @@
 #include "cvn1view_workflow.fcl"
 #include "tools_dune.fcl"
 
-process_name: Reco1viewCVN
+process_name: Reco1viewCVNTrueTranslated
 
 services:
 {
@@ -20,7 +20,7 @@ services:
 source:
 {
   module_type: RootInput
-  maxEvents:  -10        # Number of events to create
+  maxEvents:  -1        # Number of events to create
   saveMemoryObjectThreshold: 0
   inputCommands: ["keep *_*_*_*", "drop *_*_*_Reco" ]
 }
@@ -41,7 +41,7 @@ physics:
 
  #trigger_paths is a keyword and contains the paths that modify the art::event,
  #ie filters and producers
- reco: [ @sequence::cvn1view_workflow ]
+ reco: [ @sequence::cvn1view_workflow_true ]
  trigger_paths: [ reco ]
 
  #end_paths is a keyword and contains the paths that do not modify the art::Event,
@@ -57,9 +57,20 @@ outputs:
  out1:
  {
    module_type: RootOutput
-   fileName:    "%ifb_cvn1view.root"
+   fileName:    "%ifb_cvn1viewtrue.root"
    dataTier:    "full-reconstructed"
    compressionLevel: 1
    saveMemoryObjectThreshold: 0
  }
 }
+
+physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "Translate:TrueTranslated:NDTranslation"
+physics.producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss:Reco1viewCVNTrueTranslated"
+// physics.producers.spsolve.HitLabel: "gaushit::Reco1viewCVNTrueTranslated"
+// physics.producers.hitfd.HitModuleLabel: "gaushit::Reco1viewCVNTrueTranslated"
+// physics.producers.hitfd.SpModuleLabel:  "spsolve::Reco1viewCVNTrueTranslated"
+
+physics.producers.cvnmaptrue.HitsModuleLabel: "gaushit::Reco1viewCVNTrueTranslated"
+physics.producers.cvnmaptrue.ClusterPMLabel:  "cvnmaptrue" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
+physics.producers.cvnmaptrue.MinClusterHits:  0
+physics.producers.cvneva.PixelMapInput: "cvnmaptrue"
