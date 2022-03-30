@@ -203,16 +203,13 @@ cvn::ImageVectorF cvn::MyCVNImageUtils::BuildCollectionImageVectorF(cvn::ViewVec
 
   // Tensorflow wants things in the arrangement <wires, TDCs, views>
   cvn::ImageVectorF image;
-  for(unsigned int w = 0; w < v0.size(); ++w){
+  for(unsigned int w = 0; w < v2.size(); ++w){
     std::vector<std::vector<float> > wireVec;
-    for(unsigned int t = 0; t < v0[0].size(); ++t){
+    for(unsigned int t = 0; t < v2[0].size(); ++t){
       std::vector<float> timeVec;
-      timeVec.push_back(v0[w][t]);
-      // ################
-      // REMEMBER TO COMMENT THESE TWO LINES OUT
-      // ################
+      // timeVec.push_back(v0[w][t]);
       // timeVec.push_back(v1[w][t]);
-      // timeVec.push_back(v2[w][t]);
+      timeVec.push_back(v2[w][t]);
       wireVec.push_back(timeVec);
     } // Loop over tdcs
     image.push_back(wireVec);

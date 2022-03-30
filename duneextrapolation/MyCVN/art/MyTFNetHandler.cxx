@@ -88,6 +88,17 @@ namespace cvn
     imageUtils.ConvertPixelMapToCollectionImageVectorF(pm, thisImage);
     std::vector<ImageVectorF> vecForTF;
 
+    // for (auto vec1 : thisImage) {
+    //   for (auto vec2 : vec1) { 
+    //     for (auto val : vec2) {
+    //       if (val != 0) {
+    //         std::cout << val << " ";
+    //       }
+    //     }
+    //   }
+    // }
+    // std::cout << "\n";
+
     vecForTF.push_back(thisImage);
 
     std::vector< std::vector< std::vector< float > > > cvnResults; // shape(samples, #outputs, output_size)

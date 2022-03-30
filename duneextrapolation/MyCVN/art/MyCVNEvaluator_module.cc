@@ -144,9 +144,9 @@ namespace cvn {
     std::vector< art::Ptr< cvn::PixelMap > > pixelmaplist;
     art::InputTag itag1(fPixelMapInput, fPixelMapInput);
     auto pixelmapListHandle = evt.getHandle< std::vector< cvn::PixelMap > >(itag1);
-    if (pixelmapListHandle)
+    if (pixelmapListHandle) {
       art::fill_ptr_vector(pixelmaplist, pixelmapListHandle);
-
+    }
     /// Make sure we have a valid name for the CVN type
     /*
     if(fCVNType == "Caffe"){
