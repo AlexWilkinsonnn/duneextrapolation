@@ -1,0 +1,1 @@
+comment out L241 & L243 in dunereco/CVN/art/PixelMapProducer.cxx for 1view cvn to work.
