@@ -23,7 +23,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
-#include <map>
+#include <vector>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -103,8 +103,8 @@ extrapolation::LoadTranslation::LoadTranslation(fhicl::ParameterSet const& p)
     fPIndex (p.get<unsigned int>("PlaneIndex")),
     fInputFileLoc (p.get<std::string>("InputFileLoc"))
 {
-  produces<std::vector<raw::RawDigit>>("Translated");
-  produces<std::vector<raw::RawDigit>>("True");
+  produces<std::vector<raw::RawDigit>>("NetworkTranslated");
+  produces<std::vector<raw::RawDigit>>("TrueTranslated");
   produces<std::vector<recob::Hit>>("NDPackets");
 }
 
@@ -115,7 +115,6 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
   auto digsTrue = std::make_unique<std::vector<raw::RawDigit>>();
   auto hitsND = std::make_unique<std::vector<recob::Hit>>();
 
-  std::cout << "hello\n";
   if (fEntry < fNEntries) {
     fTree->GetEntry(fEntry);
 
@@ -127,52 +126,57 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
 
         raw::RawDigit::ADCvector_t adcVec(4492);
         for (int tick = 0; tick < 4492; tick++){
-          adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick];
+          adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick] + (short)900; // doing default collection pedestal manually for now just because I am afraid WC will have something hardcoded
         }
         raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
-        rawDig.SetPedestal(0);
+        rawDig.SetPedestal(900);
         digsTranslated->push_back(rawDig);
 
         adcVec = raw::RawDigit::ADCvector_t(4492);
         for (int tick = 0; tick < 4492; tick++){
-          adcVec[tick] = (short)(*fTrueDigs)[chLocal][tick];
+          adcVec[tick] = (short)(*fTrueDigs)[chLocal][tick] + (short)900;
         }
         rawDig = raw::RawDigit(ch, adcVec.size(), adcVec);
-        rawDig.SetPedestal(0);
+        rawDig.SetPedestal(900);
         digsTrue->push_back(rawDig); 
       }
       else {
-        raw::RawDigit::ADCvector_t adcVec(4492, 0);
+        raw::RawDigit::ADCvector_t adcVec(4492, 900);
         raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
-        rawDig.SetPedestal(0);
+        rawDig.SetPedestal(900);
         digsTrue->push_back(rawDig);
         digsTranslated->push_back(rawDig);   
       }
     }
 
     for (std::vector<int> ndPacket : *fNDPacket) {
-      float peakTime = ndPacket[1];
-      float integral = ndPacket[2];
-      raw::ChannelID_t channel = ndPacket[0];
-      geo::View_t view = fGeom->View(fGeom->ChannelToROP(ndPacket[0]));
+      float peakTime = (float)ndPacket[1];
+      float integral = (float)(ndPacket[2]*16);
+      float summedADC = (float)(ndPacket[2]*16);
+      float peakAmplitude = integral/5.0;
+      float rms = 3.0; // fairly arbitrary choice
+      raw::TDCtick_t startTick = (raw::TDCtick_t)(peakTime);
+      raw::TDCtick_t endTick = (raw::TDCtick_t)(peakTime + 5.0);
+      raw::ChannelID_t channel = (unsigned int)(ndPacket[0] + 14400); // The +14400 is a temporary fix because I forgot to use the global channel number
+      geo::View_t view = fGeom->View(fGeom->ChannelToROP((unsigned int)(ndPacket[0] + 14400)));
 
       geo::WireID wireID = geo::WireID();
-      for (geo::WireID wire : fGeom->ChannelToWire(ndPacket[0])) { 
+      for (geo::WireID wire : fGeom->ChannelToWire((unsigned int)(ndPacket[0] + 14400))) { 
         if (fGeom->View(wire.parentID()) == view) {
           wireID = wire;
           break;
         }
       }
 
-      recob::Hit hit(channel, raw::TDCtick_t(0), raw::TDCtick_t(0), peakTime, float(-1.0),
-        float(0.0), float(0.0), float(-1.0), float(0.0), integral, float(-1.0), short(0),
+      recob::Hit hit(channel, startTick, endTick, peakTime, float(-1.0),
+        rms, peakAmplitude, float(-1.0), float(0.0), integral, summedADC, short(0),
         short(-1), float(0.0), int(-1), view, geo::SigType_t(geo::kMysteryType), wireID);
 
       hitsND->push_back(hit);
     }
 
-    e.put(std::move(digsTrue), "True");
-    e.put(std::move(digsTranslated), "Translated");
+    e.put(std::move(digsTrue), "TrueTranslated");
+    e.put(std::move(digsTranslated), "NetworkTranslated");
     e.put(std::move(hitsND), "NDPackets");
   }
 
@@ -189,8 +193,13 @@ void extrapolation::LoadTranslation::beginJob()
   std::cout << pID << "\n";
   fRID = fGeom->WirePlaneToROP(pID);
 
+  fChannels = nullptr;
+  fTranslatedDigs = nullptr;
+  fTrueDigs = nullptr;
+  fNDPacket = nullptr;
   TFile* f = new TFile(fInputFileLoc.c_str());
   fTree = (TTree*)f->Get("digs_hits");
+  fTree->SetBranchAddress("channels", &fChannels);
   fTree->SetBranchAddress("rawdigits_translated", &fTranslatedDigs);
   fTree->SetBranchAddress("rawdigits_true", &fTrueDigs);
   fTree->SetBranchAddress("nd_packets", &fNDPacket);
