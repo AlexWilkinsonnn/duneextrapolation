@@ -37,6 +37,8 @@ art_make(
                 ${ROOT_SPECTRUM}
                 ${ROOT_ROOFIT}
                 ${ROOT_ROOFITCORE}
+
+                dunereco_CVN_func
         )
 
 install_headers()

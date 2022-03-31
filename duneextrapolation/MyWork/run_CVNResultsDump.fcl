@@ -1,0 +1,32 @@
+#include "services_dune.fcl"
+#include "CVNResultsDumpConfig.fcl"
+
+process_name: CVNResultsDump
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+services:
+{
+  @table::dunefd_services
+  TFileService: { fileName: "%ifb_cvnresult_true-network-nd_ntuple.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    cvndump: @local::CVNResultsDump
+  }
+
+  path0:     [ cvndump ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"

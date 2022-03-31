@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+CVNResultsDump:
+{
+  module_type: "CVNResultsDump"
+
+  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco1viewCVNTrueTranslated"
+  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco1viewCVNNetworkTranslated"
+  NDCVNResultsLabel:      "cvneva:cvnresult:Reco1viewCVNNDPackets"
+}
+
+END_PROLOG
