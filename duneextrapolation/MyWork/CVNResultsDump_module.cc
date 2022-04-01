@@ -145,9 +145,9 @@ extrapolation::CVNResultsDump::CVNResultsDump(fhicl::ParameterSet const& p)
   fTreeCVNResults->Branch("TrueNueScore", &fTrueNueScore, "truenuescore/F");
   fTreeCVNResults->Branch("NetworkNueScore", &fNetworkNueScore, "networknuescore/F");
   fTreeCVNResults->Branch("NDNueScore", &fNDNueScore, "ndnuescore/F");  
-  fTreeCVNResults->Branch("TrueNCScore", &fTrueNCScore, "truenCscore/F");
-  fTreeCVNResults->Branch("NetworkNCScore", &fNetworkNCScore, "networknCscore/F");
-  fTreeCVNResults->Branch("NDNCScore", &fNDNCScore, "ndnCscore/F");
+  fTreeCVNResults->Branch("TrueNCScore", &fTrueNCScore, "truencscore/F");
+  fTreeCVNResults->Branch("NetworkNCScore", &fNetworkNCScore, "networkncscore/F");
+  fTreeCVNResults->Branch("NDNCScore", &fNDNCScore, "ndncscore/F");
   fTreeCVNResults->Branch("TrueNutauScore", &fTrueNutauScore, "truenutauscore/F");
   fTreeCVNResults->Branch("NetworkNutauScore", &fNetworkNutauScore, "networknutauscore/F");
   fTreeCVNResults->Branch("NDNutauScore", &fNDNutauScore, "ndnutauscore/F");
