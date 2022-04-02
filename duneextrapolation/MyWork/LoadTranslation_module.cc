@@ -193,6 +193,7 @@ void extrapolation::LoadTranslation::beginJob()
   std::cout << pID << "\n";
   fRID = fGeom->WirePlaneToROP(pID);
 
+  std::cout << "Reading from file " << fInputFileLoc << "\n";
   fChannels = nullptr;
   fTranslatedDigs = nullptr;
   fTrueDigs = nullptr;
