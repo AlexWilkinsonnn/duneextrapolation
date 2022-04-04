@@ -158,10 +158,10 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
       raw::TDCtick_t startTick = (raw::TDCtick_t)(peakTime);
       raw::TDCtick_t endTick = (raw::TDCtick_t)(peakTime + 5.0);
       raw::ChannelID_t channel = (unsigned int)(ndPacket[0]);
-      geo::View_t view = fGeom->View(fGeom->ChannelToROP((unsigned int)(ndPacket[0] + 14400)));
+      geo::View_t view = fGeom->View(fGeom->ChannelToROP((unsigned int)ndPacket[0]));
 
       geo::WireID wireID = geo::WireID();
-      for (geo::WireID wire : fGeom->ChannelToWire((unsigned int)(ndPacket[0] + 14400))) { 
+      for (geo::WireID wire : fGeom->ChannelToWire((unsigned int)ndPacket[0])) {
         if (fGeom->View(wire.parentID()) == view) {
           wireID = wire;
           break;
