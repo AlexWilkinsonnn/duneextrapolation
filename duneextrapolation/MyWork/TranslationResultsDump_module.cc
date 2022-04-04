@@ -148,7 +148,7 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
 
   art::ServiceHandle<art::TFileService> tfs;
 
-  fTreeCVNResults = tfs->make<TTree>("CVNResults", "CVNResults");
+  fTreeCVNResults = tfs->make<TTree>("Results", "Results");
   fTreeCVNResults->Branch("Run", &fRun, "run/I");
   fTreeCVNResults->Branch("SubRun", &fSubRun, "subrun/I");
   fTreeCVNResults->Branch("EventNum", &fEventNum, "eventnum/I");
