@@ -157,7 +157,7 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
       float rms = 3.0; // fairly arbitrary choice
       raw::TDCtick_t startTick = (raw::TDCtick_t)(peakTime);
       raw::TDCtick_t endTick = (raw::TDCtick_t)(peakTime + 5.0);
-      raw::ChannelID_t channel = (unsigned int)(ndPacket[0] + 14400); // The +14400 is a temporary fix because I forgot to use the global channel number
+      raw::ChannelID_t channel = (unsigned int)(ndPacket[0]);
       geo::View_t view = fGeom->View(fGeom->ChannelToROP((unsigned int)(ndPacket[0] + 14400)));
 
       geo::WireID wireID = geo::WireID();
@@ -169,7 +169,7 @@ void extrapolation::LoadTranslation::produce(art::Event& e)
       }
 
       recob::Hit hit(channel, startTick, endTick, peakTime, float(-1.0),
-        rms, peakAmplitude, float(-1.0), float(0.0), integral, summedADC, short(0),
+        rms, peakAmplitude, float(-1.0), summedADC, integral, float(-1.0), short(0),
         short(-1), float(0.0), int(-1), view, geo::SigType_t(geo::kMysteryType), wireID);
 
       hitsND->push_back(hit);
