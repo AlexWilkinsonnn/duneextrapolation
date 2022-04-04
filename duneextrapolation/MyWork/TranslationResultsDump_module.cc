@@ -135,7 +135,7 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
     fNetworkCVNResultsLabel (p.get<std::string> ("NetworkCVNResultsLabel")),
     fNDCVNResultsLabel      (p.get<std::string> ("NDCVNResultsLabel")),
     fTrueHitsLabel          (p.get<std::string> ("TrueHitsLabel")),    
-    fNetworkHitsLabel       (p.get<std::string> ("NetworHitsLabel")),      
+    fNetworkHitsLabel       (p.get<std::string> ("NetworkHitsLabel")),      
     fNDHitsLabel            (p.get<std::string> ("NDHitsLabel"))
 {
   consumes<std::vector<cvn::Result>>(fTrueCVNResultsLabel);

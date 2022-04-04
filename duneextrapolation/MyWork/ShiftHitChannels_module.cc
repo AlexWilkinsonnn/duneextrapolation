@@ -3,7 +3,7 @@
 // Plugin Type: producer (Unknown Unknown)
 // File:        ShiftHitChannels_module.cc
 //
-// Generated Mon Mar 28 2022 by Alexander Wilkinson
+// Generated Mon Apr 4 2022 by Alexander Wilkinson
 //
 // Shift ndpacket hits back to where they should be (fixing mistake I made). 
 ////////////////////////////////////////////////////////////////////////
@@ -75,6 +75,8 @@ extrapolation::ShiftHitChannels::ShiftHitChannels(fhicl::ParameterSet const& p)
   fChannelShift  (p.get<int>("ChannelShift"))
 {
   produces<std::vector<recob::Hit>>("NDPacketsFixed");
+
+  consumes<std::vector<recob::Hit>>(fNDPacketLabel);
 }
 
 void extrapolation::ShiftHitChannels::produce(art::Event& e)
