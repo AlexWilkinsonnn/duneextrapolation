@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+ShiftHitChannels:
+{
+  module_type: "ShiftHitChannels"
+
+  NDPacketLabel: "Translate:NDPackets:NDTranslation" 
+  ChannelShift:  -14400
+}
+
+END_PROLOG
