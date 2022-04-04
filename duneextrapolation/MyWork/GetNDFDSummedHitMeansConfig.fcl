@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+GetNDFDSummedHitMeans:
+{
+  module_type: "GetNDFDSummedHitMeans"
+  
+  NDPacketLabel: "Translate:NDPackets:NDTranslation"
+  FDHitLabel:    "gaushit::Reco1viewCVNTrueTranslated"
+}
+
+END_PROLOG
