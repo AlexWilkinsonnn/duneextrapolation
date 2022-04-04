@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       CVNResultsDump
+// Class:       TranslationResultsDump
 // Plugin Type: analyzer (Unknown Unknown)
-// File:        CVNResultsDump_module.cc
+// File:        TranslationResultsDump_module.cc
 //
 // Thur Mar 31 2022 Alex Wilkinson
 ////////////////////////////////////////////////////////////////////////
@@ -39,21 +39,21 @@
 #include "TLeaf.h"
 
 namespace extrapolation {
-  class CVNResultsDump;
+  class TranslationResultsDump;
 }
 
 
-class extrapolation::CVNResultsDump : public art::EDAnalyzer {
+class extrapolation::TranslationResultsDump : public art::EDAnalyzer {
 public:
-  explicit CVNResultsDump(fhicl::ParameterSet const& p);
+  explicit TranslationResultsDump(fhicl::ParameterSet const& p);
   // The compiler-generated destructor is fine for non-base
   // classes without bare pointers or other resource use.
 
   // Plugins should not be copied or assigned.
-  CVNResultsDump(CVNResultsDump const&) = delete;
-  CVNResultsDump(CVNResultsDump&&) = delete;
-  CVNResultsDump& operator=(CVNResultsDump const&) = delete;
-  CVNResultsDump& operator=(CVNResultsDump&&) = delete;
+  TranslationResultsDump(TranslationResultsDump const&) = delete;
+  TranslationResultsDump(TranslationResultsDump&&) = delete;
+  TranslationResultsDump& operator=(TranslationResultsDump const&) = delete;
+  TranslationResultsDump& operator=(TranslationResultsDump&&) = delete;
 
   // Required functions.
   void analyze(art::Event const& e) override;
@@ -71,6 +71,9 @@ private:
   std::string fTrueCVNResultsLabel;
   std::string fNetworkCVNResultsLabel;
   std::string fNDCVNResultsLabel;
+  std::string fTrueHitsLabel; 
+  std::string fNetworkHitsLabel;
+  std::string fNDHitsLabel;
   
   TTree* fTreeCVNResults;
   int    fRun;
@@ -119,18 +122,29 @@ private:
   float  fTrueOtherScore;
   float  fNetworkOtherScore;
   float  fNDOtherScore;
+  // Hit information
+  float  fTrueHitIntegralSumZ;
+  float  fNetworkHitIntegralSumZ;
+  float  fNDHitIntegralSumZ;
 };
 
 
-extrapolation::CVNResultsDump::CVNResultsDump(fhicl::ParameterSet const& p)
+extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fTrueCVNResultsLabel       (p.get<std::string> ("TrueCVNResultsLabel")),
+    fTrueCVNResultsLabel    (p.get<std::string> ("TrueCVNResultsLabel")),
     fNetworkCVNResultsLabel (p.get<std::string> ("NetworkCVNResultsLabel")),
-    fNDCVNResultsLabel         (p.get<std::string> ("NDCVNResultsLabel"))
+    fNDCVNResultsLabel      (p.get<std::string> ("NDCVNResultsLabel")),
+    fTrueHitsLabel          (p.get<std::string> ("TrueHitsLabel")),    
+    fNetworkHitsLabel       (p.get<std::string> ("NetworHitsLabel")),      
+    fNDHitsLabel            (p.get<std::string> ("NDHitsLabel"))
 {
   consumes<std::vector<cvn::Result>>(fTrueCVNResultsLabel);
   consumes<std::vector<cvn::Result>>(fNetworkCVNResultsLabel);
   consumes<std::vector<cvn::Result>>(fNDCVNResultsLabel);
+
+  consumes<std::vector<recob::Hit>>(fTrueHitsLabel);
+  consumes<std::vector<recob::Hit>>(fNetworkHitsLabel);
+  consumes<std::vector<recob::Hit>>(fNDHitsLabel);
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -181,9 +195,13 @@ extrapolation::CVNResultsDump::CVNResultsDump(fhicl::ParameterSet const& p)
   fTreeCVNResults->Branch("TrueOtherScore", &fTrueOtherScore, "trueotherscore/F");
   fTreeCVNResults->Branch("NetworkOtherScore", &fNetworkOtherScore, "networkotherscore/F");
   fTreeCVNResults->Branch("NDOtherScore", &fNDQEScore, "ndotherscore/F"); 
+  // Hit information
+  fTreeCVNResults->Branch("TrueHitIntegralSumZ", &fTrueHitIntegralSumZ, "truehitintegralsumz/F");
+  fTreeCVNResults->Branch("NetworkHitIntegralSumZ", &fNetworkHitIntegralSumZ, "networkhitintegralsumz/F");
+  fTreeCVNResults->Branch("NDHitIntegralSumZ", &fNDHitIntegralSumZ, "ndhitintegralsumz/F");
 }
 
-void extrapolation::CVNResultsDump::analyze(art::Event const& e)
+void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
 {
   this->reset();
 
@@ -192,9 +210,15 @@ void extrapolation::CVNResultsDump::analyze(art::Event const& e)
   fSubRun = e.id().subRun(); 
   fEventNum = e.id().event();
 
+  // Get results from CVN
   const auto trueCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fTrueCVNResultsLabel);
   const auto networkCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fNetworkCVNResultsLabel);
   const auto NDCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fNDCVNResultsLabel);
+  
+  // Get Hits
+  const auto trueHits = e.getValidHandle<std::vector<recob::Hit>> (fTrueHitsLabel);
+  const auto networkHits = e.getValidHandle<std::vector<recob::Hit>> (fNetworkHitsLabel);
+  const auto NDHits = e.getValidHandle<std::vector<recob::Hit>> (fNDHitsLabel);
   
   // Get flavour scores
   fTrueNumuScore = trueCVNResults->at(0).GetNumuProbability();
@@ -243,19 +267,36 @@ void extrapolation::CVNResultsDump::analyze(art::Event const& e)
   fNetworkOtherScore = networkCVNResults->at(0).GetOtherProbability();
   fNDOtherScore = NDCVNResults->at(0).GetOtherProbability();
   
+  // Get Hit information
+  for (const recob::Hit& hit : *trueHits) {
+    if (hit.View() == geo::kZ) {
+      fTrueHitIntegralSumZ += hit.Integral();
+    }
+  }
+  for (const recob::Hit& hit : *networkHits) {
+    if (hit.View() == geo::kZ) {
+      fNetworkHitIntegralSumZ += hit.Integral();
+    }
+  }
+  for (const recob::Hit& hit : *NDHits) {
+    if (hit.View() == geo::kZ) {
+      fNDHitIntegralSumZ += hit.Integral();
+    }
+  }
+  
   fTreeCVNResults->Fill();
 }
 
-void extrapolation::CVNResultsDump::beginJob()
+void extrapolation::TranslationResultsDump::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 }
 
-void extrapolation::CVNResultsDump::endJob()
+void extrapolation::TranslationResultsDump::endJob()
 {
 }
 
-void extrapolation::CVNResultsDump::reset() 
+void extrapolation::TranslationResultsDump::reset() 
 {
   fRun = -999;
   fSubRun = -999;
@@ -303,6 +344,10 @@ void extrapolation::CVNResultsDump::reset()
   fTrueOtherScore = -999.0;
   fNetworkOtherScore = -999.0;
   fNDOtherScore = -999.0;
+  
+  fTrueHitIntegralSumZ = 0.0;
+  fNetworkHitIntegralSumZ = 0.0;
+  fNDHitIntegralSumZ = 0.0;
 }
 
-DEFINE_ART_MODULE(extrapolation::CVNResultsDump)
+DEFINE_ART_MODULE(extrapolation::TranslationResultsDump)

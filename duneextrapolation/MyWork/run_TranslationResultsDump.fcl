@@ -1,7 +1,7 @@
 #include "services_dune.fcl"
-#include "CVNResultsDumpConfig.fcl"
+#include "TranslationResultsDumpConfig.fcl"
 
-process_name: CVNResultsDump
+process_name: TranslationResultsDump
 
 source:
 {
@@ -12,17 +12,17 @@ source:
 services:
 {
   @table::dunefd_services
-  TFileService: { fileName: "%ifb_cvnresult_true-network-nd_ntuple.root" }
+  TFileService: { fileName: "%ifb_result_true-network-nd_ntuple.root" }
 }
 
 physics:
 {
   analyzers:
   {
-    cvndump: @local::CVNResultsDump
+    resultdump: @local::TranslationResultsDump
   }
 
-  path0:     [ cvndump ]
+  path0:     [ resultdump ]
   end_paths: [ path0 ]
 }
 
