@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+ScaleNDHits:
+{
+  module_type: "ScaleNDHits"
+
+  NDPacketLabel:  "Translate:NDPackets:NDTranslation" 
+  FDTrueHitsMean: 763734000
+  NDHitsMean:     2050930000
+}
+
+END_PROLOG

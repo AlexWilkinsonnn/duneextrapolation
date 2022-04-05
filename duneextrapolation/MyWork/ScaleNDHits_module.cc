@@ -68,12 +68,13 @@ private:
   std::string fNDPacketLabel;
   double fNDHitsMean;
   double fFDTrueHitsMean;
+  double fNDHitsScaleFactor;
 };
 
 extrapolation::ScaleNDHits::ScaleNDHits(fhicl::ParameterSet const& p)
   : EDProducer{p},
   fNDPacketLabel  (p.get<std::string>("NDPacketLabel")),
-  fNDHitsMean     (p.get<double>("FDTrueHitsMean")),
+  fNDHitsMean     (p.get<double>("NDHitsMean")),
   fFDTrueHitsMean (p.get<double>("FDTrueHitsMean"))
 {
   produces<std::vector<recob::Hit>>("NDPacketsScaled");
@@ -87,22 +88,14 @@ void extrapolation::ScaleNDHits::produce(art::Event& e)
   const auto hitsND = e.getValidHandle<std::vector<recob::Hit>> (fNDPacketLabel);
 
   for (const recob::Hit hit : *hitsND) {
-    raw::ChannelID_t channel = (int)hit.Channel();
-    geo::View_t view = fGeom->View(fGeom->ChannelToROP(channel));
-    geo::WireID wireID = geo::WireID();
-    for (geo::WireID wire : fGeom->ChannelToWire(channel)) {
-      if (fGeom->View(wire.parentID()) == view) {
-        wireID = wire;
-        break;
-      }
-    }
+    float integral = (float)((double)hit.Integral()*fNDHitsScaleFactor);
 
-    recob::Hit fixedHit(channel, hit.StartTick(), hit.EndTick(), hit.PeakTime(),
+    recob::Hit scaledHit(hit.Channel(), hit.StartTick(), hit.EndTick(), hit.PeakTime(),
       hit.SigmaPeakTime(), hit.RMS(), hit.PeakAmplitude(), hit.SigmaPeakAmplitude(), hit.SummedADC(),
-      hit.Integral(), hit.SigmaIntegral(), hit.Multiplicity(), hit.LocalIndex(), hit.GoodnessOfFit(),
-      hit.DegreesOfFreedom(), view, hit.SignalType(), wireID); 
+      integral, hit.SigmaIntegral(), hit.Multiplicity(), hit.LocalIndex(), hit.GoodnessOfFit(),
+      hit.DegreesOfFreedom(), hit.View(), hit.SignalType(), hit.WireID()); 
     
-    hitsNDScaled->push_back(fixedHit);
+    hitsNDScaled->push_back(scaledHit);
   }
 
   e.put(std::move(hitsNDScaled), "NDPacketsScaled");
@@ -112,7 +105,9 @@ void extrapolation::ScaleNDHits::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
   
-  // std::cout << "Shifting channel by " << fChannelShift << " for hits in " << fNDPacketLabel << "\n";
+  fNDHitsScaleFactor = fFDTrueHitsMean/fNDHitsMean;
+  std::cout << "Scaling ND hits by " << fNDHitsScaleFactor << " for FD summed hits mean of " <<
+    fFDTrueHitsMean << " and ND summed hits mean of " << fNDHitsMean << "\n";
 }
 
 void extrapolation::ScaleNDHits::endJob()
