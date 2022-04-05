@@ -43,7 +43,7 @@ physics:
 
  #trigger_paths is a keyword and contains the paths that modify the art::event,
  #ie filters and producers
- reco: [ scale, @sequence::cvn1view_workflow_nd ]
+ reco: [ scale, @sequence::cvn1view_workflow_nd_shiftscale ]
  trigger_paths: [ reco ]
 
  #end_paths is a keyword and contains the paths that do not modify the art::Event,
@@ -72,7 +72,7 @@ outputs:
 
 physics.producers.scale.NDPacketLabel: "HitShift:NDPacketsFixed:ShiftHitChannels"
 
-physics.producers.cvnmapnd.HitsModuleLabel: "scale:NDPacketsScaled:Reco1viewCVNNDPackets"
-physics.producers.cvnmapnd.ClusterPMLabel:  "cvnmapnd" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
-physics.producers.cvnmapnd.MinClusterHits:  0
-physics.producers.cvneva.PixelMapInput: "cvnmapnd"
+physics.producers.cvnmapndshiftscale.HitsModuleLabel: "scale:NDPacketsScaled:Reco1viewCVNNDPacketsShiftedScaled"
+physics.producers.cvnmapndshiftscale.ClusterPMLabel:  "cvnmapndshiftscale" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
+physics.producers.cvnmapndshiftscale.MinClusterHits:  0
+physics.producers.cvneva.PixelMapInput: "cvnmapndshiftscale"
