@@ -1,3 +1,5 @@
+add_subdirectory(run_fcls)
+
 art_make(
         MODULE_LIBRARIES
 
