@@ -1,0 +1,49 @@
+#include "services_dune.fcl"
+#include "LoadTranslationConfig.fcl"
+
+process_name: NDTranslation
+
+source:
+{
+  module_type: EmptyEvent
+  timestampPlugin: { plugin_type: "GeneratedEventTimestamp" }
+  maxEvents:   -1
+  firstRun:    1
+  firstEvent:  1
+}
+
+services:
+{
+  @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  RandomNumberGenerator: {} # ART native random number generator
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type:      RootOutput
+    fileName:	        "NDFDTranslation_gen_g4_detsim_trans.root"
+    dataTier:         "simulated"
+    compressionLevel: 1
+  }
+}
+
+physics:
+{
+  producers:
+  {
+    Translate: @local::LoadTranslation
+  }
+  simulate:      [ Translate ]
+  stream1:       [ out1 ]
+  trigger_paths: [simulate]
+  end_paths:     [stream1]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
