@@ -5,7 +5,6 @@ ExportDigits:
   module_type: "ExportDigits"
   CryoIndex:  0
   TpcIndex:   10 // Somewhere top middle of 1x2x6
-  PlaneIndex: 2 // Collection Plane
 }
 
 END_PROLOG
