@@ -82,10 +82,13 @@ private:
   double fTickShiftZ;
   double fTickShiftU;
   double fTickShiftV;
-  geo::TPCID   fTID;
-  geo::PlaneID fPIDZ;
-  geo::PlaneID fPIDU;
-  geo::PlaneID fPIDV;
+  geo::TPCID     fTID;
+  geo::PlaneID   fPIDZ;
+  geo::PlaneID   fPIDU;
+  geo::PlaneID   fPIDV;
+  readout::ROPID fRIDZ;
+  readout::ROPID fRIDU;
+  readout::ROPID fRIDV;
 };
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
@@ -166,25 +169,26 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double z = packet[0] + fZShift;
       double y = packet[1] + fYShift;
       double x = packet[2] + XShift;
-      double adc = packet[3];
+      double adc = packet[4];
+      double NDDrift = packet[5];
 
       geo::Point_t packetLoc(x, y, z);
 
-      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ);
-      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU);
-      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV);
+      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
+      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
+      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
 
       double tickRawZ = detProp.ConvertXToTicks(x, fPIDZ);
       tickRawZ -= fTickShiftZ;
       unsigned int tickZ = (unsigned int)tickRawZ;
       double tickRawU = detProp.ConvertXToTicks(x, fPIDU);
       tickRawU -= fTickShiftU;
-      unsigned int tickU = (unsigned int)tickRawZ;
+      unsigned int tickU = (unsigned int)tickRawU;
       double tickRawV = detProp.ConvertXToTicks(x, fPIDV);
       tickRawV -= fTickShiftV;
-      unsigned int tickV = (unsigned int)tickRawZ;
+      unsigned int tickV = (unsigned int)tickRawV;
 
-      std::vector<double> projection(10, 0.0);
+      std::vector<double> projection(11, 0.0);
       projection[0] = z;
       projection[1] = y;
       projection[2] = x;
@@ -195,6 +199,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       projection[7] = chV;
       projection[8] = tickV;
       projection[9] = adc;
+      projection[10] = NDDrift;
       fPacketProjection.push_back(projection);
     }
 
@@ -225,14 +230,17 @@ void extrapolation::PrepNDDeposPackets::beginJob()
     if (fGeom->View(pID) == geo::kZ) {
       std::cout << "Z plane: " << pID << "\n";
       fPIDZ = pID;
+      fRIDZ = fGeom->WirePlaneToROP(pID);
     }
     else if (fGeom->View(pID) == geo::kU) {
       std::cout << "U plane: " << pID << "\n";
       fPIDU = pID;
+      fRIDU = fGeom->WirePlaneToROP(pID);
     }
     else if (fGeom->View(pID) == geo::kV) {
       std::cout << "V plane: " << pID << "\n";
       fPIDV = pID;
+      fRIDV = fGeom->WirePlaneToROP(pID);
     }
   }
 
