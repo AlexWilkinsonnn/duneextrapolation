@@ -1,0 +1,20 @@
+BEGIN_PROLOG
+
+PrepNDDeposPackets:
+{
+  module_type: "PrepNDDeposPackets"
+
+  NDDDataLoc: "/unix/dune/awilkinson/extrapolation/larpixsoft/output_1-8_radi_vtxcuts_noped_depospackets.root"
+
+  CryoIndex: 0
+  TpcIndex:  10 // Somewhere top middle of 1x2x6
+
+  YShift: 200
+  ZShift: -14.8615
+
+  TickShiftZ: -7.8
+  TickShiftU: -10.1
+  TickShiftV: -10.9
+}
+
+END_PROLOG
