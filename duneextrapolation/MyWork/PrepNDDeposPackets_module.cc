@@ -70,6 +70,8 @@ private:
 
   TTree*                           fTreePacketProjections;
   std::vector<std::vector<double>> fPacketProjection;
+  int                              fEventID;
+  std::vector<double>              fVertexOut;
 
   std::string fNDDataLoc;
   unsigned int fCIndex;
@@ -104,6 +106,8 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
 
   fTreePacketProjections = tfs->make<TTree>("packet_projections", "packet_projections");
   fTreePacketProjections->Branch("projection", &fPacketProjection);
+  fTreePacketProjections->Branch("eventid", &fEventID);
+  fTreePacketProjections->Branch("vertex", &fVertexOut);
 }
 
 void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
@@ -162,6 +166,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double z = packet[0] + fZShift;
       double y = packet[1] + fYShift;
       double x = packet[2] + XShift;
+      double adc = packet[3];
 
       geo::Point_t packetLoc(x, y, z);
 
@@ -180,18 +185,24 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       unsigned int tickV = (unsigned int)tickRawZ;
 
       std::vector<double> projection(10, 0.0);
-      projection[0] = fEventNumber;
-      projection[1] = z;
-      projection[2] = y;
-      projection[3] = x;
-      projection[4] = chZ;
-      projection[5] = tickZ;
-      projection[6] = chU;
-      projection[7] = tickU;
-      projection[8] = chV;
-      projection[9] = tickV;
+      projection[0] = z;
+      projection[1] = y;
+      projection[2] = x;
+      projection[3] = chZ;
+      projection[4] = tickZ;
+      projection[5] = chU;
+      projection[6] = tickU;
+      projection[7] = chV;
+      projection[8] = tickV;
+      projection[9] = adc;
       fPacketProjection.push_back(projection);
     }
+
+    // Store Event id number
+    fEventID = fEventNumber;
+
+    // Want to keep vertex info
+    fVertexOut = *fVertex;
 
     fTreePacketProjections->Fill();
 
@@ -248,6 +259,7 @@ void extrapolation::PrepNDDeposPackets::endJob()
 void extrapolation::PrepNDDeposPackets::reset()
 {
   fPacketProjection.clear();
+  fEventID = -1;
 }
 
 DEFINE_ART_MODULE(extrapolation::PrepNDDeposPackets)
