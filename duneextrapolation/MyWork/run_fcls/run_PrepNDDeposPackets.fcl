@@ -18,6 +18,7 @@ services:
   TimeTracker:           {}
   MemoryTracker:         {} # default is one
   RandomNumberGenerator: {} # ART native random number generator
+  TFileService: { fileName: "NDPackets_projections.root" }
 }
 
 outputs:

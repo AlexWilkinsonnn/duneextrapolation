@@ -146,11 +146,13 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
           0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg); 
       SEDs->push_back(SED);
-
-      // SED that stores an ID for this event
-      sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0,0,0,0,posStart,posEnd,0,0,fEventNumber);
-      evNum->push_back(ID);
     }
+   
+    // SED that stores an ID for this event
+    geo::Point_t posStart = geo::Point_t(0,0,0);
+    geo::Point_t posEnd = geo::Point_t(0,0,0);
+    sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0,0,0,0,posStart,posEnd,0,0,fEventNumber);
+    evNum->push_back(ID);
 
     e.put(std::move(SEDs));
     e.put(std::move(evNum), "EventNumber");
@@ -197,9 +199,11 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
   }
   else {
     std::cout << "Gone beyond number of entries in tree (" << fNEntries << ")\n";
-    fEntry++;
   }
+
+  fEntry++;
 }
+
 void extrapolation::PrepNDDeposPackets::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
@@ -221,9 +225,8 @@ void extrapolation::PrepNDDeposPackets::beginJob()
     }
   }
 
-//   fYShift = 200; // cm
-//   fZShift = -14.8615; // cm 
-
+  std::cout << "Reading file from " << fNDDataLoc << "\n";
+  fEntry = 0;
   fDepos = nullptr;
   fPackets = nullptr;
   fVertex = nullptr;
@@ -235,6 +238,7 @@ void extrapolation::PrepNDDeposPackets::beginJob()
 
   fEventNumber = 0;
   fNEntries = fTreeDeposPackets->GetEntries();
+  std::cout << "File has " << fNEntries << " entries\n";
 }
 
 void extrapolation::PrepNDDeposPackets::endJob()
