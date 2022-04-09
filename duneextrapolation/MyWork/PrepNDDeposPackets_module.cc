@@ -188,7 +188,15 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       tickRawV -= fTickShiftV;
       unsigned int tickV = (unsigned int)tickRawV;
 
-      std::vector<double> projection(11, 0.0);
+      const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
+      double driftDistanceZ = pGeoZ.DistanceFromPlane(packetLoc);
+      const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
+      double driftDistanceU = pGeoU.DistanceFromPlane(packetLoc);
+      const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
+      double driftDistanceV = pGeoV.DistanceFromPlane(packetLoc);
+      // std::cout << driftDistanceZ << " - " << driftDistanceU << " - " << driftDistanceV << "\n";
+
+      std::vector<double> projection(14, 0.0);
       projection[0] = z;
       projection[1] = y;
       projection[2] = x;
@@ -200,6 +208,9 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       projection[8] = tickV;
       projection[9] = adc;
       projection[10] = NDDrift;
+      projection[11] = driftDistanceZ;
+      projection[12] = driftDistanceU;
+      projection[13] = driftDistanceV;
       fPacketProjection.push_back(projection);
     }
 
