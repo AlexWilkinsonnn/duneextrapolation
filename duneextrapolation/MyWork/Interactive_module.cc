@@ -47,7 +47,6 @@ private:
   const geo::GeometryCore* fGeom;
 };
 
-
 interactive::Session::Session(fhicl::ParameterSet const& p)
   : EDAnalyzer{p}
 {
@@ -64,16 +63,42 @@ void interactive::Session::beginJob()
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Examine readout plane I have chosen for nd->fd translation
-  unsigned int CryoIndex = 0;
-  unsigned int TpcIndex = 10;
-  unsigned int PlaneIndex = 2;
+  if (true) {
+    unsigned int CryoIndex = 0;
+    unsigned int TpcIndex = 10;
+    unsigned int PlaneIndex = 2;
 
-  const geo::CryostatID cID(CryoIndex);
-  const geo::TPCID tID(cID, TpcIndex);
-  const geo::PlaneID pID(tID, PlaneIndex);
-  const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
+    const geo::CryostatID cID(CryoIndex);
+    const geo::TPCID tID(cID, TpcIndex);
+    const geo::PlaneID pID(tID, PlaneIndex);
+    const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
 
-  std::cout << "FirstChannelInROP = " << fGeom->FirstChannelInROP(rID) << "\n";
+    std::cout << "FirstChannelInROP = " << fGeom->FirstChannelInROP(rID) << "\n";
+
+    const geo::TPCGeo tGeo = fGeom->TPC(tID);
+    const geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
+    std::cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
+  } 
+
+  // Examine induction plane I will use
+  if (false) {
+    using std::cout;
+
+    unsigned int CryoIndex = 0;
+    unsigned int TpcIndex = 10;
+    unsigned int PlaneIndex = 1;
+
+    const geo::CryostatID cID(CryoIndex);
+    const geo::TPCID tID(cID, TpcIndex);
+    const geo::PlaneID pID(tID, PlaneIndex);
+
+    const geo::PlaneGeo pGeo = fGeom->Plane(pID);
+
+    cout << "ThetaZ = " << pGeo.ThetaZ() << "\n";
+    cout << "FirstWire Start Y = " << pGeo.FirstWire().GetStart().Y() << "\n";
+    cout << "LastWire Start Y = " << pGeo.LastWire().GetStart().Y() << "\n";
+    cout << "LastWire ThetaZ = " << pGeo.LastWire().ThetaZ() << "\n";
+  }
 }
 
 void interactive::Session::endJob()
