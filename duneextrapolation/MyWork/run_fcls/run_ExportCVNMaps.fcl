@@ -1,0 +1,34 @@
+#include "services_dune.fcl"
+#include "ExportCVNMapsConfig.fcl"
+
+process_name: ExportCVNMaps
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1 
+}
+
+services:
+{
+  @table::dunefd_services
+  TFileService: { fileName: "cvn_pixelmaps.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    cvnevd: @local::ExportCVNMaps
+  }
+  path0:      [ cvnevd ]
+  end_paths:  [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+
+physics.analyzers.cvnevd.EventNumbers: [1103,1127,1129,1200,1327,1411,1554,1701,281,315,382,732,747,766,787,829,1060,1070]
+

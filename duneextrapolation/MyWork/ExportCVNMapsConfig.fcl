@@ -1,0 +1,18 @@
+BEGIN_PROLOG
+
+ExportCVNMaps:
+{
+  module_type: "ExportCVNMaps"
+
+  EventNumbers: [1,2]
+
+  TruePixelMapLabel:    "cvnmaptrue:cvnmaptrue:Reco1viewCVNTrueTranslated" 
+  NDPixelMapLabel:      "cvnmapndscale:cvnmapndscale:Reco1viewCVNNDPacketsScaled" 
+  NetworkPixelMapLabel: "cvnmapnetwork:cvnmapnetwork:Reco1viewCVNNetworkTranslated" 
+
+  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco1viewCVNTrueTranslated"
+  NDCVNResultsLabel:      "cvneva:cvnresult:Reco1viewCVNNDPacketsScaled"
+  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco1viewCVNNetworkTranslated"
+}
+
+END_PROLOG
