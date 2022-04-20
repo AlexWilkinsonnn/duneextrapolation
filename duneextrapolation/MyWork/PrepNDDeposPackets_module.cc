@@ -82,13 +82,14 @@ private:
   double fTickShiftZ;
   double fTickShiftU;
   double fTickShiftV;
-  geo::TPCID     fTID;
-  geo::PlaneID   fPIDZ;
-  geo::PlaneID   fPIDU;
-  geo::PlaneID   fPIDV;
-  readout::ROPID fRIDZ;
-  readout::ROPID fRIDU;
-  readout::ROPID fRIDV;
+  geo::TPCID         fTID;
+  geo::BoxBoundedGeo fTBBox;
+  geo::PlaneID       fPIDZ;
+  geo::PlaneID       fPIDU;
+  geo::PlaneID       fPIDV;
+  readout::ROPID     fRIDZ;
+  readout::ROPID     fRIDU;
+  readout::ROPID     fRIDV;
 };
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
@@ -104,6 +105,7 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
 {
   produces<std::vector<sim::SimEnergyDeposit>>();
   produces<std::vector<sim::SimEnergyDeposit>>("EventNumber");
+  produces<std::vector<sim::SimEnergyDeposit>>("ValidDepos");
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -254,6 +256,8 @@ void extrapolation::PrepNDDeposPackets::beginJob()
       fRIDV = fGeom->WirePlaneToROP(pID);
     }
   }
+  const geo::TPCGeo tGeo = fGeom->TPC(tID);
+  fTBBGeo = tGeo.BoundingBox();
 
   std::cout << "Reading file from " << fNDDataLoc << "\n";
   fEntry = 0;
