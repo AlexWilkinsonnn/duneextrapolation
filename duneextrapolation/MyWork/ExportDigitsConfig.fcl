@@ -5,6 +5,8 @@ ExportDigits:
   module_type: "ExportDigits"
   CryoIndex:  0
   TpcIndex:   10 // Somewhere top middle of 1x2x6
+
+  ExportSEDs: false
 }
 
 END_PROLOG

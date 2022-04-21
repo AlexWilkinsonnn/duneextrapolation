@@ -36,6 +36,7 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 namespace extrapolation {
   class ExportDigits;
@@ -59,12 +60,18 @@ public:
 private:
   const geo::GeometryCore* fGeom;
 
-  TTree*                          fTreeDigits;
+  TTree*                        fTreeDigits;
   // Need to use int instead of short to avoid providing a definition file for ROOT
   std::vector<std::vector<int>> fDigitsZ;
   std::vector<std::vector<int>> fDigitsU;
   std::vector<std::vector<int>> fDigitsV;
-  int                             fEventNum;
+  int                           fEventNum;
+
+  TTree*                        fTreeSEDs;
+  std::vector<std::vector<int>> fSEDsZ;
+  std::vector<std::vector<int>> fSEDsU;
+  std::vector<std::vector<int>> fSEDsV;
+
 
   unsigned int fCIndex;
   unsigned int fTIndex;
@@ -74,13 +81,16 @@ private:
   readout::ROPID fRIDZ;
   readout::ROPID fRIDU;
   readout::ROPID fRIDV;
+
+  bool fExportSEDs;
 };
 
 
 extrapolation::ExportDigits::ExportDigits(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fCIndex (p.get<unsigned int>("CryoIndex")),
-    fTIndex (p.get<unsigned int>("TpcIndex"))
+    fCIndex     (p.get<unsigned int>("CryoIndex")),
+    fTIndex     (p.get<unsigned int>("TpcIndex")),
+    fExportSEDs (p.get<bool>("ExportSEDs"))
 {
   consumes<std::vector<raw::RawDigit>>(art::InputTag("tpcrawdecoder", "daq"));
   consumes<std::vector<sim::SimEnergyDeposit>>(art::InputTag("IonAndScint", "EventNumber"));
@@ -92,6 +102,16 @@ extrapolation::ExportDigits::ExportDigits(fhicl::ParameterSet const& p)
   fTreeDigits->Branch("digit_vecsU", &fDigitsU);
   fTreeDigits->Branch("digit_vecsV", &fDigitsV);
   fTreeDigits->Branch("eventid", &fEventNum);
+
+  if (fExportSEDs) {
+    consumes<std::vector<sim::SimEnergyDeposit>>(art::InputTag("IonAndScint", ""));
+
+    fTreeSEDs = tfs->make<TTree>("seds", "seds");
+    fTreeSEDs->Branch("sedsZ", &fSEDsZ);
+    fTreeSEDs->Branch("sedsU", &fSEDsU);
+    fTreeSEDs->Branch("sedsV", &fSEDsV);
+    fTreeSEDs->Branch("eventid", &fEventNum);
+  }
 }
 
 void extrapolation::ExportDigits::analyze(art::Event const& e)
@@ -152,6 +172,41 @@ void extrapolation::ExportDigits::analyze(art::Event const& e)
   }
 
   fTreeDigits->Fill();
+
+  if (fExportSEDs) {
+    const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(art::InputTag("IonAndScint", ""));
+
+    for (auto& SED : *SEDs) { 
+      auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(e);
+      auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
+
+      raw::ChannelID_t chZ = fGeom->NearestChannel(SED.MidPoint(), fPIDZ);  
+      raw::ChannelID_t chU = fGeom->NearestChannel(SED.MidPoint(), fPIDU);  
+      raw::ChannelID_t chV = fGeom->NearestChannel(SED.MidPoint(), fPIDV);  
+
+      int chLocalZ = (int)(chZ - firstChZ);
+      int chLocalU = (int)(chU - firstChU);
+      int chLocalV = (int)(chV - firstChV);
+
+      double tickRawZ = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDZ) + clockData.TPCG4Time2TDC(SED.Time());
+      double tickRawU = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDU) + clockData.TPCG4Time2TDC(SED.Time());
+      double tickRawV = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDV) + clockData.TPCG4Time2TDC(SED.Time());
+      
+      tickRawZ -= 7.8;
+      tickRawU -= 10.1;
+      tickRawV -= 10.9;
+      
+      int tickZ = (int)tickRawZ;
+      int tickU = (int)tickRawU;
+      int tickV = (int)tickRawV;
+      
+      fSEDsZ.push_back({chLocalZ, tickZ, SED.NumElectrons()});
+      fSEDsU.push_back({chLocalU, tickU, SED.NumElectrons()});
+      fSEDsV.push_back({chLocalV, tickV, SED.NumElectrons()});
+    }
+    
+    fTreeSEDs->Fill();
+  }
 }
 
 void extrapolation::ExportDigits::beginJob()
@@ -189,6 +244,12 @@ void extrapolation::ExportDigits::reset()
   fDigitsU.clear();
   fDigitsV.clear();
   fEventNum = -1;
+
+  if (fExportSEDs) {
+    fSEDsZ.clear();
+    fSEDsU.clear();
+    fSEDsV.clear();
+  }
 }
 
 DEFINE_ART_MODULE(extrapolation::ExportDigits)
