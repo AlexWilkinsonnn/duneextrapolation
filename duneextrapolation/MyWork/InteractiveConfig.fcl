@@ -3,6 +3,8 @@ BEGIN_PROLOG
 InteractiveSession:
 {
   module_type: "Interactive"
+
+  SEDLabel: "IonAndScint::G4"
 }
 
 END_PROLOG

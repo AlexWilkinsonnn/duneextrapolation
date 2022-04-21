@@ -5,8 +5,8 @@ process_name: InteractiveSession
 
 source:
 {
-  module_type: EmptyEvent
-  maxEvents: 1
+  module_type: RootInput
+  maxEvents: -1
 }
 
 services:
@@ -28,4 +28,6 @@ services.Geometry: @local::dune10kt_1x2x6_geo
 services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+
+physics.analyzers.sess.SEDLabel: "IonAndScint::LoadNDDepos"
 

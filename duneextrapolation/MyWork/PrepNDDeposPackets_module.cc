@@ -105,7 +105,6 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
 {
   produces<std::vector<sim::SimEnergyDeposit>>();
   produces<std::vector<sim::SimEnergyDeposit>>("EventNumber");
-  produces<std::vector<sim::SimEnergyDeposit>>("ValidDepos");
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -256,8 +255,8 @@ void extrapolation::PrepNDDeposPackets::beginJob()
       fRIDV = fGeom->WirePlaneToROP(pID);
     }
   }
-  const geo::TPCGeo tGeo = fGeom->TPC(tID);
-  fTBBGeo = tGeo.BoundingBox();
+  const geo::TPCGeo tGeo = fGeom->TPC(fTID);
+  fTBBox = tGeo.BoundingBox();
 
   std::cout << "Reading file from " << fNDDataLoc << "\n";
   fEntry = 0;
