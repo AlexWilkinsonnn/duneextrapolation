@@ -33,6 +33,7 @@
 #include "dunereco/CVN/func/Result.h"
 
 #include <string>
+#include <map>
 
 #include "TTree.h"
 #include "TBranch.h"
@@ -75,57 +76,61 @@ private:
   std::string fNetworkHitsLabel;
   std::string fNDHitsLabel;
   
-  TTree* fTreeCVNResults;
-  int    fRun;
-  int    fSubRun;
-  int    fEventNum;
+  TTree*             fTreeCVNResults;
+  int                fRun;
+  int                fSubRun;
+  int                fEventNum;
   // Flavour scores
-  float  fTrueNumuScore;
-  float  fNetworkNumuScore;
-  float  fNDNumuScore;
-  float  fTrueNueScore;
-  float  fNetworkNueScore;
-  float  fNDNueScore;
-  float  fTrueNCScore;
-  float  fNetworkNCScore;
-  float  fNDNCScore;
-  float  fTrueNutauScore;
-  float  fNetworkNutauScore;
-  float  fNDNutauScore;
+  float              fTrueNumuScore;
+  float              fNetworkNumuScore;
+  float              fNDNumuScore;
+  float              fTrueNueScore;
+  float              fNetworkNueScore;
+  float              fNDNueScore;
+  float              fTrueNCScore;
+  float              fNetworkNCScore;
+  float              fNDNCScore;
+  float              fTrueNutauScore;
+  float              fNetworkNutauScore;
+  float              fNDNutauScore;
   // Pred number of daughter particle types
-  int    fTrueNumPions;
-  int    fNetworkNumPions;
-  int    fNDNumPions;
-  int    fTrueNumProtons;
-  int    fNetworkNumProtons;
-  int    fNDNumProtons;
-  int    fTrueNumPizeros;
-  int    fNetworkNumPizeros;
-  int    fNDNumPizeros;
-  int    fTrueNumNeutrons;
-  int    fNetworkNumNeutrons;
-  int    fNDNumNeutrons;
+  int                fTrueNumPions;
+  int                fNetworkNumPions;
+  int                fNDNumPions;
+  int                fTrueNumProtons;
+  int                fNetworkNumProtons;
+  int                fNDNumProtons;
+  int                fTrueNumPizeros;
+  int                fNetworkNumPizeros;
+  int                fNDNumPizeros;
+  int                fTrueNumNeutrons;
+  int                fNetworkNumNeutrons;
+  int                fNDNumNeutrons;
   // Antinuetrino score
-  float  fTrueAntiNuScore;
-  float  fNetworkAntiNuScore;
-  float  fNDAntiNuScore;
+  float              fTrueAntiNuScore;
+  float              fNetworkAntiNuScore;
+  float              fNDAntiNuScore;
   // Interaction type score
-  float  fTrueQEScore;
-  float  fNetworkQEScore;
-  float  fNDQEScore;
-  float  fTrueResScore;
-  float  fNetworkResScore;
-  float  fNDResScore;
-  float  fTrueDISScore;
-  float  fNetworkDISScore;
-  float  fNDDISScore;
-  float  fTrueOtherScore;
-  float  fNetworkOtherScore;
-  float  fNDOtherScore;
+  float              fTrueQEScore;
+  float              fNetworkQEScore;
+  float              fNDQEScore;
+  float              fTrueResScore;
+  float              fNetworkResScore;
+  float              fNDResScore;
+  float              fTrueDISScore;
+  float              fNetworkDISScore;
+  float              fNDDISScore;
+  float              fTrueOtherScore;
+  float              fNetworkOtherScore;
+  float              fNDOtherScore;
   // Hit information
-  float  fTrueHitIntegralSumZ;
-  float  fNetworkHitIntegralSumZ;
-  float  fNDHitIntegralSumZ;
+  float              fTrueHitIntegralSumZ;
+  float              fNetworkHitIntegralSumZ;
+  float              fNDHitIntegralSumZ;
+  // True hit information
+  std::vector<float> fTrueHitTickWidthsZ;
+  std::vector<int>   fTrueHitNumPerChZ;
+  std::vector<float> fTrueHitIntegralsZ;
 };
 
 
@@ -199,6 +204,10 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
   fTreeCVNResults->Branch("TrueHitIntegralSumZ", &fTrueHitIntegralSumZ, "truehitintegralsumz/F");
   fTreeCVNResults->Branch("NetworkHitIntegralSumZ", &fNetworkHitIntegralSumZ, "networkhitintegralsumz/F");
   fTreeCVNResults->Branch("NDHitIntegralSumZ", &fNDHitIntegralSumZ, "ndhitintegralsumz/F");
+  // True hit information
+  fTreeCVNResults->Branch("TrueHitTickWidthsZ", &fTrueHitTickWidthsZ);
+  fTreeCVNResults->Branch("TrueHitNumPerChZ", &fTrueHitNumPerChZ);
+  fTreeCVNResults->Branch("TrueHitIntegralsZ", &fTrueHitIntegralsZ);
 }
 
 void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
@@ -268,9 +277,13 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   fNDOtherScore = NDCVNResults->at(0).GetOtherProbability();
   
   // Get Hit information
+  std::map<raw::ChannelID_t, int> chHitCntr;
   for (const recob::Hit& hit : *trueHits) {
     if (hit.View() == geo::kZ) {
       fTrueHitIntegralSumZ += hit.Integral();
+      fTrueHitTickWidthsZ.push_back(hit.EndTick() - hit.StartTick());
+      fTrueHitIntegralsZ.push_back(hit.Integral());
+      chHitCntr[hit.Channel()]++;
     }
   }
   for (const recob::Hit& hit : *networkHits) {
@@ -282,6 +295,10 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
     if (hit.View() == geo::kZ) {
       fNDHitIntegralSumZ += hit.Integral();
     }
+  }
+  
+  for (const auto& chCntrPair : chHitCntr) {
+    fTrueHitNumPerChZ.push_back(chCntrPair.second);
   }
   
   fTreeCVNResults->Fill();
@@ -348,6 +365,10 @@ void extrapolation::TranslationResultsDump::reset()
   fTrueHitIntegralSumZ = 0.0;
   fNetworkHitIntegralSumZ = 0.0;
   fNDHitIntegralSumZ = 0.0;
+
+  fTrueHitTickWidthsZ.clear();
+  fTrueHitNumPerChZ.clear();
+  fTrueHitIntegralsZ.clear();
 }
 
 DEFINE_ART_MODULE(extrapolation::TranslationResultsDump)
