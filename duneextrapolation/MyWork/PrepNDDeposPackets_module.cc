@@ -82,14 +82,13 @@ private:
   double fTickShiftZ;
   double fTickShiftU;
   double fTickShiftV;
-  geo::TPCID         fTID;
-  geo::BoxBoundedGeo fTBBox;
-  geo::PlaneID       fPIDZ;
-  geo::PlaneID       fPIDU;
-  geo::PlaneID       fPIDV;
-  readout::ROPID     fRIDZ;
-  readout::ROPID     fRIDU;
-  readout::ROPID     fRIDV;
+  geo::TPCID     fTID;
+  geo::PlaneID   fPIDZ;
+  geo::PlaneID   fPIDU;
+  geo::PlaneID   fPIDV;
+  readout::ROPID fRIDZ;
+  readout::ROPID fRIDU;
+  readout::ROPID fRIDV;
 };
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
@@ -155,7 +154,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
           0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg); 
       SEDs->push_back(SED);
     }
-   
+
     // SED that stores an ID for this event
     geo::Point_t posStart = geo::Point_t(0,0,0);
     geo::Point_t posEnd = geo::Point_t(0,0,0);
@@ -165,6 +164,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     e.put(std::move(SEDs));
     e.put(std::move(evNum), "EventNumber");
 
+    // Dont want to use this pair so dont write out the packet projections
     // Get the wires and ticks of the ND packets using the vertex alignment
     for (const std::vector<double>& packet : *fPackets) {
       double z = packet[0] + fZShift;
@@ -180,13 +180,13 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
 
       double tickRawZ = detProp.ConvertXToTicks(x, fPIDZ);
-      tickRawZ -= fTickShiftZ;
+      tickRawZ += fTickShiftZ;
       unsigned int tickZ = (unsigned int)tickRawZ;
       double tickRawU = detProp.ConvertXToTicks(x, fPIDU);
-      tickRawU -= fTickShiftU;
+      tickRawU += fTickShiftU;
       unsigned int tickU = (unsigned int)tickRawU;
       double tickRawV = detProp.ConvertXToTicks(x, fPIDV);
-      tickRawV -= fTickShiftV;
+      tickRawV += fTickShiftV;
       unsigned int tickV = (unsigned int)tickRawV;
 
       const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
@@ -255,8 +255,6 @@ void extrapolation::PrepNDDeposPackets::beginJob()
       fRIDV = fGeom->WirePlaneToROP(pID);
     }
   }
-  const geo::TPCGeo tGeo = fGeom->TPC(fTID);
-  fTBBox = tGeo.BoundingBox();
 
   std::cout << "Reading file from " << fNDDataLoc << "\n";
   fEntry = 0;
