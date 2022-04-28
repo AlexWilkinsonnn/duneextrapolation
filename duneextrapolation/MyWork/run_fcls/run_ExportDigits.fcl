@@ -12,6 +12,8 @@ source:
 services:
 {
   @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
   TFileService: { fileName: "%ifb_digitsdump.root" }
 }
 
