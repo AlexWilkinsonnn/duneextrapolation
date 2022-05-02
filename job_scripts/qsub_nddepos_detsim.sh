@@ -21,5 +21,5 @@ cd nskip${nskip}
 
 nend=$(($n+$nskip))
 infilelocal=${infile##*/}
-lar -c detsim_dune10kt_1x2x6_wirecell_refactored_nooptdet.fcl -s $infile -n $n --nskip $nskip -o ${infilelocal::-5}_detsim_${nskip}-${nend}_detsim.root
+lar -c detsim_dune10kt_1x2x6_wirecell_refactored_nooptdet.fcl -s $infile -n $n --nskip $nskip -o ${infilelocal::-5}_${nskip}-${nend}_detsim.root
 
