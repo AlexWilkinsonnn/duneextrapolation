@@ -15,6 +15,8 @@ PrepNDDeposPackets:
   TickShiftZ: -7.8
   TickShiftU: -10.1
   TickShiftV: -10.9
+
+  OnlyProjections: false
 }
 
 END_PROLOG

@@ -61,6 +61,7 @@ public:
 private:
   const geo::GeometryCore* fGeom;
 
+  // Reading input ND tree
   int                               fNEntries;
   int                               fEntry;
   TTree*                            fTreeDeposPackets;
@@ -68,20 +69,25 @@ private:
   std::vector<std::vector<double>>* fPackets;
   std::vector<double>*              fVertex;
 
+  // Writing output ND projectiosn tree 
   TTree*                           fTreePacketProjections;
   std::vector<std::vector<double>> fPacketProjection;
   int                              fEventID;
   std::vector<double>              fVertexOut;
 
+  // fhicl params
   std::string fNDDataLoc;
   unsigned int fCIndex;
   unsigned int fTIndex;
-  int fEventNumber;
-  double fYShift;
-  double fZShift;
-  double fTickShiftZ;
-  double fTickShiftU;
-  double fTickShiftV;
+  double       fYShift;
+  double       fZShift;
+  double       fTickShiftZ;
+  double       fTickShiftU;
+  double       fTickShiftV;
+  bool         fOnlyProjections;
+  
+  // Other members
+  int            fEventNumber;
   geo::TPCID     fTID;
   geo::PlaneID   fPIDZ;
   geo::PlaneID   fPIDU;
@@ -93,14 +99,15 @@ private:
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDDataLoc  (p.get<std::string>("NDDataLoc")),
-    fCIndex     (p.get<unsigned int>("CryoIndex")),
-    fTIndex     (p.get<unsigned int>("TpcIndex")),
-    fYShift     (p.get<double>("YShift")),
-    fZShift     (p.get<double>("ZShift")),
-    fTickShiftZ (p.get<double>("TickShiftZ")),
-    fTickShiftU (p.get<double>("TickShiftU")),
-    fTickShiftV (p.get<double>("TickShiftV"))
+    fNDDataLoc       (p.get<std::string>("NDDataLoc")),
+    fCIndex          (p.get<unsigned int>("CryoIndex")),
+    fTIndex          (p.get<unsigned int>("TpcIndex")),
+    fYShift          (p.get<double>("YShift")),
+    fZShift          (p.get<double>("ZShift")),
+    fTickShiftZ      (p.get<double>("TickShiftZ")),
+    fTickShiftU      (p.get<double>("TickShiftU")),
+    fTickShiftV      (p.get<double>("TickShiftV")),
+    fOnlyProjections (p.get<bool>("OnlyProjections"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>();
   produces<std::vector<sim::SimEnergyDeposit>>("EventNumber");
@@ -133,26 +140,28 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
     auto evNum = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
 
-    for (const std::vector<double>& depo : *fDepos) {
-      int trackID = (int)depo[0];
-      int pdg = (int)depo[1];
-      double zMin = depo[2] + fZShift;
-      double zMax = depo[3] + fZShift;
-      double yMin = depo[4] + fYShift;
-      double yMax = depo[5] + fYShift;
-      double xMin = depo[6] + XShift;
-      double xMax = depo[7] + XShift;
-      double tMin = depo[8];
-      double tMax = depo[9];
-      int electrons = (int)depo[10];
-      double dE = depo[11];
+    if (!fOnlyProjections) {
+      for (const std::vector<double>& depo : *fDepos) {
+        int trackID = (int)depo[0];
+        int pdg = (int)depo[1];
+        double zMin = depo[2] + fZShift;
+        double zMax = depo[3] + fZShift;
+        double yMin = depo[4] + fYShift;
+        double yMax = depo[5] + fYShift;
+        double xMin = depo[6] + XShift;
+        double xMax = depo[7] + XShift;
+        double tMin = depo[8];
+        double tMax = depo[9];
+        int electrons = (int)depo[10];
+        double dE = depo[11];
 
-      geo::Point_t posStart = geo::Point_t(xMin, yMin, zMin);
-      geo::Point_t posEnd = geo::Point_t(xMax, yMax, zMax);
+        geo::Point_t posStart = geo::Point_t(xMin, yMin, zMin);
+        geo::Point_t posEnd = geo::Point_t(xMax, yMax, zMax);
 
-      sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
-          0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg); 
-      SEDs->push_back(SED);
+        sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
+            0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg); 
+        SEDs->push_back(SED);
+      }
     }
 
     // SED that stores an ID for this event
@@ -175,9 +184,13 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
 
       geo::Point_t packetLoc(x, y, z);
 
-      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
-      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
-      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
+      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ)- fGeom->FirstChannelInROP(fRIDZ);
+      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU)- fGeom->FirstChannelInROP(fRIDU);
+      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV)- fGeom->FirstChannelInROP(fRIDV);
+
+      const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
+      const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
+      const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
 
       double tickRawZ = detProp.ConvertXToTicks(x, fPIDZ);
       tickRawZ += fTickShiftZ;
@@ -189,15 +202,18 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       tickRawV += fTickShiftV;
       unsigned int tickV = (unsigned int)tickRawV;
 
-      const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
       double driftDistanceZ = pGeoZ.DistanceFromPlane(packetLoc);
-      const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
       double driftDistanceU = pGeoU.DistanceFromPlane(packetLoc);
-      const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
       double driftDistanceV = pGeoV.DistanceFromPlane(packetLoc);
-      // std::cout << driftDistanceZ << " - " << driftDistanceU << " - " << driftDistanceV << "\n";
 
-      std::vector<double> projection(14, 0.0);
+      double wireCoordZ = pGeoZ.WireCoordinate(packetLoc);
+      double wireDistanceZ = (wireCoordZ - (double)(int)(0.5 + wireCoordZ)) * pGeoZ.WirePitch();
+      double wireCoordU = pGeoU.WireCoordinate(packetLoc);
+      double wireDistanceU = (wireCoordU - (double)(int)(0.5 + wireCoordU)) * pGeoU.WirePitch();
+      double wireCoordV = pGeoV.WireCoordinate(packetLoc);
+      double wireDistanceV = (wireCoordV - (double)(int)(0.5 + wireCoordV)) * pGeoV.WirePitch();
+
+      std::vector<double> projection(17, 0.0);
       projection[0] = z;
       projection[1] = y;
       projection[2] = x;
@@ -212,6 +228,9 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       projection[11] = driftDistanceZ;
       projection[12] = driftDistanceU;
       projection[13] = driftDistanceV;
+      projection[14] = wireDistanceZ;
+      projection[15] = wireDistanceU;
+      projection[16] = wireDistanceV;
       fPacketProjection.push_back(projection);
     }
 

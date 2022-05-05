@@ -53,5 +53,6 @@ services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
 physics.producers.IonAndScint.NDDataLoc: "/unix/dune/awilkinson/extrapolation/larpixsoft/output_1-8_radi_vtxcuts_fixedsegments_depospackets.root"
+physics.producers.IonAndScint.OnlyProjections: true
 
 
