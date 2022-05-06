@@ -56,52 +56,55 @@ interactive::Session::Session(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
   fSEDLabel (p.get<std::string>("SEDLabel"))
 {
-  consumes<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
+  if (fSEDLabel != "none") {
+    consumes<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
+  }
 }
 
 void interactive::Session::analyze(art::Event const& e)
 {
-  const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
+  if (fSEDLabel != "none") {
+    const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
 
-  std::vector<geo::Length_t> stepSizes;
-  std::vector<int> numElectrons;
-  std::vector<double> energies;
-  for (auto& SED : *SEDs) {
-    stepSizes.push_back(SED.StepLength());
-    numElectrons.push_back(SED.NumElectrons());
-    energies.push_back(SED.Energy());
-  }
-
-  { using std::cout;
-    cout << "StepSizes:\n{ ";
-    for (auto stepSize : stepSizes) {
-      cout << stepSize << ", ";
+    std::vector<geo::Length_t> stepSizes;
+    std::vector<int> numElectrons;
+    std::vector<double> energies;
+    for (auto& SED : *SEDs) {
+      stepSizes.push_back(SED.StepLength());
+      numElectrons.push_back(SED.NumElectrons());
+      energies.push_back(SED.Energy());
     }
-    cout << " }\n";
-    cout << "Min = " << *std::min_element(stepSizes.begin(), stepSizes.end());
-    cout << "  Max = " << *std::max_element(stepSizes.begin(), stepSizes.end());
-    cout << "  Mean = " << std::accumulate(stepSizes.begin(), stepSizes.end(), 0.0)/stepSizes.size();
-    cout << "\n\n";
 
-    cout << "NumElectrons:\n{ ";
-    for (auto numElectron : numElectrons) {
-      cout << numElectron << ", ";
+    { using std::cout;
+      cout << "StepSizes:\n{ ";
+      for (auto stepSize : stepSizes) {
+        cout << stepSize << ", ";
+      }
+      cout << " }\n";
+      cout << "Min = " << *std::min_element(stepSizes.begin(), stepSizes.end());
+      cout << "  Max = " << *std::max_element(stepSizes.begin(), stepSizes.end());
+      cout << "  Mean = " << std::accumulate(stepSizes.begin(), stepSizes.end(), 0.0)/stepSizes.size();
+      cout << "\n\n";
+
+      cout << "NumElectrons:\n{ ";
+      for (auto numElectron : numElectrons) {
+        cout << numElectron << ", ";
+      }
+      cout << " }\n";
+      cout << "Min = " << *std::min_element(numElectrons.begin(), numElectrons.end());
+      cout << "  Max = " << *std::max_element(numElectrons.begin(), numElectrons.end());
+      cout << "  Mean = " << std::accumulate(numElectrons.begin(), numElectrons.end(), 0.0)/numElectrons.size();
+      cout << "\n\n";
+
+      // cout << "Energies:\n{ ";
+      // for (auto energy : energies) { //   cout << energy << ", ";
+      // }
+      // cout << " }\n";
+      // cout << "Min = " << *std::min_element(energies.begin(), energies.end());
+      // cout << "  Max = " << *std::max_element(energies.begin(), energies.end());
+      // cout << "  Mean = " << std::accumulate(energies.begin(), energies.end(), 0.0)/energies.size();
+      // cout << "\n\n";
     }
-    cout << " }\n";
-    cout << "Min = " << *std::min_element(numElectrons.begin(), numElectrons.end());
-    cout << "  Max = " << *std::max_element(numElectrons.begin(), numElectrons.end());
-    cout << "  Mean = " << std::accumulate(numElectrons.begin(), numElectrons.end(), 0.0)/numElectrons.size();
-    cout << "\n\n";
-
-    // cout << "Energies:\n{ ";
-    // for (auto energy : energies) {
-    //   cout << energy << ", ";
-    // }
-    // cout << " }\n";
-    // cout << "Min = " << *std::min_element(energies.begin(), energies.end());
-    // cout << "  Max = " << *std::max_element(energies.begin(), energies.end());
-    // cout << "  Mean = " << std::accumulate(energies.begin(), energies.end(), 0.0)/energies.size();
-    // cout << "\n\n";
   }
 }
 
@@ -111,13 +114,13 @@ void interactive::Session::beginJob()
 
   // Examine readout plane I have chosen for nd->fd translation
   if (false) {
-    unsigned int CryoIndex = 0;
-    unsigned int TpcIndex = 10;
-    unsigned int PlaneIndex = 2;
+    unsigned int cryoIndex = 0;
+    unsigned int tpcIndex = 10;
+    unsigned int planeIndex = 2;
 
-    const geo::CryostatID cID(CryoIndex);
-    const geo::TPCID tID(cID, TpcIndex);
-    const geo::PlaneID pID(tID, PlaneIndex);
+    const geo::CryostatID cID(cryoIndex);
+    const geo::TPCID tID(cID, tpcIndex);
+    const geo::PlaneID pID(tID, planeIndex);
     const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
 
     std::cout << "FirstChannelInROP = " << fGeom->FirstChannelInROP(rID) << "\n";
@@ -131,13 +134,13 @@ void interactive::Session::beginJob()
   if (false) {
     using std::cout;
 
-    unsigned int CryoIndex = 0;
-    unsigned int TpcIndex = 10;
-    unsigned int PlaneIndex = 1;
+    unsigned int cryoIndex = 0;
+    unsigned int tpcIndex = 10;
+    unsigned int planeIndex = 1;
 
-    const geo::CryostatID cID(CryoIndex);
-    const geo::TPCID tID(cID, TpcIndex);
-    const geo::PlaneID pID(tID, PlaneIndex);
+    const geo::CryostatID cID(cryoIndex);
+    const geo::TPCID tID(cID, tpcIndex);
+    const geo::PlaneID pID(tID, planeIndex);
 
     const geo::PlaneGeo pGeo = fGeom->Plane(pID);
 
@@ -145,6 +148,24 @@ void interactive::Session::beginJob()
     cout << "FirstWire Start Y = " << pGeo.FirstWire().GetStart().Y() << "\n";
     cout << "LastWire Start Y = " << pGeo.LastWire().GetStart().Y() << "\n";
     cout << "LastWire ThetaZ = " << pGeo.LastWire().ThetaZ() << "\n";
+  }
+
+  if (true) {
+    using std::cout;
+
+    std::cout << "Z wire pitch = " << fGeom->WirePitch(geo::kZ) <<
+      ", U wire pitch = " << fGeom->WirePitch(geo::kU) <<
+      ", V wire pitch = " << fGeom->WirePitch(geo::kV) << "\n";
+
+    // unsigned int cryoIndex = 0;
+    // unsigned int tpcIndex = 10;
+    // unsigned int planeIndexZ = 2;
+    // unsigned int planeIndexUV = 1;
+
+    // const geo::CryostatID cID(cryoIndex);
+    // const geo::TPCID tID(cID, tpcIndex);
+    // const geo::PlaneID pIDZ(tID, planeIndexZ);
+    // const geo::PlaneID pIDUV(tID, planeIndexUV);
   }
 }
 
