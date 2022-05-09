@@ -133,10 +133,12 @@ void interactive::Session::beginJob()
 
     cout << "FirstChannelInROP Z = " << fGeom->FirstChannelInROP(rIDZ) << "\n";
     if (fGeom->View(rIDU) == geo::kU) { // Not sure if I have plane ID numbers the right way round
+      cout << "pIndex 1 is U view\n";
       cout << "FirstChannelInROP U = " << fGeom->FirstChannelInROP(rIDU) << "\n";
       cout << "FirstChannelInROP V = " << fGeom->FirstChannelInROP(rIDV) << "\n";
     }
     else {
+      cout << "pIndex 0 is U view\n";
       cout << "FirstChannelInROP U = " << fGeom->FirstChannelInROP(rIDV) << "\n";
       cout << "FirstChannelInROP V = " << fGeom->FirstChannelInROP(rIDU) << "\n";
     }
