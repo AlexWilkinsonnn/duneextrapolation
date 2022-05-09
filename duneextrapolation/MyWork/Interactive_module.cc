@@ -113,21 +113,37 @@ void interactive::Session::beginJob()
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Examine readout plane I have chosen for nd->fd translation
-  if (false) {
+  if (true) {
+    using std::cout;
+
     unsigned int cryoIndex = 0;
     unsigned int tpcIndex = 10;
-    unsigned int planeIndex = 2;
+    unsigned int planeIndexZ = 2;
+    unsigned int planeIndexU = 1;
+    unsigned int planeIndexV = 0;
 
     const geo::CryostatID cID(cryoIndex);
     const geo::TPCID tID(cID, tpcIndex);
-    const geo::PlaneID pID(tID, planeIndex);
-    const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
+    const geo::PlaneID pIDZ(tID, planeIndexZ);
+    const readout::ROPID rIDZ = fGeom->WirePlaneToROP(pIDZ);
+    const geo::PlaneID pIDU(tID, planeIndexU);
+    const readout::ROPID rIDU = fGeom->WirePlaneToROP(pIDU);
+    const geo::PlaneID pIDV(tID, planeIndexV);
+    const readout::ROPID rIDV = fGeom->WirePlaneToROP(pIDV);
 
-    std::cout << "FirstChannelInROP = " << fGeom->FirstChannelInROP(rID) << "\n";
+    cout << "FirstChannelInROP Z = " << fGeom->FirstChannelInROP(rIDZ) << "\n";
+    if (fGeom->View(rIDU) == geo::kU) { // Not sure if I have plane ID numbers the right way round
+      cout << "FirstChannelInROP U = " << fGeom->FirstChannelInROP(rIDU) << "\n";
+      cout << "FirstChannelInROP V = " << fGeom->FirstChannelInROP(rIDV) << "\n";
+    }
+    else {
+      cout << "FirstChannelInROP U = " << fGeom->FirstChannelInROP(rIDV) << "\n";
+      cout << "FirstChannelInROP V = " << fGeom->FirstChannelInROP(rIDU) << "\n";
+    }
 
     const geo::TPCGeo tGeo = fGeom->TPC(tID);
     const geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
-    std::cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
+    cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
   } 
 
   // Examine induction plane I will use
@@ -150,22 +166,12 @@ void interactive::Session::beginJob()
     cout << "LastWire ThetaZ = " << pGeo.LastWire().ThetaZ() << "\n";
   }
 
-  if (true) {
+  if (false) {
     using std::cout;
 
     std::cout << "Z wire pitch = " << fGeom->WirePitch(geo::kZ) <<
       ", U wire pitch = " << fGeom->WirePitch(geo::kU) <<
       ", V wire pitch = " << fGeom->WirePitch(geo::kV) << "\n";
-
-    // unsigned int cryoIndex = 0;
-    // unsigned int tpcIndex = 10;
-    // unsigned int planeIndexZ = 2;
-    // unsigned int planeIndexUV = 1;
-
-    // const geo::CryostatID cID(cryoIndex);
-    // const geo::TPCID tID(cID, tpcIndex);
-    // const geo::PlaneID pIDZ(tID, planeIndexZ);
-    // const geo::PlaneID pIDUV(tID, planeIndexUV);
   }
 }
 
