@@ -1,0 +1,14 @@
+BEGIN_PROLOG
+
+LoadTranslationKeepSED:
+{
+  module_type: "LoadTranslationKeepSED"
+
+  InputFileLoc:     "/unix/dune/awilkinson/extrapolation/larsoft_area/test.root"
+
+  EvNumLabel:       "IonAndScint:EventNumber:LoadNDDepos"
+
+  NDHitsScaleFactor: 0.37238423544440813
+}
+
+END_PROLOG
