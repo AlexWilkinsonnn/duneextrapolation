@@ -3,7 +3,7 @@
 // Plugin Type: filter (Unknown Unknown)
 // File:        LoadTranlsationKeepSED_module.cc
 //
-// Generated Mon Mar 28 2022 by Alexander Wilkinson
+// Copied May 10 2022 by Alexander Wilkinson
 //
 // Load tranalsation results into event if event ID has results.
 ////////////////////////////////////////////////////////////////////////
@@ -24,6 +24,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -113,12 +114,9 @@ bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
 
   int evNum = evNumVec->at(0).TrackID();
 
-  std::cout << evNum << "\n";
-  std::cout << evNumToTreeEntry.count(evNum) << "\n";
   if (!evNumToTreeEntry.count(evNum)) {
     return false;
   }
-  std::cout << "hello\n";
 
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
 
@@ -129,6 +127,8 @@ bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
   fTree->GetEntry(evNumToTreeEntry[evNum]);
 
   for (unsigned int ch = 0; ch < fGeom->Nchannels(); ++ch) {
+    short ped = fGeom->View(fGeom->ChannelToROP(ch)) == geo::kZ ? 900 : 2350;
+
     auto iCh = std::find(fChannels->begin(), fChannels->end(), (int)ch);
 
     if (iCh != fChannels->end()) {
@@ -136,24 +136,24 @@ bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
 
       raw::RawDigit::ADCvector_t adcVec(4492);
       for (int tick = 0; tick < 4492; tick++){
-        adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick] + (short)900; // doing default collection pedestal manually for now just because I am afraid WC will have something hardcoded
+        adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick] + ped;// doing default collection pedestal manually for now just because I am afraid WC will have something hardcoded
       }
       raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
-      rawDig.SetPedestal(900);
+      rawDig.SetPedestal(ped);
       digsTranslated->push_back(rawDig);
 
       adcVec = raw::RawDigit::ADCvector_t(4492);
       for (int tick = 0; tick < 4492; tick++){
-        adcVec[tick] = (short)(*fTrueDigs)[chLocal][tick] + (short)900;
+        adcVec[tick] = (short)(*fTrueDigs)[chLocal][tick] + ped;
       }
       rawDig = raw::RawDigit(ch, adcVec.size(), adcVec);
-      rawDig.SetPedestal(900);
+      rawDig.SetPedestal(ped);
       digsTrue->push_back(rawDig); 
     }
     else {
-      raw::RawDigit::ADCvector_t adcVec(4492, 900);
+      raw::RawDigit::ADCvector_t adcVec(4492, ped);
       raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
-      rawDig.SetPedestal(900);
+      rawDig.SetPedestal(ped);
       digsTrue->push_back(rawDig);
       digsTranslated->push_back(rawDig);   
     }
