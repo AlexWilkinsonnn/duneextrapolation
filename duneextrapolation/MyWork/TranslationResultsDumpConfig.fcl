@@ -4,13 +4,24 @@ TranslationResultsDump:
 {
   module_type: "TranslationResultsDump"
 
-  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco1viewCVNTrueTranslated"
-  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco1viewCVNNetworkTranslated"
-  NDCVNResultsLabel:      "cvneva:cvnresult:Reco1viewCVNNDPackets"
+  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco3viewTrueTranslated"
+  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco3viewNetworkTranslated"
+  NDCVNResultsLabel:      "cvneva:cvnresult:Reco3viewNDPackets"
+  AltCVNResultsLabel:     "cvneva:cvnresult:Reco3viewAltDetsim"
   
-  TrueHitsLabel:    "gaushit::Reco1viewCVNTrueTranslated"
-  NetworkHitsLabel: "gaushit::Reco1viewCVNNetworkTranslated"
-  NDHitsLabel:      "Translate:NDPackets:NDTranslation"
+  TrueHitsLabel:    "gaushit::Reco3viewTrueTranslated"
+  NetworkHitsLabel: "gaushit::Reco3viewNetworkTranslated"
+  NDHitsLabel:      "Translate:NDPackets:NDTranslationKeepSED"
+  AltHitsLabel:     "gaushit::Reco3viewAltDetsim"
+
+  TrueNumuEResultsLabel:    "energyrecnumu::Reco3viewTrueTranslated"
+  NetworkNumuEResultsLabel: "energyrecnumu::Reco3viewNetworkTranslated"
+  AltNumuEResultsLabel:     "energyrecnumu::Reco3viewAltDetsim"
+  TrueNCEResultsLabel:      "energyrecnc::Reco3viewTrueTranslated"
+  NetworkNCEResultsLabel:   "energyrecnc::Reco3viewNetworkTranslated"
+  AltNCEResultsLabel:       "energyrecnc::Reco3viewAltDetsim"
+
+  Legacy: false // true for the 1 view CVN only reco
 }
 
 END_PROLOG

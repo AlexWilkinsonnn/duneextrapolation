@@ -12,7 +12,7 @@ source:
 services:
 {
   @table::dunefd_services
-  TFileService: { fileName: "%ifb_result_true-network-nd_ntuple.root" }
+  TFileService: { fileName: "%ifb_result_true-network-nd-alt_ntuple.root" }
 }
 
 physics:
