@@ -1,0 +1,138 @@
+#include "hitfindermodules_dune.fcl"
+#include "wirecell_dune.fcl"
+#include "SpacePointSolver_dune.fcl"
+#include "cvn_dune.fcl"
+#include "energyreco.fcl"
+#include "pandoramodules_dune.fcl"
+#include "particleid.fcl"
+#include "cluster_dune.fcl"
+#include "trackfindermodules_dune.fcl"
+
+BEGIN_PROLOG
+
+reco3view_producers:
+{
+  rns: { module_type: RandomNumberSaver }
+
+  caldata: @local::producer_adcprep_notool
+
+  wclsmcnfsp: @local::dune10kt_1x2x6_mc_nfsp
+  gaushit:    @local::dunefd_gaushitfinder
+  spsolve:    @local::dunefd_horizdrift_spacepointsolver
+  hitfd:      @local::dunefd_disambigfromsp
+
+  linecluster: @local::dune35t_linecluster
+
+  pandora:       @local::dunefd_pandora
+  pandoraTrack:  @local::dune_pandoraTrackCreation
+  pandoraShower: @local::dune_pandoraModularShowerCreation
+  pandoracalo:   @local::dune10kt_calomc
+  pandorapid:    @local::standard_chi2pid
+  
+  // CVN stuff doesnt use the full art event tag properly so need to do this to have data products like cvnmapnd:cvnmapnd as this is the only format it can read from in CVNEvaluator >:(
+  cvnmaptrue:    @local::dunefd_horizdrift_cvnmapper
+  cvnmapnetwork: @local::dunefd_horizdrift_cvnmapper
+  cvnmapnd:      @local::dunefd_horizdrift_cvnmapper
+  cvnmapalt:     @local::dunefd_horizdrift_cvnmapper
+  cvneva:        @local::dunefd_horizdrift_cvnevaluator
+
+  energyrecnumu: @local::dunefd_nuenergyreco_pandora_numu
+  energyrecnc:   @local::dunefd_nuenergyreco_pandora_nc
+}
+
+reco3view_sp:
+[
+  wclsmcnfsp,
+  gaushit,
+  spsolve,
+  hitfd
+]
+
+reco3view_2dclustering:
+[
+  linecluster
+]
+
+reco3view_pandora:
+[
+  pandora,
+  pandoraTrack,
+  pandoraShower,
+  pandoracalo,
+  pandorapid
+]
+
+reco3view_cvn_true:
+[
+  cvnmaptrue,
+  cvneva
+]
+
+reco3view_cvn_network:
+[
+  cvnmapnetwork,
+  cvneva
+]
+
+reco3view_cvn_nd:
+[
+  cvnmapnd,
+  cvneva
+]
+
+reco3view_cvn_alt:
+[
+  cvnmapalt,
+  cvneva
+]
+
+reco3view_nuenergy:
+[
+  energyrecnumu,
+  energyrecnc
+]
+
+reco3view_workflow_true:
+[
+  @sequence::reco3view_sp,
+  @sequence::reco3view_2dclustering,
+  @sequence::reco3view_pandora,
+  @sequence::reco3view_cvn_true,
+  @sequence::reco3view_nuenergy,
+  rns
+]
+
+reco3view_workflow_network:
+[
+  @sequence::reco3view_sp,
+  @sequence::reco3view_2dclustering,
+  @sequence::reco3view_pandora,
+  @sequence::reco3view_cvn_network,
+  @sequence::reco3view_nuenergy,
+  rns
+]
+
+reco3view_workflow_nd:
+[
+  @sequence::reco3view_cvn_nd,
+  rns
+]
+reco3view_workflow_alt:
+[
+  @sequence::reco3view_sp,
+  @sequence::reco3view_2dclustering,
+  @sequence::reco3view_pandora,
+  @sequence::reco3view_cvn_alt,
+  @sequence::reco3view_nuenergy,
+  rns
+]
+
+reco3view_producers.caldata.DigitLabel: "tpcrawdecoder:daq"
+
+reco3view_producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss"
+
+reco3view_producers.pandoracalo.MakeTree:      false
+reco3view_producers.pandoracalo.T0ModuleLabel: ""
+
+END_PROLOG
+
