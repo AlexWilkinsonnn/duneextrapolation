@@ -73,7 +73,7 @@ private:
   std::vector<int>*              fChannels;
   std::vector<std::vector<int>>* fTranslatedDigs;
   std::vector<std::vector<int>>* fTrueDigs;
-  std::vector<std::vector<int>>* fNDPacket;
+  std::vector<std::vector<int>>* fNDPackets;
 
   std::string fInputFileLoc;
   std::string fEvNumLabel;
@@ -92,37 +92,47 @@ extrapolation::LoadTranlsationKeepSED::LoadTranlsationKeepSED(fhicl::ParameterSe
 
   consumes<std::vector<sim::SimEnergyDeposit>>(fEvNumLabel);
 
+  std::cout << "Reading from file " << fInputFileLoc << "\n";
+  fChannels = nullptr;
+  fTranslatedDigs = nullptr;
+  fTrueDigs = nullptr;
+  fNDPackets = nullptr;
   TFile* f = new TFile(fInputFileLoc.c_str());
   fTree = (TTree*)f->Get("digs_hits");
-  const int nEntries = fTree->GetEntries();
+  fTree->SetBranchAddress("channels", &fChannels);
+  fTree->SetBranchAddress("rawdigits_translated", &fTranslatedDigs);
+  fTree->SetBranchAddress("rawdigits_true", &fTrueDigs);
+  fTree->SetBranchAddress("nd_packets", &fNDPackets);
 
   int evNum = -1;
   fTree->SetBranchAddress("ev_num", &evNum);
 
-  for (int i = 0; i < nEntries; i++) { 
+  for (int i = 0; i < fTree->GetEntries(); i++) { 
     evNum = -1;
     fTree->GetEntry(i); 
 
-    std::cout << evNum << "\n";
     evNumToTreeEntry[evNum] = i;
   }
+
 }
 
 bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
 {
   const auto evNumVec = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fEvNumLabel);
 
-  int evNum = evNumVec->at(0).TrackID();
-
-  if (!evNumToTreeEntry.count(evNum)) {
-    return false;
-  }
-
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
-
   auto digsTranslated = std::make_unique<std::vector<raw::RawDigit>>();
   auto digsTrue = std::make_unique<std::vector<raw::RawDigit>>();
   auto hitsND = std::make_unique<std::vector<recob::Hit>>();
+
+  int evNum = evNumVec->at(0).TrackID();
+
+  if (!evNumToTreeEntry.count(evNum)) {
+    e.put(std::move(digsTrue), "TrueTranslated");
+    e.put(std::move(digsTranslated), "NetworkTranslated");
+    e.put(std::move(hitsND), "NDPackets");
+
+    return false;
+  }
 
   fTree->GetEntry(evNumToTreeEntry[evNum]);
 
@@ -136,7 +146,7 @@ bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
 
       raw::RawDigit::ADCvector_t adcVec(4492);
       for (int tick = 0; tick < 4492; tick++){
-        adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick] + ped;// doing default collection pedestal manually for now just because I am afraid WC will have something hardcoded
+        adcVec[tick] = (short)(*fTranslatedDigs)[chLocal][tick] + ped;
       }
       raw::RawDigit rawDig(ch, adcVec.size(), adcVec);
       rawDig.SetPedestal(ped);
@@ -159,7 +169,7 @@ bool extrapolation::LoadTranlsationKeepSED::filter(art::Event& e)
     }
   }
 
-  for (std::vector<int> ndPacket : *fNDPacket) {
+  for (std::vector<int> ndPacket : *fNDPackets) {
     float peakTime = (float)ndPacket[1];
     float integral = (float)(ndPacket[2]*16);
     float summedADC = (float)(ndPacket[2]*16);
