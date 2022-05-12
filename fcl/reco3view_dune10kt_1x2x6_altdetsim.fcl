@@ -61,6 +61,7 @@ outputs:
    dataTier:    "full-reconstructed"
    compressionLevel: 1
    saveMemoryObjectThreshold: 0
+   outputCommands: ["keep *", "drop *_wclsmcnfsp_wiener_*"]
  }
 }
 
