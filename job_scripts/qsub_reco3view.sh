@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#PBS -l walltime=01:00:00
+#PBS -l walltime=10:00:00
 
-#PBS -l cput=01:00:00
+#PBS -l cput=10:00:00
 
-#PBS -l mem=3500mb
+#PBS -l mem=4000mb
 
 #PBS -l nodes=1
 
