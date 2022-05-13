@@ -17,6 +17,7 @@ n=$3
 cd /unix/dune/awilkinson/extrapolation/larsoft_area
 source setup.sh
 cd nskip${nskip}
+ls -lrt *
 
 nend=$(($n+$nskip))
 infilelocal=${infile##*/}
