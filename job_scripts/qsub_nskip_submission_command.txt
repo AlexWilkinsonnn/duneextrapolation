@@ -1,2 +1,2 @@
-for ((nskip=0; nskip<=1; nskip+=1)); do qsub -q long -o qsub_logs/${nskip}.o -e qsub_logs/${nskip}.e -F "/unix/dune/awilkinson/extrapolation/larsoft_area/NDDepos_gen_g4_geomserviceUVZ_transtest2.root $nskip 1" qsub_reco3view.sh; done
+for ((nskip=0; nskip<=4200; nskip+=100)); do echo $nskip; qsub -q long -o qsub_logs/${nskip}.o -e qsub_logs/${nskip}.e -F "/unix/dune/awilkinson/extrapolation/larsoft_area/NDDepos_gen_g4_geomserviceUVZ_transtest2.root $nskip 100" qsub_reco3view.sh; done
 
