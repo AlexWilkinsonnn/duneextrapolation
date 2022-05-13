@@ -47,5 +47,5 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.filters.Translate.InputFileLoc: "/unix/dune/awilkinson/extrapolation/larsoft_area/ndfdT10UVZvalid_Zdoublecols14latest_Ugeomservice1biasmu_Vgeomservice2biasmu_fdtruefdpredndin_valid4202.root"
+physics.filters.Translate.InputFileLoc: "/unix/dune/awilkinson/extrapolation/larsoft_area/ndfdT10UVZvalid_Zdoublecols14latest_Ugeomservice1biasmu_Vgeomservice2biasmu_fdtruefdpredndin_testmask5.root"
 

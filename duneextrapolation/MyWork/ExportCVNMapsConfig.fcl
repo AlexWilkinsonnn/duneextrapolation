@@ -6,13 +6,13 @@ ExportCVNMaps:
 
   EventNumbers: [1,2]
 
-  TruePixelMapLabel:    "cvnmaptrue:cvnmaptrue:Reco1viewCVNTrueTranslated" 
-  NDPixelMapLabel:      "cvnmapndscale:cvnmapndscale:Reco1viewCVNNDPacketsScaled" 
-  NetworkPixelMapLabel: "cvnmapnetwork:cvnmapnetwork:Reco1viewCVNNetworkTranslated" 
+  TruePixelMapLabel:    "cvnmaptrue:cvnmaptrue:Reco3viewTrueTranslated" 
+  NDPixelMapLabel:      "cvnmapnd:cvnmapnd:Reco3viewNDPackets" 
+  NetworkPixelMapLabel: "cvnmapnetwork:cvnmapnetwork:Reco3viewNetworkTranslated" 
 
-  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco1viewCVNTrueTranslated"
-  NDCVNResultsLabel:      "cvneva:cvnresult:Reco1viewCVNNDPacketsScaled"
-  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco1viewCVNNetworkTranslated"
+  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco3viewTrueTranslated"
+  NDCVNResultsLabel:      "cvneva:cvnresult:Reco3viewNDPackets"
+  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco3viewNetworkTranslated"
 }
 
 END_PROLOG
