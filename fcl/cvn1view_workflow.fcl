@@ -15,7 +15,9 @@ cvn1view_producers:
   hitfd:              @local::dunefd_disambigfromsp
   // CVN stuff doesnt use the full art event tag properly so need to do this to have data products like cvnmapnd:cvnmapnd as this is the only format it can read from in CVNEvaluator >:(
   cvnmaptrue:         @local::dunefd_horizdrift_cvnmapper
+  cvnmaptruenosp:     @local::dunefd_horizdrift_cvnmapper
   cvnmapnetwork:      @local::dunefd_horizdrift_cvnmapper
+  cvnmapnetworknosp:  @local::dunefd_horizdrift_cvnmapper
   cvnmapnd:           @local::dunefd_horizdrift_cvnmapper
   cvnmapndscale:      @local::dunefd_horizdrift_cvnmapper
   cvnmapndshiftscale: @local::dunefd_horizdrift_cvnmapper
@@ -42,9 +44,21 @@ cvn1view_cvn_true:
   cvneva
 ]
 
+cvn1view_cvn_true_nosp:
+[
+  cvnmaptruenosp,
+  cvneva
+]
+
 cvn1view_cvn_network:
 [
   cvnmapnetwork,
+  cvneva
+]
+
+cvn1view_cvn_network_nosp:
+[
+  cvnmapnetworknosp,
   cvneva
 ]
 
@@ -73,10 +87,22 @@ cvn1view_workflow_true:
   rns
 ]
 
+cvn1view_workflow_true_nosp:
+[
+  @sequence::cvn1view_cvn_true_nosp,
+  rns
+]
+
 cvn1view_workflow_network:
 [
   @sequence::cvn1view_recotohits,
   @sequence::cvn1view_cvn_network,
+  rns
+]
+
+cvn1view_workflow_network_nosp:
+[
+  @sequence::cvn1view_cvn_network_nosp,
   rns
 ]
 

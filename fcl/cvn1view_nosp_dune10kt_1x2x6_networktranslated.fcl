@@ -41,7 +41,7 @@ physics:
 
  #trigger_paths is a keyword and contains the paths that modify the art::event,
  #ie filters and producers
- reco: [ @sequence::cvn1view_workflow_network ]
+ reco: [ @sequence::cvn1view_workflow_network_nosp ]
  trigger_paths: [ reco ]
 
  #end_paths is a keyword and contains the paths that do not modify the art::Event,
@@ -64,13 +64,7 @@ outputs:
  }
 }
 
-physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "Translate:NetworkTranslated:NDTranslation"
-physics.producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss:Reco1viewCVNNetworkTranslated"
-// physics.producers.spsolve.HitLabel: "gaushit::Reco1viewCVNetworkTranslated"
-// physics.producers.hitfd.HitModuleLabel: "gaushit::Reco1viewCVNNetworkTranslated"
-// physics.producers.hitfd.SpModuleLabel:  "spsolve::Reco1viewCVNNetworkTranslated"
-
-physics.producers.cvnmapnetwork.HitsModuleLabel: "gaushit::Reco1viewCVNNetworkTranslated"
-physics.producers.cvnmapnetwork.ClusterPMLabel:  "cvnmapnetwork" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
-physics.producers.cvnmapnetwork.MinClusterHits:  0
-physics.producers.cvneva.PixelMapInput: "cvnmapnetwork"
+physics.producers.cvnmapnetworknosp.HitsModuleLabel: "gaushit::Reco3viewNetworkTranslated"
+physics.producers.cvnmapnetworknosp.ClusterPMLabel:  "cvnmapnetworknosp" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
+physics.producers.cvnmapnetworknosp.MinClusterHits:  0
+physics.producers.cvneva.PixelMapInput: "cvnmapnetworknosp"

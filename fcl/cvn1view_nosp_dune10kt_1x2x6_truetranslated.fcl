@@ -2,7 +2,7 @@
 #include "cvn1view_workflow.fcl"
 #include "tools_dune.fcl"
 
-process_name: Reco1viewCVNNetworkTranslated
+process_name: Reco1viewCVNTrueTranslated
 
 services:
 {
@@ -41,7 +41,7 @@ physics:
 
  #trigger_paths is a keyword and contains the paths that modify the art::event,
  #ie filters and producers
- reco: [ @sequence::cvn1view_workflow_network ]
+ reco: [ @sequence::cvn1view_workflow_true_nosp ]
  trigger_paths: [ reco ]
 
  #end_paths is a keyword and contains the paths that do not modify the art::Event,
@@ -57,20 +57,15 @@ outputs:
  out1:
  {
    module_type: RootOutput
-   fileName:    "%ifb_cvn1viewnetwork.root"
+   fileName:    "%ifb_cvn1viewtrue.root"
    dataTier:    "full-reconstructed"
    compressionLevel: 1
    saveMemoryObjectThreshold: 0
  }
 }
 
-physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "Translate:NetworkTranslated:NDTranslation"
-physics.producers.gaushit.CalDataModuleLabel: "wclsmcnfsp:gauss:Reco1viewCVNNetworkTranslated"
-// physics.producers.spsolve.HitLabel: "gaushit::Reco1viewCVNetworkTranslated"
-// physics.producers.hitfd.HitModuleLabel: "gaushit::Reco1viewCVNNetworkTranslated"
-// physics.producers.hitfd.SpModuleLabel:  "spsolve::Reco1viewCVNNetworkTranslated"
+physics.producers.cvnmaptruenosp.HitsModuleLabel: "gaushit::Reco3viewTrueTranslated"
+physics.producers.cvnmaptruenosp.ClusterPMLabel:  "cvnmaptruenosp" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
+physics.producers.cvnmaptruenosp.MinClusterHits:  0
+physics.producers.cvneva.PixelMapInput: "cvnmaptruenosp"
 
-physics.producers.cvnmapnetwork.HitsModuleLabel: "gaushit::Reco1viewCVNNetworkTranslated"
-physics.producers.cvnmapnetwork.ClusterPMLabel:  "cvnmapnetwork" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
-physics.producers.cvnmapnetwork.MinClusterHits:  0
-physics.producers.cvneva.PixelMapInput: "cvnmapnetwork"
