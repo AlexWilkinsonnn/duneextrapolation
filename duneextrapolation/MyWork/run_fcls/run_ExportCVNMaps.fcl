@@ -30,7 +30,7 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.analyzers.cvnevd.EventNumbers: [1,11,12,13,101,102,103,104,105,106]
+physics.analyzers.cvnevd.EventNumbers: [0,10001,10002,10003,10004]
 // 3 view valid 4202:
 // first 10 = [1,11,12,13,101,102,103,104,105,106]
 // 1 view valid1772:
