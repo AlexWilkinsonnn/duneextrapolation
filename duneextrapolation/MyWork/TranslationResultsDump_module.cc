@@ -72,7 +72,9 @@ private:
 
   // Labels from fcl
   std::string fTrueCVNResultsLabel;
+  std::string fTrueCVNCollectionResultsLabel;
   std::string fNetworkCVNResultsLabel;
+  std::string fNetworkCVNCollectionResultsLabel;
   std::string fNDCVNResultsLabel;
   std::string fAltCVNResultsLabel;
   std::string fTrueHitsLabel; 
@@ -88,6 +90,7 @@ private:
 
    // Options from fcl 
   bool fLegacy;
+  bool fCollectionComparison;
   
   TTree*             fTreeCVNResults;
   int                fRun;
@@ -95,58 +98,84 @@ private:
   int                fEventNum;
   // Flavour scores
   float              fTrueNumuScore;
+  float              fTrueCollectionNumuScore;
   float              fNetworkNumuScore;
+  float              fNetworkCollectionNumuScore;
   float              fNDNumuScore;
   float              fAltNumuScore;
   float              fTrueNueScore;
+  float              fTrueCollectionNueScore;
   float              fNetworkNueScore;
+  float              fNetworkCollectionNueScore;
   float              fNDNueScore;
   float              fAltNueScore;
   float              fTrueNCScore;
+  float              fTrueCollectionNCScore;
   float              fNetworkNCScore;
+  float              fNetworkCollectionNCScore;
   float              fNDNCScore;
   float              fAltNCScore;
   float              fTrueNutauScore;
+  float              fTrueCollectionNutauScore;
   float              fNetworkNutauScore;
+  float              fNetworkCollectionNutauScore;
   float              fNDNutauScore;
   float              fAltNutauScore;
   // Pred number of daughter particle types
   int                fTrueNumPions;
+  int                fTrueCollectionNumPions;
   int                fNetworkNumPions;
+  int                fNetworkCollectionNumPions;
   int                fNDNumPions;
   int                fAltNumPions;
   int                fTrueNumProtons;
+  int                fTrueCollectionNumProtons;
   int                fNetworkNumProtons;
+  int                fNetworkCollectionNumProtons;
   int                fNDNumProtons;
   int                fAltNumProtons;
   int                fTrueNumPizeros;
+  int                fTrueCollectionNumPizeros;
   int                fNetworkNumPizeros;
+  int                fNetworkCollectionNumPizeros;
   int                fNDNumPizeros;
   int                fAltNumPizeros;
   int                fTrueNumNeutrons;
+  int                fTrueCollectionNumNeutrons;
   int                fNetworkNumNeutrons;
+  int                fNetworkCollectionNumNeutrons;
   int                fNDNumNeutrons;
   int                fAltNumNeutrons;
   // Antinuetrino score
   float              fTrueAntiNuScore;
+  float              fTrueCollectionAntiNuScore;
   float              fNetworkAntiNuScore;
+  float              fNetworkCollectionAntiNuScore;
   float              fNDAntiNuScore;
   float              fAltAntiNuScore;
   // Interaction type score
   float              fTrueQEScore;
+  float              fTrueCollectionQEScore;
   float              fNetworkQEScore;
+  float              fNetworkCollectionQEScore;
   float              fNDQEScore;
   float              fAltQEScore;
   float              fTrueResScore;
+  float              fTrueCollectionResScore;
   float              fNetworkResScore;
+  float              fNetworkCollectionResScore;
   float              fNDResScore;
   float              fAltResScore;
   float              fTrueDISScore;
+  float              fTrueCollectionDISScore;
   float              fNetworkDISScore;
+  float              fNetworkCollectionDISScore;
   float              fNDDISScore;
   float              fAltDISScore;
   float              fTrueOtherScore;
+  float              fTrueCollectionOtherScore;
   float              fNetworkOtherScore;
+  float              fNetworkCollectionOtherScore;
   float              fNDOtherScore;
   float              fAltOtherScore;
   // Hit information
@@ -190,21 +219,24 @@ private:
 
 extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fTrueCVNResultsLabel      (p.get<std::string> ("TrueCVNResultsLabel")),
-    fNetworkCVNResultsLabel   (p.get<std::string> ("NetworkCVNResultsLabel")),
-    fNDCVNResultsLabel        (p.get<std::string> ("NDCVNResultsLabel")),
-    fAltCVNResultsLabel       (p.get<std::string> ("AltCVNResultsLabel")),
-    fTrueHitsLabel            (p.get<std::string> ("TrueHitsLabel")),    
-    fNetworkHitsLabel         (p.get<std::string> ("NetworkHitsLabel")),      
-    fNDHitsLabel              (p.get<std::string> ("NDHitsLabel")),
-    fAltHitsLabel             (p.get<std::string> ("AltHitsLabel")),
-    fTrueNumuEResultsLabel    (p.get<std::string> ("TrueNumuEResultsLabel")),
-    fNetworkNumuEResultsLabel (p.get<std::string> ("NetworkNumuEResultsLabel")),
-    fAltNumuEResultsLabel     (p.get<std::string> ("AltNumuEResultsLabel")),
-    fTrueNCEResultsLabel      (p.get<std::string> ("TrueNCEResultsLabel")),
-    fNetworkNCEResultsLabel   (p.get<std::string> ("NetworkNCEResultsLabel")),
-    fAltNCEResultsLabel       (p.get<std::string> ("AltNCEResultsLabel")),
-    fLegacy                   (p.get<bool> ("Legacy"))
+    fTrueCVNResultsLabel              (p.get<std::string> ("TrueCVNResultsLabel")),
+    fTrueCVNCollectionResultsLabel    (p.get<std::string> ("TrueCVNCollectionResultsLabel")),
+    fNetworkCVNResultsLabel           (p.get<std::string> ("NetworkCVNResultsLabel")),
+    fNetworkCVNCollectionResultsLabel (p.get<std::string> ("NetworkCVNCollectionResultsLabel")),
+    fNDCVNResultsLabel                (p.get<std::string> ("NDCVNResultsLabel")),
+    fAltCVNResultsLabel               (p.get<std::string> ("AltCVNResultsLabel")),
+    fTrueHitsLabel                    (p.get<std::string> ("TrueHitsLabel")),    
+    fNetworkHitsLabel                 (p.get<std::string> ("NetworkHitsLabel")),      
+    fNDHitsLabel                      (p.get<std::string> ("NDHitsLabel")),
+    fAltHitsLabel                     (p.get<std::string> ("AltHitsLabel")),
+    fTrueNumuEResultsLabel            (p.get<std::string> ("TrueNumuEResultsLabel")),
+    fNetworkNumuEResultsLabel         (p.get<std::string> ("NetworkNumuEResultsLabel")),
+    fAltNumuEResultsLabel             (p.get<std::string> ("AltNumuEResultsLabel")),
+    fTrueNCEResultsLabel              (p.get<std::string> ("TrueNCEResultsLabel")),
+    fNetworkNCEResultsLabel           (p.get<std::string> ("NetworkNCEResultsLabel")),
+    fAltNCEResultsLabel               (p.get<std::string> ("AltNCEResultsLabel")),
+    fLegacy                           (p.get<bool> ("Legacy")),
+    fCollectionComparison             (p.get<bool> ("CollectionComparison"))
 {
   consumes<std::vector<cvn::Result>>(fTrueCVNResultsLabel);
   consumes<std::vector<cvn::Result>>(fNetworkCVNResultsLabel);
@@ -227,6 +259,11 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
     consumes<std::vector<recob::Hit>>(fAltHitsLabel);
   }
 
+  if (fCollectionComparison) {
+    consumes<std::vector<cvn::Result>>(fTrueCVNCollectionResultsLabel);
+    consumes<std::vector<cvn::Result>>(fNetworkCVNCollectionResultsLabel);
+  }
+
   art::ServiceHandle<art::TFileService> tfs;
 
   fTreeCVNResults = tfs->make<TTree>("Results", "Results");
@@ -235,60 +272,86 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
   fTreeCVNResults->Branch("EventNum", &fEventNum, "eventnum/I");
   // Flavour scores
   fTreeCVNResults->Branch("TrueNumuScore", &fTrueNumuScore, "truenumuscore/F");
+  fTreeCVNResults->Branch("TrueCollectionNumuScore", &fTrueCollectionNumuScore, "truecollectionnumuscore/F");
   fTreeCVNResults->Branch("NetworkNumuScore", &fNetworkNumuScore, "networknumuscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionNumuScore", &fNetworkCollectionNumuScore, "networkcollectionnumuscore/F");
   fTreeCVNResults->Branch("NDNumuScore", &fNDNumuScore, "ndnumuscore/F");
   fTreeCVNResults->Branch("AltNumuScore", &fAltNumuScore, "altnumuscore/F");
   fTreeCVNResults->Branch("TrueNueScore", &fTrueNueScore, "truenuescore/F");
+  fTreeCVNResults->Branch("TrueCollectionNueScore", &fTrueCollectionNueScore, "truecollectionnuescore/F");
   fTreeCVNResults->Branch("NetworkNueScore", &fNetworkNueScore, "networknuescore/F");
+  fTreeCVNResults->Branch("NetworkCollectionNueScore", &fNetworkCollectionNueScore, "networkcollectionnuescore/F");
   fTreeCVNResults->Branch("NDNueScore", &fNDNueScore, "ndnuescore/F");  
   fTreeCVNResults->Branch("AltNueScore", &fAltNueScore, "altnuescore/F");  
   fTreeCVNResults->Branch("TrueNCScore", &fTrueNCScore, "truencscore/F");
+  fTreeCVNResults->Branch("TrueCollectionNCScore", &fTrueCollectionNCScore, "truecollectionncscore/F");
   fTreeCVNResults->Branch("NetworkNCScore", &fNetworkNCScore, "networkncscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionNCScore", &fNetworkCollectionNCScore, "networkcollectionncscore/F");
   fTreeCVNResults->Branch("NDNCScore", &fNDNCScore, "ndncscore/F");
   fTreeCVNResults->Branch("AltNCScore", &fAltNCScore, "altncscore/F");
   fTreeCVNResults->Branch("TrueNutauScore", &fTrueNutauScore, "truenutauscore/F");
+  fTreeCVNResults->Branch("TrueCollectionNutauScore", &fTrueCollectionNutauScore, "truecollectionnutauscore/F");
   fTreeCVNResults->Branch("NetworkNutauScore", &fNetworkNutauScore, "networknutauscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionNutauScore", &fNetworkCollectionNutauScore, "networkcollectionnutauscore/F");
   fTreeCVNResults->Branch("NDNutauScore", &fNDNutauScore, "ndnutauscore/F");
   fTreeCVNResults->Branch("AltNutauScore", &fAltNutauScore, "altnutauscore/F");
   // Pred number of daughter particles
   fTreeCVNResults->Branch("TrueNumPions", &fTrueNumPions, "truenumpions/I");
+  fTreeCVNResults->Branch("TrueCollectionNumPions", &fTrueCollectionNumPions, "truecollectionnumpions/I");
   fTreeCVNResults->Branch("NetworkNumPions", &fNetworkNumPions, "networknumpions/I");
+  fTreeCVNResults->Branch("NetworkCollectionNumPions", &fNetworkCollectionNumPions, "networkcollectionnumpions/I");
   fTreeCVNResults->Branch("NDNumPions", &fNDNumPions, "ndnumpions/I");
   fTreeCVNResults->Branch("AltNumPions", &fAltNumPions, "altnumpions/I");
   fTreeCVNResults->Branch("TrueNumProtons", &fTrueNumProtons, "truenumprotons/I");
+  fTreeCVNResults->Branch("TrueCollectionNumProtons", &fTrueCollectionNumProtons, "truecollectionnumprotons/I");
   fTreeCVNResults->Branch("NetworkNumProtons", &fNetworkNumProtons, "networknumprotons/I");
+  fTreeCVNResults->Branch("NetworkCollectionNumProtons", &fNetworkCollectionNumProtons, "networkcollectionnumprotons/I");
   fTreeCVNResults->Branch("NDNumProtons", &fNDNumProtons, "ndnumprotons/I");
   fTreeCVNResults->Branch("AltNumProtons", &fAltNumProtons, "altnumprotons/I");
   fTreeCVNResults->Branch("TrueNumPizeros", &fTrueNumPizeros, "truenumpizeros/I");
+  fTreeCVNResults->Branch("TrueCollectionNumPizeros", &fTrueCollectionNumPizeros, "truecollectionnumpizeros/I");
   fTreeCVNResults->Branch("NetworkNumPizeros", &fNetworkNumPizeros, "networknumpizeros/I");
+  fTreeCVNResults->Branch("NetworkCollectionNumPizeros", &fNetworkCollectionNumPizeros, "networkcollectionnumpizeros/I");
   fTreeCVNResults->Branch("NDNumPizeros", &fNDNumPizeros, "ndnumpizeros/I");
   fTreeCVNResults->Branch("AltNumPizeros", &fAltNumPizeros, "altnumpizeros/I");
   fTreeCVNResults->Branch("TrueNumNeutrons", &fTrueNumNeutrons, "truenumneutrons/I");
+  fTreeCVNResults->Branch("TrueCollectionNumNeutrons", &fTrueCollectionNumNeutrons, "truecollectionnumneutrons/I");
   fTreeCVNResults->Branch("NetworkNumNeutrons", &fNetworkNumNeutrons, "networknumneutrons/I");
+  fTreeCVNResults->Branch("NetworkCollectionNumNeutrons", &fNetworkCollectionNumNeutrons, "networkcollectionnumneutrons/I");
   fTreeCVNResults->Branch("NDNumNeutrons", &fNDNumNeutrons, "ndnumneutrons/I");
   fTreeCVNResults->Branch("AltNumNeutrons", &fAltNumNeutrons, "altnumneutrons/I");
   // Antineutrino score
   fTreeCVNResults->Branch("TrueAntiNuScore", &fTrueAntiNuScore, "trueantinuscore/F");
+  fTreeCVNResults->Branch("TrueCollectionAntiNuScore", &fTrueCollectionAntiNuScore, "truecollectionantinuscore/F");
   fTreeCVNResults->Branch("NetworkAntiNuScore", &fNetworkAntiNuScore, "networkantinuscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionAntiNuScore", &fNetworkCollectionAntiNuScore, "networkcollectionantinuscore/F");
   fTreeCVNResults->Branch("NDAntiNuScore", &fNDAntiNuScore, "ndantinuscore/F");
   fTreeCVNResults->Branch("AltAntiNuScore", &fAltAntiNuScore, "altantinuscore/F");
   // Interaction Type scores
   fTreeCVNResults->Branch("TrueQEScore", &fTrueQEScore, "trueqescore/F");
+  fTreeCVNResults->Branch("TrueCollectionQEScore", &fTrueCollectionQEScore, "truecollectionqescore/F");
   fTreeCVNResults->Branch("NetworkQEScore", &fNetworkQEScore, "networkqescore/F");
+  fTreeCVNResults->Branch("NetworkCollectionQEScore", &fNetworkCollectionQEScore, "networkcollectionqescore/F");
   fTreeCVNResults->Branch("NDQEScore", &fNDQEScore, "ndqescore/F");
   fTreeCVNResults->Branch("AltQEScore", &fAltQEScore, "altqescore/F");
   fTreeCVNResults->Branch("TrueResScore", &fTrueResScore, "trueresscore/F");
+  fTreeCVNResults->Branch("TrueCollectionResScore", &fTrueCollectionResScore, "truecollectionresscore/F");
   fTreeCVNResults->Branch("NetworkResScore", &fNetworkResScore, "networkresscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionResScore", &fNetworkCollectionResScore, "networkcollectionresscore/F");
   fTreeCVNResults->Branch("NDResScore", &fNDResScore, "ndresscore/F");
   fTreeCVNResults->Branch("AltResScore", &fAltResScore, "altresscore/F");
   fTreeCVNResults->Branch("TrueDISScore", &fTrueDISScore, "truedisscore/F");
+  fTreeCVNResults->Branch("TrueCollectionDISScore", &fTrueCollectionDISScore, "truecollectiondisscore/F");
   fTreeCVNResults->Branch("NetworkDISScore", &fNetworkDISScore, "networkdisscore/F");
+  fTreeCVNResults->Branch("NetworkCollectionDISScore", &fNetworkCollectionDISScore, "networkcollectiondisscore/F");
   fTreeCVNResults->Branch("NDDISScore", &fNDDISScore, "nddisscore/F");
   fTreeCVNResults->Branch("AltDISScore", &fAltDISScore, "altdisscore/F");
   fTreeCVNResults->Branch("TrueOtherScore", &fTrueOtherScore, "trueotherscore/F");
+  fTreeCVNResults->Branch("TrueCollectionOtherScore", &fTrueCollectionOtherScore, "truecollectionotherscore/F");
   fTreeCVNResults->Branch("NetworkOtherScore", &fNetworkOtherScore, "networkotherscore/F");
-  fTreeCVNResults->Branch("NDOtherScore", &fNDQEScore, "ndotherscore/F"); 
-  fTreeCVNResults->Branch("AltOtherScore", &fAltQEScore, "altotherscore/F"); 
+  fTreeCVNResults->Branch("NetworkCollectionOtherScore", &fNetworkCollectionOtherScore, "networkcollectionotherscore/F");
+  fTreeCVNResults->Branch("NDOtherScore", &fNDOtherScore, "ndotherscore/F"); 
+  fTreeCVNResults->Branch("AltOtherScore", &fAltOtherScore, "altotherscore/F"); 
   // Hit information
   fTreeCVNResults->Branch("TrueHitIntegralSumZ", &fTrueHitIntegralSumZ, "truehitintegralsumz/F");
   fTreeCVNResults->Branch("NetworkHitIntegralSumZ", &fNetworkHitIntegralSumZ, "networkhitintegralsumz/F");
@@ -439,6 +502,7 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   }
 
   if (fLegacy) {
+    fTreeCVNResults->Fill();
     return;
   }
 
@@ -505,6 +569,45 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   fNetworkNCLepE = networkNCEOut->fLepLorentzVector.E(); 
   fAltNCLepE = networkNCEOut->fLepLorentzVector.E(); 
 
+  if (!fCollectionComparison) {
+    fTreeCVNResults->Fill();
+    return;
+  }
+
+  // Get collection view CVN results for comparison with the 3 view results
+  const auto trueCollectionCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fTrueCVNCollectionResultsLabel);
+  const auto networkCollectionCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fNetworkCVNCollectionResultsLabel);
+
+  fTrueCollectionNumuScore = trueCollectionCVNResults->at(0).GetNumuProbability();
+  fTrueCollectionNueScore = trueCollectionCVNResults->at(0).GetNueProbability();
+  fTrueCollectionNCScore = trueCollectionCVNResults->at(0).GetNCProbability();
+  fTrueCollectionNutauScore = trueCollectionCVNResults->at(0).GetNutauProbability();
+  fNetworkCollectionNumuScore = networkCollectionCVNResults->at(0).GetNumuProbability();
+  fNetworkCollectionNueScore = networkCollectionCVNResults->at(0).GetNueProbability();
+  fNetworkCollectionNCScore = networkCollectionCVNResults->at(0).GetNCProbability();
+  fNetworkCollectionNutauScore = networkCollectionCVNResults->at(0).GetNutauProbability();
+
+  fTrueCollectionNumPions = (int)trueCollectionCVNResults->at(0).PredictedPions();
+  fTrueCollectionNumProtons = (int)trueCollectionCVNResults->at(0).PredictedProtons();
+  fTrueCollectionNumPizeros = (int)trueCollectionCVNResults->at(0).PredictedPizeros();
+  fTrueCollectionNumNeutrons = (int)trueCollectionCVNResults->at(0).PredictedNeutrons();
+  fNetworkCollectionNumPions = (int)networkCollectionCVNResults->at(0).PredictedPions();
+  fNetworkCollectionNumProtons = (int)networkCollectionCVNResults->at(0).PredictedProtons();
+  fNetworkCollectionNumPizeros = (int)networkCollectionCVNResults->at(0).PredictedPizeros();
+  fNetworkCollectionNumNeutrons = (int)networkCollectionCVNResults->at(0).PredictedNeutrons();
+
+  fTrueCollectionAntiNuScore = trueCollectionCVNResults->at(0).GetIsAntineutrinoProbability();
+  fNetworkCollectionAntiNuScore = networkCollectionCVNResults->at(0).GetIsAntineutrinoProbability();
+
+  fTrueCollectionQEScore = trueCollectionCVNResults->at(0).GetQEProbability();
+  fTrueCollectionResScore = trueCollectionCVNResults->at(0).GetResProbability();
+  fTrueCollectionDISScore = trueCollectionCVNResults->at(0).GetDISProbability();
+  fTrueCollectionOtherScore = trueCollectionCVNResults->at(0).GetOtherProbability();
+  fNetworkCollectionQEScore = networkCollectionCVNResults->at(0).GetQEProbability();
+  fNetworkCollectionResScore = networkCollectionCVNResults->at(0).GetResProbability();
+  fNetworkCollectionDISScore = networkCollectionCVNResults->at(0).GetDISProbability();
+  fNetworkCollectionOtherScore = networkCollectionCVNResults->at(0).GetOtherProbability();
+
   fTreeCVNResults->Fill();
 }
 
@@ -524,58 +627,84 @@ void extrapolation::TranslationResultsDump::reset()
   fEventNum = -999;
 
   fTrueNumuScore = -999.0;
+  fTrueCollectionNumuScore = -999.0;
   fNetworkNumuScore = -999.0;
+  fNetworkCollectionNumuScore = -999.0;
   fNDNumuScore = -999.0;
   fAltNumuScore = -999.0;
   fTrueNueScore = -999.0;
+  fTrueCollectionNueScore = -999.0;
   fNetworkNueScore = -999.0;
+  fNetworkCollectionNueScore = -999.0;
   fNDNueScore = -999.0;
   fAltNueScore = -999.0;
   fTrueNCScore = -999.0;
+  fTrueCollectionNCScore = -999.0;
   fNetworkNCScore = -999.0;
+  fNetworkCollectionNCScore = -999.0;
   fNDNCScore = -999.0;
   fAltNCScore = -999.0;
   fTrueNutauScore = -999.0;
+  fTrueCollectionNutauScore = -999.0;
   fNetworkNutauScore = -999.0;
+  fNetworkCollectionNutauScore = -999.0;
   fNDNutauScore = -999.0;
   fAltNutauScore = -999.0;
 
   fTrueNumPions = -999;
+  fTrueCollectionNumPions = -999;
   fNetworkNumPions = -999;
+  fNetworkCollectionNumPions = -999;
   fNDNumPions = -999;
   fAltNumPions = -999;
   fTrueNumProtons = -999;
+  fTrueCollectionNumProtons = -999;
   fNetworkNumProtons = -999;
+  fNetworkCollectionNumProtons = -999;
   fNDNumProtons = -999;
   fAltNumProtons = -999;
   fTrueNumPizeros = -999;
+  fTrueCollectionNumPizeros = -999;
   fNetworkNumPizeros = -999;
+  fNetworkCollectionNumPizeros = -999;
   fNDNumPizeros = -999;
   fAltNumPizeros = -999;
   fTrueNumNeutrons = -999;
+  fTrueCollectionNumNeutrons = -999;
   fNetworkNumNeutrons = -999;
+  fNetworkCollectionNumNeutrons = -999;
   fNDNumNeutrons = -999;
   fAltNumNeutrons = -999;
 
   fTrueAntiNuScore = -999.0;
+  fTrueCollectionAntiNuScore = -999.0;
   fNetworkAntiNuScore = -999.0;
+  fNetworkCollectionAntiNuScore = -999.0;
   fNDAntiNuScore = -999.0;
   fAltAntiNuScore = -999.0;
 
   fTrueQEScore = -999.0;
+  fTrueCollectionQEScore = -999.0;
   fNetworkQEScore = -999.0;
+  fNetworkCollectionQEScore = -999.0;
   fNDQEScore = -999.0;
   fAltQEScore = -999.0;
   fTrueResScore = -999.0;
+  fTrueCollectionResScore = -999.0;
   fNetworkResScore = -999.0;
+  fNetworkCollectionResScore = -999.0;
   fNDResScore = -999.0;
   fAltResScore = -999.0;
   fTrueDISScore = -999.0;
+  fTrueCollectionDISScore = -999.0;
   fNetworkDISScore = -999.0;
+  fNetworkCollectionDISScore = -999.0;
   fNDDISScore = -999.0;
   fAltDISScore = -999.0;
   fTrueOtherScore = -999.0;
+  fTrueCollectionOtherScore = -999.0;
   fNetworkOtherScore = -999.0;
+  fNetworkCollectionOtherScore = -999.0;
   fNDOtherScore = -999.0;
   fAltOtherScore = -999.0;
   

@@ -4,10 +4,12 @@ TranslationResultsDump:
 {
   module_type: "TranslationResultsDump"
 
-  TrueCVNResultsLabel:    "cvneva:cvnresult:Reco3viewTrueTranslated"
-  NetworkCVNResultsLabel: "cvneva:cvnresult:Reco3viewNetworkTranslated"
-  NDCVNResultsLabel:      "cvneva:cvnresult:Reco3viewNDPackets"
-  AltCVNResultsLabel:     "cvneva:cvnresult:Reco3viewAltDetsim"
+  TrueCVNResultsLabel:             "cvneva:cvnresult:Reco3viewTrueTranslated"
+  TrueCVNCollectionResultsLabel:    ""
+  NetworkCVNResultsLabel:           "cvneva:cvnresult:Reco3viewNetworkTranslated"
+  NetworkCVNCollectionResultsLabel: ""
+  NDCVNResultsLabel:                "cvneva:cvnresult:Reco3viewNDPackets"
+  AltCVNResultsLabel:               "cvneva:cvnresult:Reco3viewAltDetsim"
   
   TrueHitsLabel:    "gaushit::Reco3viewTrueTranslated"
   NetworkHitsLabel: "gaushit::Reco3viewNetworkTranslated"
@@ -21,7 +23,8 @@ TranslationResultsDump:
   NetworkNCEResultsLabel:   "energyrecnc::Reco3viewNetworkTranslated"
   AltNCEResultsLabel:       "energyrecnc::Reco3viewAltDetsim"
 
-  Legacy: false // true for the 1 view CVN only reco
+  Legacy:               false // true for the 1 view CVN only reco
+  CollectionComparison: false // true if file has collection CVN and 3view CVN results and want to dump both to tree
 }
 
 END_PROLOG
