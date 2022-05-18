@@ -215,10 +215,9 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double wireCoordV = pGeoV.WireCoordinate(packetLoc);
       double wireDistanceV = (wireCoordV - (double)(int)(0.5 + wireCoordV)) * pGeoV.WirePitch();
 
-      if (fHighResProjectionZ) {
-        int wireNumZ = (int)((wireCoordZ * 4.0) + 0.5);
-        std::cout << wireCoordZ << " - " << wireNumZ << " -- ";
-        std::cout << tickZ << " - " << (unsigned int)(tickRawZ * 10.0) << "\n";
+      if (fHighResProjectionZ) { // Pretend Z plane has better resolution
+        chZ = (raw::ChannelID_t)(int)((wireCoordZ * 4.0) + 0.5);
+        tickZ = (unsigned int)((tickRawZ * 10.0) + 0.5);
       }
         
       std::vector<double> projection(17, 0.0);
