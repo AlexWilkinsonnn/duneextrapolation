@@ -76,7 +76,7 @@ private:
   std::vector<double>              fVertexOut;
 
   // fhicl params
-  std::string fNDDataLoc;
+  std::string  fNDDataLoc;
   unsigned int fCIndex;
   unsigned int fTIndex;
   double       fYShift;
@@ -85,6 +85,7 @@ private:
   double       fTickShiftU;
   double       fTickShiftV;
   bool         fOnlyProjections;
+  bool         fHighResProjectionZ;
   
   // Other members
   int            fEventNumber;
@@ -99,15 +100,16 @@ private:
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDDataLoc       (p.get<std::string>("NDDataLoc")),
-    fCIndex          (p.get<unsigned int>("CryoIndex")),
-    fTIndex          (p.get<unsigned int>("TpcIndex")),
-    fYShift          (p.get<double>("YShift")),
-    fZShift          (p.get<double>("ZShift")),
-    fTickShiftZ      (p.get<double>("TickShiftZ")),
-    fTickShiftU      (p.get<double>("TickShiftU")),
-    fTickShiftV      (p.get<double>("TickShiftV")),
-    fOnlyProjections (p.get<bool>("OnlyProjections"))
+    fNDDataLoc          (p.get<std::string>("NDDataLoc")),
+    fCIndex             (p.get<unsigned int>("CryoIndex")),
+    fTIndex             (p.get<unsigned int>("TpcIndex")),
+    fYShift             (p.get<double>("YShift")),
+    fZShift             (p.get<double>("ZShift")),
+    fTickShiftZ         (p.get<double>("TickShiftZ")),
+    fTickShiftU         (p.get<double>("TickShiftU")),
+    fTickShiftV         (p.get<double>("TickShiftV")),
+    fOnlyProjections    (p.get<bool>("OnlyProjections")),
+    fHighResProjectionZ (p.get<bool>("HighResProjectionZ"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>();
   produces<std::vector<sim::SimEnergyDeposit>>("EventNumber");
@@ -183,14 +185,14 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double NDDrift = packet[5];
 
       geo::Point_t packetLoc(x, y, z);
-
-      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ)- fGeom->FirstChannelInROP(fRIDZ);
-      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU)- fGeom->FirstChannelInROP(fRIDU);
-      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV)- fGeom->FirstChannelInROP(fRIDV);
-
+      
       const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
       const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
       const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
+
+      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
+      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
+      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
 
       double tickRawZ = detProp.ConvertXToTicks(x, fPIDZ);
       tickRawZ += fTickShiftZ;
@@ -213,6 +215,12 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double wireCoordV = pGeoV.WireCoordinate(packetLoc);
       double wireDistanceV = (wireCoordV - (double)(int)(0.5 + wireCoordV)) * pGeoV.WirePitch();
 
+      if (fHighResProjectionZ) {
+        int wireNumZ = (int)((wireCoordZ * 4.0) + 0.5);
+        std::cout << wireCoordZ << " - " << wireNumZ << " -- ";
+        std::cout << tickZ << " - " << (unsigned int)(tickRawZ * 10.0) << "\n";
+      }
+        
       std::vector<double> projection(17, 0.0);
       projection[0] = z;
       projection[1] = y;
