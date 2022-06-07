@@ -58,6 +58,7 @@ public:
   void endJob() override;
 
   void reset();
+
 private:
   const geo::GeometryCore* fGeom;
 
@@ -69,7 +70,7 @@ private:
   std::vector<std::vector<double>>* fPackets;
   std::vector<double>*              fVertex;
 
-  // Writing output ND projectiosn tree 
+  // Writing output ND projectiosn tree
   TTree*                           fTreePacketProjections;
   std::vector<std::vector<double>> fPacketProjection;
   int                              fEventID;
@@ -85,8 +86,8 @@ private:
   double       fTickShiftU;
   double       fTickShiftV;
   bool         fOnlyProjections;
-  bool         fHighResProjectionZ;
-  
+  bool         fHighResProjection;
+
   // Other members
   int            fEventNumber;
   geo::TPCID     fTID;
@@ -100,16 +101,16 @@ private:
 
 extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDDataLoc          (p.get<std::string>("NDDataLoc")),
-    fCIndex             (p.get<unsigned int>("CryoIndex")),
-    fTIndex             (p.get<unsigned int>("TpcIndex")),
-    fYShift             (p.get<double>("YShift")),
-    fZShift             (p.get<double>("ZShift")),
-    fTickShiftZ         (p.get<double>("TickShiftZ")),
-    fTickShiftU         (p.get<double>("TickShiftU")),
-    fTickShiftV         (p.get<double>("TickShiftV")),
-    fOnlyProjections    (p.get<bool>("OnlyProjections")),
-    fHighResProjectionZ (p.get<bool>("HighResProjectionZ"))
+    fNDDataLoc         (p.get<std::string>("NDDataLoc")),
+    fCIndex            (p.get<unsigned int>("CryoIndex")),
+    fTIndex            (p.get<unsigned int>("TpcIndex")),
+    fYShift            (p.get<double>("YShift")),
+    fZShift            (p.get<double>("ZShift")),
+    fTickShiftZ        (p.get<double>("TickShiftZ")),
+    fTickShiftU        (p.get<double>("TickShiftU")),
+    fTickShiftV        (p.get<double>("TickShiftV")),
+    fOnlyProjections   (p.get<bool>("OnlyProjections")),
+    fHighResProjection (p.get<bool>("HighResProjection"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>();
   produces<std::vector<sim::SimEnergyDeposit>>("EventNumber");
@@ -129,7 +130,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
   // std::cout << detProp.ConvertTicksToX(2000, fPIDZ) << "\n"; = 163.705
 
-  if (fEntry < fNEntries) { 
+  if (fEntry < fNEntries) {
     fTreeDeposPackets->GetEntry(fEntry);
 
     // Get Vertex alignment info
@@ -161,7 +162,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         geo::Point_t posEnd = geo::Point_t(xMax, yMax, zMax);
 
         sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
-            0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg); 
+            0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg);
         SEDs->push_back(SED);
       }
     }
@@ -185,7 +186,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double NDDrift = packet[5];
 
       geo::Point_t packetLoc(x, y, z);
-      
+
       const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
       const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
       const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
@@ -215,11 +216,50 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double wireCoordV = pGeoV.WireCoordinate(packetLoc);
       double wireDistanceV = (wireCoordV - (double)(int)(0.5 + wireCoordV)) * pGeoV.WirePitch();
 
-      if (fHighResProjectionZ) { // Pretend Z plane has better resolution
-        chZ = (raw::ChannelID_t)(int)((wireCoordZ * 4.0) + 0.5);
-        tickZ = (unsigned int)((tickRawZ * 10.0) + 0.5);
+      // Project to wires and ticks with a much higher resolution
+      // Try 9 also
+      if (fHighResProjection) { 
+        // std::cout << chZ << " -- ";
+        const geo::WireID wIDZ = fGeom->NearestWireID(packetLoc, fPIDZ);
+        // Cant have negative channel numbers, want the most negative pixel from the zeroth channel
+        // to map to the zeroth pixel of the high res FD projection.
+        const int wNoHighResShiftedZ = (int)(((wireCoordZ + 0.50) * 8.0));
+        chZ = (raw::ChannelID_t)(wNoHighResShiftedZ - (wIDZ.Wire * 8) + (chZ * 8));
+        if (chZ >= 3840 || chZ < 0) {
+          std::cout << wNoHighResShiftedZ << " -- " << wIDZ.Wire * 8 << "\n";
+          throw std::runtime_error("brokey");
+        }
+        // std::cout << chZ << " | ";
+        // std::cout << tickZ << " -- ";
+        tickZ = (unsigned int)((tickRawZ * 8.0) + 0.5);
+        // std::cout << tickZ << " -- ";
+        // std::cout << chU << " -- ";
+        const geo::WireID wIDU = fGeom->NearestWireID(packetLoc, fPIDU);
+        const int wNoHighResShiftedU = (int)(((wireCoordU + 0.50) * 8.0));
+        chU = (raw::ChannelID_t)(wNoHighResShiftedU - (wIDU.Wire * 8) + (chU * 8)); 
+        // My understanding is that this should not occur but it sometimes does so just going to fix it here
+        if (chU  >= 6400 || chU < 0) {
+          std::cout << wNoHighResShiftedU << " -- " << wIDU.Wire * 8 << "\n";
+          throw std::runtime_error("brokey");
+        }
+        // std::cout << chU << " | "; 
+        // std::cout << tickU << " -- ";
+        tickU = (unsigned int)((tickRawU * 8.0) + 0.5);
+        // std::cout << tickU << "\n";
+        // std::cout << chV << " -- ";
+        const geo::WireID wIDV = fGeom->NearestWireID(packetLoc, fPIDV);
+        const int wNoHighResShiftedV = (int)(((wireCoordV + 0.50) * 8.0));
+        chV = (raw::ChannelID_t)(wNoHighResShiftedV - (wIDV.Wire * 8) + (chV * 8));
+        if (chV >= 6400 || chV < 0) {
+          std::cout << wNoHighResShiftedV << " -- " << wIDV.Wire * 8 << "\n";
+          throw std::runtime_error("brokey");
+        }
+        // std::cout << chV << " | \n";
+        // std::cout << tickV << " -- ";
+        tickV = (unsigned int)((tickRawV * 8.0) + 0.5);
+        // std::cout << tickV << "\n";
       }
-        
+
       std::vector<double> projection(17, 0.0);
       projection[0] = z;
       projection[1] = y;

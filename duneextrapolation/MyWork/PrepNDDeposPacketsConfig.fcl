@@ -16,8 +16,8 @@ PrepNDDeposPackets:
   TickShiftU: -10.1
   TickShiftV: -10.9
 
-  OnlyProjections:    false
-  HighResProjectionZ: false // Project onto a wire plane with better time and wire resolution that reality
+  OnlyProjections:   false
+  HighResProjection: false // Project onto a wire plane with better time and wire resolution that reality
 }
 
 END_PROLOG
