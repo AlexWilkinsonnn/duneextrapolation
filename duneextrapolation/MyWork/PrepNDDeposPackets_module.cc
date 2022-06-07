@@ -218,7 +218,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
 
       // Project to wires and ticks with a much higher resolution
       // Try 9 also
-      if (fHighResProjection) { 
+      if (fHighResProjection) {
         // std::cout << chZ << " -- ";
         const geo::WireID wIDZ = fGeom->NearestWireID(packetLoc, fPIDZ);
         // Cant have negative channel numbers, want the most negative pixel from the zeroth channel
@@ -236,13 +236,13 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         // std::cout << chU << " -- ";
         const geo::WireID wIDU = fGeom->NearestWireID(packetLoc, fPIDU);
         const int wNoHighResShiftedU = (int)(((wireCoordU + 0.50) * 8.0));
-        chU = (raw::ChannelID_t)(wNoHighResShiftedU - (wIDU.Wire * 8) + (chU * 8)); 
+        chU = (raw::ChannelID_t)(wNoHighResShiftedU - (wIDU.Wire * 8) + (chU * 8));
         // My understanding is that this should not occur but it sometimes does so just going to fix it here
         if (chU  >= 6400 || chU < 0) {
           std::cout << wNoHighResShiftedU << " -- " << wIDU.Wire * 8 << "\n";
           throw std::runtime_error("brokey");
         }
-        // std::cout << chU << " | "; 
+        // std::cout << chU << " | ";
         // std::cout << tickU << " -- ";
         tickU = (unsigned int)((tickRawU * 8.0) + 0.5);
         // std::cout << tickU << "\n";
