@@ -1,6 +1,6 @@
 add_subdirectory(run_fcls)
 
-set(CMAKE_PREFIX_PATH "/work1/dune/users/awilkins/dsim/pytorch_cu1111_cudnn_sm70/pytorch-install")
+set(CMAKE_PREFIX_PATH "/work1/dune/users/awilkins/extrapolation/pytorch-install")
 find_package(Torch REQUIRED)
 
 # using SYSTEM to prevent multiple "error: extra ‘;’ [-Werror=pedantic]" errors
@@ -11,10 +11,10 @@ art_make(
 
                 lardataobj_RecoBase
                 lardataobj_RawData
-		lardataobj_Simulation
-		nusimdata_SimulationBase
+                lardataobj_Simulation
+                nusimdata_SimulationBase
                 larcorealg_Geometry
-		larcore_Geometry_Geometry_service
+                larcore_Geometry_Geometry_service
                 lardataalg_DetectorInfo
                 #dune-raw-data_Overlays
                 #dune_ArtSupport
