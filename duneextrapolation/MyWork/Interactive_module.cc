@@ -146,6 +146,8 @@ void interactive::Session::beginJob()
     const geo::TPCGeo tGeo = fGeom->TPC(tID);
     const geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
     cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
+
+    cout << "tGeo.DriftDistance()=" << tGeo.DriftDistance() << "\n"; 
   } 
 
   // Examine induction plane I will use
