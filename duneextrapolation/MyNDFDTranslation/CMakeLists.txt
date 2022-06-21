@@ -37,11 +37,13 @@ art_make(
                 ${FHICLCPP}
                 ${CLHEP}
 
-                ${TORCH_INSTALL_PREFIX}/lib/libtorch.so
-                ${TORCH_INSTALL_PREFIX}/lib/libtorch_cpu.so
-                ${TORCH_INSTALL_PREFIX}/lib/libtorch_cuda.so
-                ${TORCH_INSTALL_PREFIX}/lib/libc10.so
-                ${TORCH_INSTALL_PREFIX}/lib/libc10_cuda.so
+                # Complains about absolute paths, not sure If I need this anyway
+                # ${TORCH_INSTALL_PREFIX}/lib/libtorch.so
+                # ${TORCH_INSTALL_PREFIX}/lib/libtorch_cpu.so
+                # ${TORCH_INSTALL_PREFIX}/lib/libtorch_cuda.so
+                # ${TORCH_INSTALL_PREFIX}/lib/libc10.so
+                # ${TORCH_INSTALL_PREFIX}/lib/libc10_cuda.so
+                torch
 
                 ${ROOT_GEOM}
                 ${ROOT_XMLIO}
@@ -50,8 +52,6 @@ art_make(
                 ${ROOT_SPECTRUM}
                 ${ROOT_ROOFIT}
                 ${ROOT_ROOFITCORE}
-
-                dunereco_CVN_func
         )
 
 install_headers()

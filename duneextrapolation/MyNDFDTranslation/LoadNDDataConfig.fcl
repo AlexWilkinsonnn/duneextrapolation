@@ -4,20 +4,13 @@ LoadNDData:
 {
   module_type: "LoadNDData"
 
-  NDDDataLoc: "/unix/dune/awilkinson/extrapolation/larpixsoft/output_1-8_radi_vtxcuts_noped_depospackets.root"
+  NDDDataLoc: "/wclustre/dune/awilkins/extrapolation/output_1-8_radi_vtxcuts_noped_depospackets.root"
 
-  CryoIndex: 0
-  TpcIndex:  10 // Somewhere top middle of 1x2x6
+  XShift: 0 // ND is ~[400,950] FD is ~[0,1400]
+  YShift: 200 // ND is ~[-150,150] FD is ~[0,600]
+  ZShift: 0 // ND is ~[-350, 350] FD is ~[-360, 360]
 
-  YShift: 200
-  ZShift: -14.8615
-
-  TickShiftZ: -7.8
-  TickShiftU: -10.1
-  TickShiftV: -10.9
-
-  OnlyProjections:   false
-  HighResProjection: false // Project onto a wire plane with better time and wire resolution that reality
+  LoadTrueDepos: false
 }
 
 END_PROLOG
