@@ -113,7 +113,7 @@ void interactive::Session::beginJob()
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Examine readout plane I have chosen for nd->fd translation
-  if (true) {
+  if (false) {
     using std::cout;
 
     unsigned int cryoIndex = 0;
@@ -146,7 +146,7 @@ void interactive::Session::beginJob()
     const geo::TPCGeo tGeo = fGeom->TPC(tID);
     const geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
     cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
-  } 
+  }
 
   // Examine induction plane I will use
   if (false) {
@@ -168,12 +168,23 @@ void interactive::Session::beginJob()
     cout << "LastWire ThetaZ = " << pGeo.LastWire().ThetaZ() << "\n";
   }
 
+  // Get wire pitch
   if (false) {
     using std::cout;
 
     std::cout << "Z wire pitch = " << fGeom->WirePitch(geo::kZ) <<
       ", U wire pitch = " << fGeom->WirePitch(geo::kU) <<
       ", V wire pitch = " << fGeom->WirePitch(geo::kV) << "\n";
+  }
+
+  // Get TPC coordinates
+  if (true) {
+    using std::cout;
+
+    for (const geo::TPCGeo& tGeo : fGeom->IterateTPCs()) {
+      tGeo.PrintTPCInfo(cout, "", 5);
+      cout << "\n==========\n";
+    }
   }
 }
 
