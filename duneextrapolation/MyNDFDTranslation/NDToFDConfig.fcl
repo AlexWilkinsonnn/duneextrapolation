@@ -1,0 +1,19 @@
+BEGIN_PROLOG
+
+NDToFD:
+{
+  module_type: "NDToFD"
+
+  NetworkPathZ: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_tracedmodel.pt"
+  NetworkPathU: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1_best_bias_mu_tracedmodel.pt"
+  NetworkPathV: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2_best_bias_mu_tracedmodel.pt"
+
+  // How to project the packets and make pixel maps for input to the translation.
+  // 1: Project to FD wire and tick. UVZ has ch0 adc, ch1 nd drift, ch2 fd drift,
+  // ch3 num pixels stacked. Z has ch4 1 or 2 pixel columns mapped to collection wire.
+  // U and V have ch4 num first triggers stacked, ch5 wire distance.
+  PixelMapMode: 1
+
+}
+
+END_PROLOG

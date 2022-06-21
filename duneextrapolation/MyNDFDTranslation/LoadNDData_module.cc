@@ -3,7 +3,7 @@
 // Plugin Type: producer (Unknown Unknown)
 // File:        LoadNDData_module.cc
 //
-// Generated at Thu Apr 07 2022 by Alexander Wilkinson.
+// Copied on Mon 20 Jun 22 by Alex Wilkinson.
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
@@ -19,9 +19,6 @@
 #include <memory>
 #include <iostream>
 
-// #include <torch/torch.h> // testing
-#include <torch/script.h> //testing
-
 #include "TFile.h"
 #include "TTree.h"
 #include "TBranch.h"
@@ -30,17 +27,10 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCTrajectory.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardataobj/RawData/raw.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 namespace extrapolation {
   class LoadNDData;
@@ -106,8 +96,6 @@ extrapolation::LoadNDData::LoadNDData(fhicl::ParameterSet const& p)
 
 void extrapolation::LoadNDData::produce(art::Event& e)
 {
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
-
   if (fEntry < fNEntries) {
     fTreeDeposPackets->GetEntry(fEntry);
 
