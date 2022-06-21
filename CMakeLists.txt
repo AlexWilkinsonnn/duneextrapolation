@@ -8,6 +8,7 @@
 cmake_minimum_required (VERSION 3.19 FATAL_ERROR)
 
 project(duneextrapolation VERSION 09.42.04.00 LANGUAGES CXX)
+set(IGNORE_ABSOLUTE_TRANSITIVE_DEPENDENCIES ON)
 
 # cetbuildtools contains our cmake modules
 find_package(cetbuildtools REQUIRED)
