@@ -88,7 +88,9 @@ void extrapolation::Projections::ProjectToWires()
     // so we wont either for now. Doing this here since it does not depend on plane.
     // TODO Make these number configurable.
     // TODO Confirm these numbers, ~600 too high, the drift is ~[-360, 360].
-    if (std::abs(packetPos.X()) < 5.239 || std::abs(packetPos.X()) > 600.019) {
+    // Should only have to worry about the lower bound if xShift is correct since FD is wider than
+    // ND.
+    if (std::abs(packetPos.X()) < 5.239) { //|| std::abs(packetPos.X()) > 600.019) {
       fNumInvalidProjections += 3;
       continue;
     }
