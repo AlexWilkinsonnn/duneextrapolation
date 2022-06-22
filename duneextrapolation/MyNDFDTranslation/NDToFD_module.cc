@@ -3,7 +3,7 @@
 // Plugin Type: producer (Unknown Unknown)
 // File:        NDToFD_module.cc
 //
-// Copied on Tue 21 Jun 22 by Alex Wilkinson.
+// Created on Tue 21 Jun 22 by Alex Wilkinson.
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
@@ -31,6 +31,8 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
+#include "duneextrapolation/MyNDFDTranslation/Projections.h"
+
 namespace extrapolation {
   class NDToFD;
 }
@@ -54,6 +56,8 @@ private:
 
   std::map<geo::View_t, torch::jit::script::Module> fNetworks;
 
+  Projections fProj;
+
   // fhicl params
   std::string fNetworkPathZ;
   std::string fNetworkPathU;
@@ -70,20 +74,52 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
     fNetworkPathV (p.get<std::string>("NetworkPathV")),
     fPixelMapMode (p.get<int>("PixelMapMode"))
 {
-  produces<std::vector<raw::RawDigit>>("NDTranslated");
+  // produces<std::vector<raw::RawDigit>>("NDTranslated");
 }
 
 void extrapolation::NDToFD::produce(art::Event& e)
 {
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
+  fProj.SetDetProp(&detProp);
 
-  std::cout << "test\n";
+  geo::PlaneID pID(0, 0, 1);
+  std::cout << "hello\n";
+  std::cout << detProp.Efield() << "\n";
+  std::cout << detProp.ConvertXToTicks(100, pID) << "\n";
+  std::cout << "hi\n";
 
+  // Tests
+  { using std::cout;
+  fProj.Add(geo::Point_t(100, 100, 100), 100, 30);
+  cout << fProj.Size() << "\n";
+
+  fProj.ProjectToWires();
+  cout << fProj.Size() << " - " << fProj.GetNumInvalidProjections() << "\n";
+
+  for (int i = 0; i < fProj.Size(); i++) {
+    for (auto rID : fProj.ActiveROPIDs() ) {
+      cout << "rID = " << rID << "\n";
+      cout << "ch = " << fProj.GetChs(i)[rID] <<
+        " - tick = " << fProj.GetTicks(i)[rID] <<
+        " - fd drift = " << fProj.GetFDDrifts(i)[rID] <<
+        " - wire distance = " << fProj.GetWireDistances(i)[rID] <<
+        " - adc = " << fProj.GetAdc(i) <<
+        " - nd drift = " << fProj.GetNDDrift(i) << "\n";
+    }
+  }
+
+  fProj.Clear();
+  cout << fProj.Size() << " - " << fProj.GetNumInvalidProjections() << "\n";
+  }
 }
 
 void extrapolation::NDToFD::beginJob()
 {
+  // NOTE Maybe this should all go in the constructor instead for running over multiple files.
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+  // Initialise projector
+  // fProj(0.0, 0.0, 0.0, &fGeom, &detProp, true);
+  fProj = Projections(0.0, 0.0, 0.0, fGeom, true);
 
   // Load torchscript models
   try {

@@ -72,9 +72,6 @@ private:
   double       fXShift;
   double       fYShift;
   double       fZShift;
-  double       fProjectionTickShiftZ;
-  double       fProjectionTickShiftU;
-  double       fProjectionTickShiftV;
   bool         fLoadTrueDepos;
 };
 
