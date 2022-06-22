@@ -125,7 +125,7 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
 
 void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
 {
-  this ->reset();
+  this->reset();
 
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
   // std::cout << detProp.ConvertTicksToX(2000, fPIDZ) << "\n"; = 163.705
