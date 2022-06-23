@@ -18,6 +18,10 @@
 
 #include <memory>
 #include <iostream>
+#include <vector>
+#include <map>
+#include <cmath>
+#include <algorithm>
 
 #include <torch/torch.h>
 #include <torch/script.h>
@@ -32,6 +36,7 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 #include "duneextrapolation/MyNDFDTranslation/Projections.h"
+#include "duneextrapolation/MyNDFDTranslation/Types.h"
 
 namespace extrapolation {
   class NDToFD;
@@ -55,16 +60,29 @@ private:
   const geo::GeometryCore* fGeom;
 
   std::map<geo::View_t, torch::jit::script::Module> fNetworks;
+  std::map<geo::View_t, double>                     fTickShifts;
+  std::map<geo::View_t, std::vector<double>>        fInputScaleFactors;
+  std::map<geo::View_t, double>                     fOutputScaleFactors;
 
   Projections fProj;
 
   // fhicl params
-  std::string fNetworkPathZ;
-  std::string fNetworkPathU;
-  std::string fNetworkPathV;
-  int         fPixelMapMode;
-  // TODO add an option to save the pixel map to the event. Will need to define my own data product
-  // in order to do this.
+  std::string         fNDPacketsLabel;
+  std::string         fNetworkPathZ;
+  std::string         fNetworkPathU;
+  std::string         fNetworkPathV;
+  int                 fPixelMapMode;
+  double              fTickShiftZ;
+  double              fTickShiftU;
+  double              fTickShiftV;
+  std::vector<double> fInputScaleFactorsZ;
+  std::vector<double> fInputScaleFactorsU;
+  std::vector<double> fInputScaleFactorsV;
+  double              fOutputScaleFactorZ;
+  double              fOutputScaleFactorU;
+  double              fOutputScaleFactorV;
+  std::vector<int>    fDoubleColZWires;
+  bool                fSavePixelMaps;
 };
 
 extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
@@ -73,64 +91,33 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
     fNetworkPathZ       (p.get<std::string>("NetworkPathZ")),
     fNetworkPathU       (p.get<std::string>("NetworkPathU")),
     fNetworkPathV       (p.get<std::string>("NetworkPathV")),
-    fPixelMapMode       (p.get<int>("PixelMapMode"))
+    fPixelMapMode       (p.get<int>("PixelMapMode")),
     fTickShiftZ         (p.get<double>("TickShiftZ")),
     fTickShiftU         (p.get<double>("TickShiftU")),
     fTickShiftV         (p.get<double>("TickShiftV")),
     fInputScaleFactorsZ (p.get<std::vector<double>>("InputScaleFactorsZ")),
     fInputScaleFactorsU (p.get<std::vector<double>>("InputScaleFactorsU")),
     fInputScaleFactorsV (p.get<std::vector<double>>("InputScaleFactorsV")),
-    fOuputScaleFactorZ  (p.get<double>("OutputScaleFactorZ")),
-    fOuputScaleFactorU  (p.get<double>("OutputScaleFactorU")),
-    fOuputScaleFactorV  (p.get<double>("OutputScaleFactorV")),
+    fOutputScaleFactorZ (p.get<double>("OutputScaleFactorZ")),
+    fOutputScaleFactorU (p.get<double>("OutputScaleFactorU")),
+    fOutputScaleFactorV (p.get<double>("OutputScaleFactorV")),
+    fDoubleColZWires    (p.get<std::vector<int>>("DoubleColZWires")),
     fSavePixelMaps      (p.get<bool>("SavePixelMaps"))
 {
-  // produces<std::vector<raw::RawDigit>>("NDTranslated");
-}
+  consumes<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
 
-void extrapolation::NDToFD::produce(art::Event& e)
-{
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
-  fProj.SetDetProp(&detProp);
+  produces<std::vector<raw::RawDigit>>("NDTranslated");
 
-  geo::PlaneID pID(0, 0, 1);
-  std::cout << "hello\n";
-  std::cout << detProp.Efield() << "\n";
-  std::cout << detProp.ConvertXToTicks(100, pID) << "\n";
-  std::cout << "hi\n";
-
-  // Tests
-  { using std::cout;
-  fProj.Add(geo::Point_t(100, 100, 100), 100, 30);
-  cout << fProj.Size() << "\n";
-
-  fProj.ProjectToWires();
-  cout << fProj.Size() << " - " << fProj.GetNumInvalidProjections() << "\n";
-
-  for (int i = 0; i < fProj.Size(); i++) {
-    for (auto rID : fProj.ActiveROPIDs() ) {
-      cout << "rID = " << rID << "\n";
-      cout << "ch = " << fProj.GetChs(i)[rID] <<
-        " - tick = " << fProj.GetTicks(i)[rID] <<
-        " - fd drift = " << fProj.GetFDDrifts(i)[rID] <<
-        " - wire distance = " << fProj.GetWireDistances(i)[rID] <<
-        " - adc = " << fProj.GetAdc(i) <<
-        " - nd drift = " << fProj.GetNDDrift(i) << "\n";
-    }
-  }
-
-  fProj.Clear();
-  cout << fProj.Size() << " - " << fProj.GetNumInvalidProjections() << "\n";
-  }
-}
-
-void extrapolation::NDToFD::beginJob()
-{
-  // NOTE Maybe this should all go in the constructor instead for running over multiple files.
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+
   // Initialise projector
-  // fProj(0.0, 0.0, 0.0, &fGeom, &detProp, true);
-  fProj = Projections(0.0, 0.0, 0.0, fGeom, true);
+  if (fPixelMapMode == 1) {
+    fProj = Projections(fTickShiftZ, fTickShiftU, fTickShiftV, fGeom, true);
+  }
+  else {
+    throw std::runtime_error(std::string("PixelMapMode=") +
+      std::to_string(fPixelMapMode) + std::string(" not implemented"));
+  }
 
   // Load torchscript models
   try {
@@ -160,6 +147,168 @@ void extrapolation::NDToFD::beginJob()
     std::cerr << "error loading the model\n";
     std::cerr << err.what() << "\n";
   }
+
+  // Fill maps with fcl params
+  fTickShifts[geo::kZ] = fTickShiftZ;
+  fTickShifts[geo::kU] = fTickShiftU;
+  fTickShifts[geo::kV] = fTickShiftV;
+  fInputScaleFactors[geo::kZ] = fInputScaleFactorsZ;
+  fInputScaleFactors[geo::kU] = fInputScaleFactorsU;
+  fInputScaleFactors[geo::kV] = fInputScaleFactorsV;
+  fOutputScaleFactors[geo::kZ] = fOutputScaleFactorZ;
+  fOutputScaleFactors[geo::kU] = fOutputScaleFactorU;
+  fOutputScaleFactors[geo::kV] = fOutputScaleFactorV;
+}
+
+void extrapolation::NDToFD::produce(art::Event& e)
+{
+  fProj.Clear();
+
+  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
+  fProj.SetDetProp(&detProp);
+
+  const auto sedsNDPackets = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
+  auto digs = std::make_unique<std::vector<raw::RawDigit>>();
+
+  for (const sim::SimEnergyDeposit& sed : *sedsNDPackets) {
+    fProj.Add(sed);
+  }
+
+  fProj.ProjectToWires();
+
+  // Pixel Map mode 1 is the only one at the moment, refactor stuff into functions later
+  for (readout::ROPID rID : fProj.ActiveROPIDs()) {
+    // Construct ROPID tensor
+    torch::Tensor NDTensor = fGeom->View(rID) == geo::kZ ?
+      torch::zeros(
+        {1, 5, 480, 4492}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)) :
+      torch::zeros(
+        {1, 6, 800, 4492}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false));
+    auto NDTensorAccess = NDTensor.accessor<float, 4>();
+
+    std::map<std::pair<float, float>, std::pair<int, std::vector<int>>> pixelTriggers;
+
+    // Fill with data from projetions
+    for (ProjectionData proj : fProj.GetProjectionData(rID)) {
+      int& ch = proj.localCh;
+      int& tick = proj.tick;
+      int adc = proj.packet.adc * fInputScaleFactors[fGeom->View(rID)][0];
+      // Drift effect goes like sqrt of drift distance. Also doing weighted average by adc.
+      double NDDrift = std::sqrt(proj.packet.NDDrift) * fInputScaleFactors[fGeom->View(rID)][1] * adc;
+      double FDDrift = std::sqrt(proj.FDDrift) * fInputScaleFactors[fGeom->View(rID)][2] * adc;
+
+      NDTensorAccess[0][0][ch][tick] += adc;
+      NDTensorAccess[0][1][ch][tick] += NDDrift;
+      NDTensorAccess[0][2][ch][tick] += FDDrift;
+      NDTensorAccess[0][3][ch][tick] += fInputScaleFactors[fGeom->View(rID)][3]; // Num stacked
+
+      // Record data on pixel triggers and fill in wire distance channel
+      if (fGeom->View(rID) != geo::kZ) {
+        float z = std::round((float)proj.packet.pos.Z() * 10.0) / 10.0;
+        float y = std::round((float)proj.packet.pos.Y() * 10.0) / 10.0;
+        // std::cout << proj.packet.pos.Z() << " - " << z << "\n " << proj.packet.pos.Y() << " - " << y << "\n";
+
+        if (!pixelTriggers.count(std::make_pair(z, y))) {
+          pixelTriggers[std::make_pair(z, y)] = std::make_pair(ch, std::vector<int> { tick });
+        }
+        else {
+          pixelTriggers[std::make_pair(z, y)].second.push_back(tick);
+        }
+
+        double wireDistance = proj.wireDistance * fInputScaleFactors[fGeom->View(rID)][5] * adc;
+
+        NDTensorAccess[0][5][ch][tick] += wireDistance;
+      }
+      // Fill double pixel column channels
+      else {
+        for (int doubleColCh : fDoubleColZWires) {
+          NDTensor.index_put_({0, 4, doubleColCh, torch::indexing::Slice()},
+            fInputScaleFactors[fGeom->View(rID)][4]);
+        }
+      }
+    }
+
+    // Last step in the adc weighted average
+    for (ProjectionData proj : fProj.GetProjectionData(rID)) {
+      if (NDTensorAccess[0][0][proj.localCh][proj.tick] != 0) {
+        NDTensorAccess[0][1][proj.localCh][proj.tick] /=
+          NDTensorAccess[0][0][proj.localCh][proj.tick];
+        NDTensorAccess[0][2][proj.localCh][proj.tick] /=
+          NDTensorAccess[0][0][proj.localCh][proj.tick];
+
+        if (fGeom->View(rID) != geo::kZ) {
+          NDTensorAccess[0][5][proj.localCh][proj.tick] /=
+            NDTensorAccess[0][0][proj.localCh][proj.tick];
+        }
+      }
+    }
+
+    // Use pixel trigger data to identify first triggers and fill in tensor with first trigger data.
+    if (fGeom->View(rID) != geo::kZ) {
+      for (std::pair<std::pair<int, int>, std::pair<int, std::vector<int>>> pixelTrigger : pixelTriggers ) {
+        std::sort(pixelTrigger.second.second.begin(), pixelTrigger.second.second.end()); // Sort in place
+
+        // Identify first tiggers in self-triggering cycle
+        std::vector<int> firstTriggerTicks;
+        for (int i = 0; i < (int)pixelTrigger.second.second.size(); i++) {
+          if (i == 0 || pixelTrigger.second.second[i] - firstTriggerTicks[i - 1] > 15) {
+            firstTriggerTicks.push_back(pixelTrigger.second.second[i]);
+          }
+        }
+
+        // Fill tensor with first triggers.
+        for (int tick : firstTriggerTicks) {
+          NDTensorAccess[0][4][pixelTrigger.second.first][tick] +=
+            fInputScaleFactors[fGeom->View(rID)][4];
+        }
+      }
+    }
+
+    // Do inference
+    torch::NoGradGuard no_grad_guard;
+
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(NDTensor.to(torch::kCUDA));
+
+    torch::Tensor FDTranslatedTensor = fNetworks[fGeom->View(rID)].forward(inputs).toTensor().detach().to(torch::kCPU);
+
+    FDTranslatedTensor = FDTranslatedTensor[0][0] / fOutputScaleFactors[fGeom->View(rID)];
+    FDTranslatedTensor = FDTranslatedTensor.to(torch::kShort);
+
+    // Write out to raw digits
+    auto FDTranslatedTensorAccess = FDTranslatedTensor.accessor<short, 2>();
+    for (int i = 0; i < (int)fGeom->Nchannels(rID); i++) {
+      raw::RawDigit::ADCvector_t adcVec(4492);
+      for (int j = 0; j < 4492; j++) {
+        adcVec[j] = FDTranslatedTensorAccess[i][j];
+      }
+
+      raw::RawDigit dig((raw::ChannelID_t)i + fGeom->FirstChannelInROP(rID), adcVec.size(), adcVec);
+      dig.SetPedestal(0);
+      digs->push_back(dig);
+    }
+  }
+
+  // Fill remaining channels with zero vectors
+  std::vector<readout::ROPID> rIDsWritten = fProj.ActiveROPIDs();
+  for (readout::ROPID rID : fGeom->IterateROPIDs()) {
+    if (std::find(rIDsWritten.begin(), rIDsWritten.end(), rID) == rIDsWritten.end()) {
+      raw::ChannelID_t firstCh = fGeom->FirstChannelInROP(rID);
+      for (raw::ChannelID_t ch = firstCh; ch < firstCh + fGeom->Nchannels(rID); ch++) {
+        raw::RawDigit::ADCvector_t adcVec(4492, 0);
+
+        raw::RawDigit dig(ch, adcVec.size(), adcVec);
+        dig.SetPedestal(0);
+        digs->push_back(dig);
+      }
+    }
+  }
+
+  e.put(std::move(digs), "NDTranslated");
+}
+
+void extrapolation::NDToFD::beginJob()
+{
 }
 
 void extrapolation::NDToFD::endJob()

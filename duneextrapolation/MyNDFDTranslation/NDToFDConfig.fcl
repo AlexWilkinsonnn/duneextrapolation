@@ -4,9 +4,34 @@ NDToFD:
 {
   module_type: "NDToFD"
 
+  NDPacketsLabel: "LoadND:NDPackets"
+
   NetworkPathZ: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_tracedmodel.pt"
   NetworkPathU: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1_best_bias_mu_tracedmodel.pt"
   NetworkPathV: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2_best_bias_mu_tracedmodel.pt"
+
+  InputScaleFactorsZ: [
+    0.0011947431302270011, 0.14085904245475275, 0.05645979274839422, 0.025, 1.0
+  ]
+  InputScaleFactorsU: [
+    0.0012484394506866417, 0.14085904245475275, 0.05645979274839422, 0.022222222222222223,
+    0.022222222222222223, 4.285408185129634
+  ]
+  InputScaleFactorsV: [
+    0.0012484394506866417, 0.14085904245475275, 0.05645979274839422, 0.022222222222222223,
+    0.022222222222222223, 4.285408185129634
+  ]
+  OutputScaleFactorZ: 0.00031298904538341156
+  OutputScaleFactorU: 0.000425531914893617
+  OutputScaleFactorV: 0.000425531914893617
+
+  DoubleColZWires: [
+    0,4,7,12,15,19,23,27,31,34,38,42,46,50,54,57,61,76,80,84,88,92,95,99,103,107,111,115,118,122,
+    126,130,134,138,141,145,149,153,157,161,164,168,172,176,180,184,187,191,195,199,203,207,211,
+    214,218,222,226,230,234,237,241,245,249,253,257,260,264,268,272,287,291,295,298,302,306,310,
+    314,318,321,325,329,333,337,341,344,348,352,356,360,364,367,371,375,379,383,387,391,394,398,
+    402,406,410,414,417,421,425,429,433,437,440,444,448,452,456,460,463,467,471,475,479
+  ]
 
   // How to project the packets and make pixel maps for input to the translation.
   // 1: Project to FD wire and tick. UVZ has ch0 adc, ch1 nd drift, ch2 fd drift,
@@ -14,6 +39,13 @@ NDToFD:
   // U and V have ch4 num first triggers stacked, ch5 wire distance.
   PixelMapMode: 1
 
+  // Extra shift needed on top of the det prop calculation needed to line up with WC detsim.
+  TickShiftZ: -7.8
+  TickShiftU: -10.1
+  TickShiftV: -10.9
+
+  // Save pixel maps to TH2s to check everything is working ok
+  SavePixelMaps: false
 }
 
 END_PROLOG
