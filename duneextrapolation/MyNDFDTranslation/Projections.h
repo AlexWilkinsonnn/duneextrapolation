@@ -13,6 +13,8 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
 
+#include "duneextrapolation/MyNDFDTranslation/Types.h"
+
 #include <map>
 #include <vector>
 #include <set>
@@ -41,7 +43,7 @@ namespace extrapolation
     void Add(const sim::SimEnergyDeposit& sed);
 
     // Get number of ND packets stored
-    int Size();
+    int Size() { return fPackets.size(); }
 
     // Clear ND packets and projections
     void Clear();
@@ -50,21 +52,13 @@ namespace extrapolation
     void ProjectToWires();
 
     // Get projection information
-    std::set<readout::ROPID> ActiveROPIDs() { return fActiveROPs; }
-    std::map<readout::ROPID, int> GetChs(const int& i) { return fLocalChs[i]; }
-    std::map<readout::ROPID, int> GetTicks(const int& i) { return fTicks[i]; }
-    int GetAdc(const int& i) { return fAdcs[i]; }
-    double  GetNDDrift(const int& i) { return fNDDrifts[i]; }
-    std::map<readout::ROPID, double> GetFDDrifts(const int& i) { return fFDDrifts[i]; }
-    std::map<readout::ROPID, double> GetWireDistances(const int& i) { return fWireDistances[i]; }
+    std::vector<ProjectionData> GetProjectionData(const readout::ROPID& rID) { return fProjections[rID]; }
+    std::vector<readout::ROPID> ActiveROPIDs();
     int GetNumInvalidProjections() { return fNumInvalidProjections; }
 
   private:
     // Packet data
-    std::vector<geo::Point_t> fPositions;
-    std::vector<int>          fAdcs;
-    std::vector<double>       fNDDrifts;
-    int                       fNumPackets;
+    std::vector<PacketData> fPackets;
 
     // Projection config data
     const geo::GeometryCore*               fGeom;
@@ -74,13 +68,10 @@ namespace extrapolation
     bool                                   fCalcWireDistance;
 
     // Projection data
-    std::vector<std::map<readout::ROPID, int>>    fLocalChs;
-    std::vector<std::map<readout::ROPID, int>>    fTicks;
-    std::vector<std::map<readout::ROPID, double>> fFDDrifts;
-    std::vector<std::map<readout::ROPID, double>> fWireDistances;
-    std::set<readout::ROPID>                      fActiveROPs;
-    int                                           fNumInvalidProjections;
+    std::map<readout::ROPID, std::vector<ProjectionData>> fProjections;
+    int                                                   fNumInvalidProjections;
   };
+
 }
 
 #endif // EXTRAPOLATION_PROJECTIONS_H

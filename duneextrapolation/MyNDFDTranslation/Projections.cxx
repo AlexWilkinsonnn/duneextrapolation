@@ -11,6 +11,7 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 
 #include "duneextrapolation/MyNDFDTranslation/Projections.h"
+#include "duneextrapolation/MyNDFDTranslation/Types.h"
 
 #include <map>
 #include <vector>
@@ -21,7 +22,6 @@ extrapolation::Projections::Projections(const double& tickShiftZ, const double& 
   const bool& calcWireDistance /* = false */)
 {
   SetProjectionConfig(tickShiftZ, tickShiftU, tickShiftV, geom, calcWireDistance);
-  fNumPackets = 0;
 }
 
 void extrapolation::Projections::SetProjectionConfig(const double& tickShiftZ,
@@ -42,10 +42,7 @@ void extrapolation::Projections::SetDetProp(const detinfo::DetectorPropertiesDat
 
 void extrapolation::Projections::Add(const geo::Point_t& pos, const int& adc, const double& NDDrift)
 {
-  fPositions.push_back(pos);
-  fAdcs.push_back(adc);
-  fNDDrifts.push_back(NDDrift);
-  fNumPackets++;
+  fPackets.push_back(PacketData(pos, adc, NDDrift));
 }
 
 void extrapolation::Projections::Add(const sim::SimEnergyDeposit& sed)
@@ -53,50 +50,28 @@ void extrapolation::Projections::Add(const sim::SimEnergyDeposit& sed)
   Add(sed.Start(), sed.NumElectrons(), sed.ScintYieldRatio());
 }
 
-int extrapolation::Projections::Size()
-{
-  return fNumPackets;
-}
-
 void extrapolation::Projections::Clear()
 {
-  fPositions.clear();
-  fAdcs.clear();
-  fLocalChs.clear();
-  fTicks.clear();
-  fFDDrifts.clear();
-  fWireDistances.clear();
-  fActiveROPs.clear();
-  fNumPackets = 0;
+  fPackets.clear();
+  fProjections.clear();
 }
 
 void extrapolation::Projections::ProjectToWires()
 {
-  // Make vectors of empty maps. Any packets that fall outside drift bb for a plane will have
-  // empty map entries.
-  fLocalChs = std::vector<std::map<readout::ROPID, int>>(fNumPackets);
-  fTicks = std::vector<std::map<readout::ROPID, int>>(fNumPackets);
-  fFDDrifts = std::vector<std::map<readout::ROPID, double>>(fNumPackets);
-  if (fCalcWireDistance) {
-    fWireDistances = std::vector<std::map<readout::ROPID, double>>(fNumPackets);
-  }
-
-  for (int i = 0; i < fNumPackets; i++) {
-    const geo::Point_t& packetPos = fPositions[i];
-
+  for (PacketData& packet : fPackets) {
     // Check if packet falls outside of WC bb X range. In this case WC wouldnt drift the charge
     // so we wont either for now. Doing this here since it does not depend on plane.
     // TODO Make these number configurable.
     // TODO Confirm these numbers, ~600 too high, the drift is ~[-360, 360].
     // Should only have to worry about the lower bound if xShift is correct since FD is wider than
     // ND.
-    if (std::abs(packetPos.X()) < 5.239) { //|| std::abs(packetPos.X()) > 600.019) {
+    if (std::abs(packet.pos.X()) < 5.239) { //|| std::abs(packet.pos.X()) > 600.019) {
       fNumInvalidProjections += 3;
       continue;
     }
 
     // Find the 3 wire planes and associated readout planes that the packet will be projected onto
-    const geo::TPCID tID = fGeom->PositionToTPCID(packetPos);
+    const geo::TPCID tID = fGeom->PositionToTPCID(packet.pos);
     std::vector<geo::PlaneID> pIDs;
     std::vector<readout::ROPID> rIDs;
 
@@ -121,42 +96,52 @@ void extrapolation::Projections::ProjectToWires()
       const geo::BoxBoundedGeo pGeoBox = pGeo.BoundingBox();
 
       // This should never happen since ND shorter than FD but good to check
-      if (!pGeoBox.ContainsY(packetPos.Y())) {
+      if (!pGeoBox.ContainsY(packet.pos.Y())) {
         fNumInvalidProjections++;
         continue;
       }
       // This is how WC does it
-      if (packetPos.Z() < (pGeoBox.MinZ() - (pGeo.WirePitch()/2))
-           || packetPos.Z() > (pGeoBox.MaxZ() + (pGeo.WirePitch()/2))) {
+      if (packet.pos.Z() < (pGeoBox.MinZ() - (pGeo.WirePitch()/2))
+           || packet.pos.Z() > (pGeoBox.MaxZ() + (pGeo.WirePitch()/2))) {
         fNumInvalidProjections++;
         continue;
       }
 
-      // ROP is active if we made it this far
-      fActiveROPs.insert(rID);
+      ProjectionData projData(packet);
 
       // Local channel wrt first channel in ROP ie. column in pixel map
-      int ch = (int)(fGeom->NearestChannel(packetPos, pID) - fGeom->FirstChannelInROP(rID));
-      fLocalChs[i][rID] = ch;
+      int ch = (int)(fGeom->NearestChannel(packet.pos, pID) - fGeom->FirstChannelInROP(rID));
+      projData.localCh = ch;
 
       // Tick ie. row in pixel map
-      std::cout << packetPos.X() << "\n";
-      double tickRaw = fDetProp->ConvertXToTicks(packetPos.X(), pID);
-      std::cout << tickRaw << "\n";
+      double tickRaw = fDetProp->ConvertXToTicks(packet.pos.X(), pID);
       tickRaw += fTickShifts[fGeom->View(rID)];
       int tick = (int)tickRaw;
-      fTicks[i][rID] = tick;
+      projData.tick = tick;
 
       // FD drift distance
-      double FDDrift = pGeo.DistanceFromPlane(packetPos);
-      fFDDrifts[i][rID] = FDDrift;
+      double FDDrift = pGeo.DistanceFromPlane(packet.pos);
+      projData.FDDrift = FDDrift;
 
       if (fCalcWireDistance) {
-        double wireCoord = pGeo.WireCoordinate(packetPos);
+        double wireCoord = pGeo.WireCoordinate(packet.pos);
         double wireDistance = (wireCoord - (double)(int)(0.5 + wireCoord)) * pGeo.WirePitch();
-        fWireDistances[i][rID] = wireDistance;
+        projData.wireDistance = wireDistance;
       }
+
+      fProjections[rID].push_back(projData);
     } // for (int j = 0; j < 3; j++)
-  } // for (int i = 0; i < fNumPackets; i++)
+  } // for (PacketData& packet : fPackets) 
+}
+
+std::vector<readout::ROPID> extrapolation::Projections::ActiveROPIDs()
+{
+  std::vector<readout::ROPID> rIDs;
+
+  for (std::pair<readout::ROPID, std::vector<ProjectionData>> proj : fProjections) {
+    rIDs.push_back(proj.first);
+  }
+
+  return rIDs;
 }
 
