@@ -69,10 +69,21 @@ private:
 
 extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNetworkPathZ (p.get<std::string>("NetworkPathZ")),
-    fNetworkPathU (p.get<std::string>("NetworkPathU")),
-    fNetworkPathV (p.get<std::string>("NetworkPathV")),
-    fPixelMapMode (p.get<int>("PixelMapMode"))
+    fNDPacketsLabel     (p.get<std::string>("NDPacketsLabel")),
+    fNetworkPathZ       (p.get<std::string>("NetworkPathZ")),
+    fNetworkPathU       (p.get<std::string>("NetworkPathU")),
+    fNetworkPathV       (p.get<std::string>("NetworkPathV")),
+    fPixelMapMode       (p.get<int>("PixelMapMode"))
+    fTickShiftZ         (p.get<double>("TickShiftZ")),
+    fTickShiftU         (p.get<double>("TickShiftU")),
+    fTickShiftV         (p.get<double>("TickShiftV")),
+    fInputScaleFactorsZ (p.get<std::vector<double>>("InputScaleFactorsZ")),
+    fInputScaleFactorsU (p.get<std::vector<double>>("InputScaleFactorsU")),
+    fInputScaleFactorsV (p.get<std::vector<double>>("InputScaleFactorsV")),
+    fOuputScaleFactorZ  (p.get<double>("OutputScaleFactorZ")),
+    fOuputScaleFactorU  (p.get<double>("OutputScaleFactorU")),
+    fOuputScaleFactorV  (p.get<double>("OutputScaleFactorV")),
+    fSavePixelMaps      (p.get<bool>("SavePixelMaps"))
 {
   // produces<std::vector<raw::RawDigit>>("NDTranslated");
 }
