@@ -13,6 +13,7 @@
 namespace extrapolation
 {
 
+  // Structs
   struct PacketData
   {
     PacketData(geo::Point_t _pos, int _adc, double _NDDrift)
@@ -40,6 +41,14 @@ namespace extrapolation
     int          tick;
     int          FDDrift;
     double       wireDistance;
+  };
+
+  // enums
+  enum ChannelType
+  {
+    kFirstTriggers,
+    kWireDistance,
+    kDoubleColZWires
   };
 
 }

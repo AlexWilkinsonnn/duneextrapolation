@@ -26,7 +26,7 @@ namespace extrapolation
   class Projections
   {
   public:
-    Projections() { fNumPackets = 0; };
+    Projections() { };
     // Constructor that sets projection config
     Projections(const double& tickShiftZ, const double& tickShiftU, const double& tickShiftV,
        const geo::GeometryCore* geom, const bool& calcWireDistance = false);

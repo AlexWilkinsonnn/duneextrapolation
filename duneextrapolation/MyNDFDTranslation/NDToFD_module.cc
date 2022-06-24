@@ -26,6 +26,11 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
+// All ROOT stuff needs to go after torch stuff because of some macro ROOT claims that torch wants to use,
+#include "TH2D.h"
+#include "art_root_io/TFileService.h"
+#include "art_root_io/TFileDirectory.h"
+
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
@@ -57,12 +62,17 @@ public:
   void endJob() override;
 
 private:
+  void fillNDTensor(torch::Tensor& NDTensor, readout::ROPID rID);
+  void writeToTH2(torch::Tensor& tensor, std::string name);
+
   const geo::GeometryCore* fGeom;
 
   std::map<geo::View_t, torch::jit::script::Module> fNetworks;
   std::map<geo::View_t, double>                     fTickShifts;
   std::map<geo::View_t, std::vector<double>>        fInputScaleFactors;
   std::map<geo::View_t, double>                     fOutputScaleFactors;
+  std::map<geo::View_t, std::map<ChannelType, int>> fExtraChannels;
+
 
   Projections fProj;
 
@@ -113,6 +123,9 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
   // Initialise projector
   if (fPixelMapMode == 1) {
     fProj = Projections(fTickShiftZ, fTickShiftU, fTickShiftV, fGeom, true);
+    fExtraChannels[geo::kZ] = { { kDoubleColZWires, 4 } };
+    fExtraChannels[geo::kU] = { { kFirstTriggers, 4 }, { kWireDistance, 5 } };
+    fExtraChannels[geo::kV] = { { kFirstTriggers, 4 }, { kWireDistance, 5 } };
   }
   else {
     throw std::runtime_error(std::string("PixelMapMode=") +
@@ -162,131 +175,93 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
 
 void extrapolation::NDToFD::produce(art::Event& e)
 {
+  auto digs = std::make_unique<std::vector<raw::RawDigit>>();
+
   fProj.Clear();
 
   auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
   fProj.SetDetProp(&detProp);
 
   const auto sedsNDPackets = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
-  auto digs = std::make_unique<std::vector<raw::RawDigit>>();
-
   for (const sim::SimEnergyDeposit& sed : *sedsNDPackets) {
     fProj.Add(sed);
   }
 
   fProj.ProjectToWires();
 
-  // Pixel Map mode 1 is the only one at the moment, refactor stuff into functions later
   for (readout::ROPID rID : fProj.ActiveROPIDs()) {
-    // Construct ROPID tensor
-    torch::Tensor NDTensor = fGeom->View(rID) == geo::kZ ?
-      torch::zeros(
-        {1, 5, 480, 4492}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false)) :
-      torch::zeros(
-        {1, 6, 800, 4492}, torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false));
-    auto NDTensorAccess = NDTensor.accessor<float, 4>();
+    int depth = 4 + fExtraChannels[fGeom->View(rID)].size();
 
-    std::map<std::pair<float, float>, std::pair<int, std::vector<int>>> pixelTriggers;
+    torch::Tensor NDInput = torch::zeros({1, depth, fGeom->Nchannels(rID), 4492},
+      torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false));
 
-    // Fill with data from projetions
-    for (ProjectionData proj : fProj.GetProjectionData(rID)) {
-      int& ch = proj.localCh;
-      int& tick = proj.tick;
-      int adc = proj.packet.adc * fInputScaleFactors[fGeom->View(rID)][0];
-      // Drift effect goes like sqrt of drift distance. Also doing weighted average by adc.
-      double NDDrift = std::sqrt(proj.packet.NDDrift) * fInputScaleFactors[fGeom->View(rID)][1] * adc;
-      double FDDrift = std::sqrt(proj.FDDrift) * fInputScaleFactors[fGeom->View(rID)][2] * adc;
-
-      NDTensorAccess[0][0][ch][tick] += adc;
-      NDTensorAccess[0][1][ch][tick] += NDDrift;
-      NDTensorAccess[0][2][ch][tick] += FDDrift;
-      NDTensorAccess[0][3][ch][tick] += fInputScaleFactors[fGeom->View(rID)][3]; // Num stacked
-
-      // Record data on pixel triggers and fill in wire distance channel
-      if (fGeom->View(rID) != geo::kZ) {
-        float z = std::round((float)proj.packet.pos.Z() * 10.0) / 10.0;
-        float y = std::round((float)proj.packet.pos.Y() * 10.0) / 10.0;
-        // std::cout << proj.packet.pos.Z() << " - " << z << "\n " << proj.packet.pos.Y() << " - " << y << "\n";
-
-        if (!pixelTriggers.count(std::make_pair(z, y))) {
-          pixelTriggers[std::make_pair(z, y)] = std::make_pair(ch, std::vector<int> { tick });
-        }
-        else {
-          pixelTriggers[std::make_pair(z, y)].second.push_back(tick);
-        }
-
-        double wireDistance = proj.wireDistance * fInputScaleFactors[fGeom->View(rID)][5] * adc;
-
-        NDTensorAccess[0][5][ch][tick] += wireDistance;
-      }
-      // Fill double pixel column channels
-      else {
-        for (int doubleColCh : fDoubleColZWires) {
-          NDTensor.index_put_({0, 4, doubleColCh, torch::indexing::Slice()},
-            fInputScaleFactors[fGeom->View(rID)][4]);
-        }
-      }
-    }
-
-    // Last step in the adc weighted average
-    for (ProjectionData proj : fProj.GetProjectionData(rID)) {
-      if (NDTensorAccess[0][0][proj.localCh][proj.tick] != 0) {
-        NDTensorAccess[0][1][proj.localCh][proj.tick] /=
-          NDTensorAccess[0][0][proj.localCh][proj.tick];
-        NDTensorAccess[0][2][proj.localCh][proj.tick] /=
-          NDTensorAccess[0][0][proj.localCh][proj.tick];
-
-        if (fGeom->View(rID) != geo::kZ) {
-          NDTensorAccess[0][5][proj.localCh][proj.tick] /=
-            NDTensorAccess[0][0][proj.localCh][proj.tick];
-        }
-      }
-    }
-
-    // Use pixel trigger data to identify first triggers and fill in tensor with first trigger data.
-    if (fGeom->View(rID) != geo::kZ) {
-      for (std::pair<std::pair<int, int>, std::pair<int, std::vector<int>>> pixelTrigger : pixelTriggers ) {
-        std::sort(pixelTrigger.second.second.begin(), pixelTrigger.second.second.end()); // Sort in place
-
-        // Identify first tiggers in self-triggering cycle
-        std::vector<int> firstTriggerTicks;
-        for (int i = 0; i < (int)pixelTrigger.second.second.size(); i++) {
-          if (i == 0 || pixelTrigger.second.second[i] - firstTriggerTicks[i - 1] > 15) {
-            firstTriggerTicks.push_back(pixelTrigger.second.second[i]);
-          }
-        }
-
-        // Fill tensor with first triggers.
-        for (int tick : firstTriggerTicks) {
-          NDTensorAccess[0][4][pixelTrigger.second.first][tick] +=
-            fInputScaleFactors[fGeom->View(rID)][4];
-        }
-      }
-    }
+    fillNDTensor(NDInput, rID);
 
     // Do inference
     torch::NoGradGuard no_grad_guard;
 
     std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(NDTensor.to(torch::kCUDA));
+    inputs.push_back(NDInput.to(torch::kCUDA));
 
-    torch::Tensor FDTranslatedTensor = fNetworks[fGeom->View(rID)].forward(inputs).toTensor().detach().to(torch::kCPU);
+    torch::Tensor FDOutput = fNetworks[fGeom->View(rID)].forward(inputs).toTensor().detach().to(torch::kCPU);
 
-    FDTranslatedTensor = FDTranslatedTensor[0][0] / fOutputScaleFactors[fGeom->View(rID)];
-    FDTranslatedTensor = FDTranslatedTensor.to(torch::kShort);
+    FDOutput = FDOutput[0][0] / fOutputScaleFactors[fGeom->View(rID)];
+    FDOutput = FDOutput.to(torch::kShort);
 
     // Write out to raw digits
-    auto FDTranslatedTensorAccess = FDTranslatedTensor.accessor<short, 2>();
+    auto FDOutputAccess = FDOutput.accessor<short, 2>();
     for (int i = 0; i < (int)fGeom->Nchannels(rID); i++) {
       raw::RawDigit::ADCvector_t adcVec(4492);
       for (int j = 0; j < 4492; j++) {
-        adcVec[j] = FDTranslatedTensorAccess[i][j];
+        adcVec[j] = FDOutputAccess[i][j];
       }
 
       raw::RawDigit dig((raw::ChannelID_t)i + fGeom->FirstChannelInROP(rID), adcVec.size(), adcVec);
       dig.SetPedestal(0);
       digs->push_back(dig);
     }
+
+    // if (fSavePixelMaps) {
+    //   art::ServiceHandle<art::TFileService> tfs;
+
+    //   int nChs = NDInput.sizes()[2];
+    //   for (int iDepth = 0; iDepth < NDInput.sizes()[1]; iDepth++) {
+    //     std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_view" +
+    //       std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event()) + "_ch" +
+    //       std::to_string(iDepth);
+
+    //     TH2D* hND = new TH2D(NDName.c_str(), NDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+
+    //     for(int iCh = 0; iCh < nChs; iCh++) {
+    //       for (int iTick = 0; iTick < 4492; iTick++) {
+    //         hND->SetBinContent(iCh + 1, iTick + 1, NDInputAccess[0][iDepth][iCh][iTick]);
+    //       }
+    //     }
+
+    //     TH2D* hNDWrite = tfs->make<TH2D>(*hND);
+    //     hNDWrite->Write();
+
+    //     delete hND;
+    //     delete hNDWrite;
+    //   }
+
+    //   std::string FDName = "pm_fd_rop" + std::to_string(rID.ROP) + "_view" +
+    //     std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event());
+
+    //   TH2D* hFD = new TH2D(FDName.c_str(), FDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+
+    //   for(int iCh = 0; iCh < nChs; iCh++) {
+    //     for (int iTick = 0; iTick < 4492; iTick++) {
+    //       hFD->SetBinContent(iCh + 1, iTick + 1, FDOutputAccess[iCh][iTick]);
+    //     }
+    //   }
+
+      // TH2D* hFDWrite = tfs->make<TH2D>(*hFD);
+      // hFDWrite->Write();
+
+      // delete hFD;
+      // delete hFDWrite;
+    // }
   }
 
   // Fill remaining channels with zero vectors
@@ -304,6 +279,7 @@ void extrapolation::NDToFD::produce(art::Event& e)
     }
   }
 
+
   e.put(std::move(digs), "NDTranslated");
 }
 
@@ -314,6 +290,136 @@ void extrapolation::NDToFD::beginJob()
 void extrapolation::NDToFD::endJob()
 {
 }
+
+// Fill tensor with the default adc, drifts, stacked then request extra channels using a map of
+// channel number to type of channel.
+void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID rID)
+{
+  std::map<std::pair<float, float>, std::pair<int, std::vector<int>>> pixelTriggers;
+  const geo::View_t view = fGeom->View(rID);
+  std::map<ChannelType, int> extraChannels = fExtraChannels[view];
+
+  auto NDTensorAccess = NDTensor.accessor<float, 4>();
+
+  for (ProjectionData proj : fProj.GetProjectionData(rID)) {
+    int ch = proj.localCh; int tick = proj.tick;
+    double adc = (double)proj.packet.adc * fInputScaleFactors[view][0];
+    // Drift effect goes like sqrt of drift distance. Also doing weighted average by adc.
+    double NDDrift = std::sqrt(proj.packet.NDDrift) * fInputScaleFactors[view][1] * adc;
+    double FDDrift = std::sqrt(proj.FDDrift) * fInputScaleFactors[view][2] * adc;
+
+    // Channels common to all ND tensors
+    NDTensorAccess[0][0][ch][tick] += adc;
+    NDTensorAccess[0][1][ch][tick] += NDDrift;
+    NDTensorAccess[0][2][ch][tick] += FDDrift;
+    NDTensorAccess[0][3][ch][tick] += fInputScaleFactors[view][3]; // Num stacked
+
+    if (extraChannels.count(kFirstTriggers)) {
+      float z = std::round((float)proj.packet.pos.Z() * 10.0) / 10.0;
+      float y = std::round((float)proj.packet.pos.Y() * 10.0) / 10.0;
+
+      if (!pixelTriggers.count(std::make_pair(z, y))) {
+        pixelTriggers[std::make_pair(z, y)] = std::make_pair(ch, std::vector<int> { tick });
+      }
+      else {
+        pixelTriggers[std::make_pair(z, y)].second.push_back(tick);
+      }
+    }
+
+    if (extraChannels.count(kWireDistance)) {
+      double wireDistance = proj.wireDistance *
+        fInputScaleFactors[view][extraChannels[kWireDistance]] * adc;
+
+      NDTensorAccess[0][extraChannels[kWireDistance]][ch][tick] += wireDistance;
+    }
+
+    if (extraChannels.count(kDoubleColZWires)) {
+      for (int doubleColCh : fDoubleColZWires) {
+        NDTensor.index_put_({0, 4, doubleColCh, torch::indexing::Slice()},
+          fInputScaleFactors[view][extraChannels[kDoubleColZWires]]);
+      }
+    }
+  }
+
+  // Last step in the adc weighted average
+  for (ProjectionData proj : fProj.GetProjectionData(rID)) {
+    int ch = proj.localCh; int tick = proj.tick;
+
+    if (NDTensorAccess[0][0][ch][tick] != 0) {
+      NDTensorAccess[0][1][ch][tick] /=
+        NDTensorAccess[0][0][ch][tick];
+      NDTensorAccess[0][2][ch][tick] /=
+        NDTensorAccess[0][0][ch][tick];
+
+      if (extraChannels.count(kWireDistance)) {
+        NDTensorAccess[0][extraChannels[kWireDistance]][ch][tick] /=
+          NDTensorAccess[0][0][ch][tick];
+      }
+    }
+  }
+
+  if (extraChannels.count(kFirstTriggers)) {
+    for (std::pair<std::pair<int, int>, std::pair<int, std::vector<int>>> pixelTrigger : pixelTriggers ) {
+      std::sort(pixelTrigger.second.second.begin(), pixelTrigger.second.second.end()); // Sort in place
+
+      // Identify first tiggers in self-triggering cycle
+      std::vector<int> firstTriggerTicks;
+      for (int i = 0; i < (int)pixelTrigger.second.second.size(); i++) {
+        if (i == 0 || pixelTrigger.second.second[i] - firstTriggerTicks[i - 1] > 15) {
+          firstTriggerTicks.push_back(pixelTrigger.second.second[i]);
+        }
+      }
+
+      // Fill tensor with first triggers.
+      for (int tick : firstTriggerTicks) {
+        NDTensorAccess[0][extraChannels[kFirstTriggers]][pixelTrigger.second.first][tick] +=
+          fInputScaleFactors[view][extraChannels[kFirstTriggers]];
+      }
+    }
+  }
+}
+
+void writeToTH2(torch::Tensor& tensor, std::string name)
+{
+  art::ServiceHandle<art::TFileService> tfs;
+
+  int nChs = tensor.sizes()[2];
+    //   for (int iDepth = 0; iDepth < NDInput.sizes()[1]; iDepth++) {
+    //     std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_view" +
+    //       std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event()) + "_ch" +
+    //       std::to_string(iDepth);
+
+    //     TH2D* hND = new TH2D(NDName.c_str(), NDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+
+    //     for(int iCh = 0; iCh < nChs; iCh++) {
+    //       for (int iTick = 0; iTick < 4492; iTick++) {
+    //         hND->SetBinContent(iCh + 1, iTick + 1, NDInputAccess[0][iDepth][iCh][iTick]);
+    //       }
+    //     }
+
+    //     TH2D* hNDWrite = tfs->make<TH2D>(*hND);
+    //     hNDWrite->Write();
+
+    //     delete hND;
+    //     delete hNDWrite;
+    //   }
+
+    //   std::string FDName = "pm_fd_rop" + std::to_string(rID.ROP) + "_view" +
+    //     std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event());
+
+    //   TH2D* hFD = new TH2D(FDName.c_str(), FDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+
+    //   for(int iCh = 0; iCh < nChs; iCh++) {
+    //     for (int iTick = 0; iTick < 4492; iTick++) {
+    //       hFD->SetBinContent(iCh + 1, iTick + 1, FDOutputAccess[iCh][iTick]);
+    //     }
+    //   }
+
+      // TH2D* hFDWrite = tfs->make<TH2D>(*hFD);
+      // hFDWrite->Write();
+
+      // delete hFD;
+      // delete hFDWrite;
 
 DEFINE_ART_MODULE(extrapolation::NDToFD)
 
