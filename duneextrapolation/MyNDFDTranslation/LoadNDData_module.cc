@@ -86,8 +86,9 @@ extrapolation::LoadNDData::LoadNDData(fhicl::ParameterSet const& p)
   produces<std::vector<sim::SimEnergyDeposit>>("NDPackets");
   produces<std::vector<sim::SimEnergyDeposit>>("EventID");
 
+  // Hard to configure WC detsim will just ensure the true depos get input tag "IonAndScint::"
   if (fLoadTrueDepos) {
-    produces<std::vector<sim::SimEnergyDeposit>>("NDDepos");
+    produces<std::vector<sim::SimEnergyDeposit>>();
   }
 }
 
@@ -122,7 +123,7 @@ void extrapolation::LoadNDData::produce(art::Event& e)
         NDDepos->push_back(NDDepo);
       }
 
-      e.put(std::move(NDDepos), "NDDepos");
+      e.put(std::move(NDDepos));
     }
 
     // SED that stores an ID for this event.

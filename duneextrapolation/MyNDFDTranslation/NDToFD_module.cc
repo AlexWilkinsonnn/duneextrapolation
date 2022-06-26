@@ -26,7 +26,7 @@
 #include <torch/torch.h>
 #include <torch/script.h>
 
-// All ROOT stuff needs to go after torch stuff because of some macro ROOT claims that torch wants to use,
+// All ROOT stuff needs to go after torch stuff because of the ClassDef macro ROOT defines.
 #include "TH2D.h"
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
@@ -63,7 +63,8 @@ public:
 
 private:
   void fillNDTensor(torch::Tensor& NDTensor, readout::ROPID rID);
-  void writeToTH2(torch::Tensor& tensor, std::string name);
+  void writeTensorToTH2(torch::Tensor tensor, std::string name);
+  void writeDigitsToTH2(art::Event& e, std::vector<readout::ROPID> rIDs);
 
   const geo::GeometryCore* fGeom;
 
@@ -72,7 +73,6 @@ private:
   std::map<geo::View_t, std::vector<double>>        fInputScaleFactors;
   std::map<geo::View_t, double>                     fOutputScaleFactors;
   std::map<geo::View_t, std::map<ChannelType, int>> fExtraChannels;
-
 
   Projections fProj;
 
@@ -93,6 +93,8 @@ private:
   double              fOutputScaleFactorV;
   std::vector<int>    fDoubleColZWires;
   bool                fSavePixelMaps;
+  bool                fSaveTrueDigits;
+  std::string         fTrueDigitsLabel;
 };
 
 extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
@@ -112,9 +114,14 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
     fOutputScaleFactorU (p.get<double>("OutputScaleFactorU")),
     fOutputScaleFactorV (p.get<double>("OutputScaleFactorV")),
     fDoubleColZWires    (p.get<std::vector<int>>("DoubleColZWires")),
-    fSavePixelMaps      (p.get<bool>("SavePixelMaps"))
+    fSavePixelMaps      (p.get<bool>("SavePixelMaps")),
+    fSaveTrueDigits     (p.get<bool>("SaveTrueDigits")),
+    fTrueDigitsLabel    (p.get<std::string>("TrueDigitsLabel"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
+  if (fSaveTrueDigits) {
+    consumes<std::vector<raw::RawDigit>>(fTrueDigitsLabel);
+  }
 
   produces<std::vector<raw::RawDigit>>("NDTranslated");
 
@@ -195,6 +202,7 @@ void extrapolation::NDToFD::produce(art::Event& e)
     torch::Tensor NDInput = torch::zeros({1, depth, fGeom->Nchannels(rID), 4492},
       torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false));
 
+    // Fill ND tensor with projection information
     fillNDTensor(NDInput, rID);
 
     // Do inference
@@ -221,47 +229,23 @@ void extrapolation::NDToFD::produce(art::Event& e)
       digs->push_back(dig);
     }
 
-    // if (fSavePixelMaps) {
-    //   art::ServiceHandle<art::TFileService> tfs;
+    if (fSavePixelMaps) {
+      std::string FDName = "pm_fd_rop" + std::to_string(rID.ROP) + "_tpcset" +
+        std::to_string(rID.TPCset) + "_view" + std::to_string(fGeom->View(rID)) + "_e" +
+        std::to_string(e.event());
+      writeTensorToTH2(FDOutput.to(torch::kFloat), FDName);
 
-    //   int nChs = NDInput.sizes()[2];
-    //   for (int iDepth = 0; iDepth < NDInput.sizes()[1]; iDepth++) {
-    //     std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_view" +
-    //       std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event()) + "_ch" +
-    //       std::to_string(iDepth);
+      for (int iDepth = 0; iDepth < NDInput.sizes()[1]; iDepth++) {
+        std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_tpcset" +
+          std::to_string(rID.TPCset) + "_view" + std::to_string(fGeom->View(rID)) + "_e" +
+          std::to_string(e.event()) + "_ch" + std::to_string(iDepth);
+        writeTensorToTH2(NDInput[0][iDepth], NDName);
+      }
+    }
+  } // for (readout::ROPID rID : fProj.ActiveROPIDs())
 
-    //     TH2D* hND = new TH2D(NDName.c_str(), NDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
-
-    //     for(int iCh = 0; iCh < nChs; iCh++) {
-    //       for (int iTick = 0; iTick < 4492; iTick++) {
-    //         hND->SetBinContent(iCh + 1, iTick + 1, NDInputAccess[0][iDepth][iCh][iTick]);
-    //       }
-    //     }
-
-    //     TH2D* hNDWrite = tfs->make<TH2D>(*hND);
-    //     hNDWrite->Write();
-
-    //     delete hND;
-    //     delete hNDWrite;
-    //   }
-
-    //   std::string FDName = "pm_fd_rop" + std::to_string(rID.ROP) + "_view" +
-    //     std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event());
-
-    //   TH2D* hFD = new TH2D(FDName.c_str(), FDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
-
-    //   for(int iCh = 0; iCh < nChs; iCh++) {
-    //     for (int iTick = 0; iTick < 4492; iTick++) {
-    //       hFD->SetBinContent(iCh + 1, iTick + 1, FDOutputAccess[iCh][iTick]);
-    //     }
-    //   }
-
-      // TH2D* hFDWrite = tfs->make<TH2D>(*hFD);
-      // hFDWrite->Write();
-
-      // delete hFD;
-      // delete hFDWrite;
-    // }
+  if (fSaveTrueDigits) {
+    writeDigitsToTH2(e, fProj.ActiveROPIDs());
   }
 
   // Fill remaining channels with zero vectors
@@ -278,7 +262,6 @@ void extrapolation::NDToFD::produce(art::Event& e)
       }
     }
   }
-
 
   e.put(std::move(digs), "NDTranslated");
 }
@@ -379,47 +362,62 @@ void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID
   }
 }
 
-void writeToTH2(torch::Tensor& tensor, std::string name)
+void extrapolation::NDToFD::writeTensorToTH2(torch::Tensor tensor, std::string name)
 {
   art::ServiceHandle<art::TFileService> tfs;
+  auto tensorAccess = tensor.accessor<float, 2>();
 
-  int nChs = tensor.sizes()[2];
-    //   for (int iDepth = 0; iDepth < NDInput.sizes()[1]; iDepth++) {
-    //     std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_view" +
-    //       std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event()) + "_ch" +
-    //       std::to_string(iDepth);
+  int nChs = tensor.sizes()[0];
 
-    //     TH2D* hND = new TH2D(NDName.c_str(), NDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+  TH2D* h = tfs->make<TH2D>(name.c_str(), name.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
 
-    //     for(int iCh = 0; iCh < nChs; iCh++) {
-    //       for (int iTick = 0; iTick < 4492; iTick++) {
-    //         hND->SetBinContent(iCh + 1, iTick + 1, NDInputAccess[0][iDepth][iCh][iTick]);
-    //       }
-    //     }
+  for(int iCh = 0; iCh < nChs; iCh++) {
+    for (int iTick = 0; iTick < 4492; iTick++) {
+      h->SetBinContent(iCh + 1, iTick + 1, tensorAccess[iCh][iTick]);
+    }
+  }
 
-    //     TH2D* hNDWrite = tfs->make<TH2D>(*hND);
-    //     hNDWrite->Write();
+  h->Write();
 
-    //     delete hND;
-    //     delete hNDWrite;
-    //   }
+  delete h;
+}
 
-    //   std::string FDName = "pm_fd_rop" + std::to_string(rID.ROP) + "_view" +
-    //     std::to_string(fGeom->View(rID)) + "_e" + std::to_string(e.event());
+void extrapolation::NDToFD::writeDigitsToTH2(art::Event& e, std::vector<readout::ROPID> rIDs)
+{
+  art::ServiceHandle<art::TFileService> tfs;
+  const auto digs = e.getValidHandle<std::vector<raw::RawDigit>>(fTrueDigitsLabel);
 
-    //   TH2D* hFD = new TH2D(FDName.c_str(), FDName.c_str(), nChs, 0, nChs, 4492, 0 , 4492);
+  std::map<readout::ROPID, TH2D*> hs;
+  for (readout::ROPID rID : rIDs) {
+    std::string name = "pm_fdtrue_rop" + std::to_string(rID.ROP) + "_tpcset" +
+      std::to_string(rID.TPCset) + "_view" + std::to_string(fGeom->View(rID)) + "_e" +
+      std::to_string(e.event());
+    hs[rID] = tfs->make<TH2D>(name.c_str(), name.c_str(), fGeom->Nchannels(rID), 0,
+      fGeom->Nchannels(rID), 4492, 0, 4492);
+  }
 
-    //   for(int iCh = 0; iCh < nChs; iCh++) {
-    //     for (int iTick = 0; iTick < 4492; iTick++) {
-    //       hFD->SetBinContent(iCh + 1, iTick + 1, FDOutputAccess[iCh][iTick]);
-    //     }
-    //   }
+  for (raw::RawDigit dig : *digs) {
+    readout::ROPID rID = fGeom->ChannelToROP(dig.Channel());
 
-      // TH2D* hFDWrite = tfs->make<TH2D>(*hFD);
-      // hFDWrite->Write();
+    if (hs.count(rID)) {
+      raw::RawDigit::ADCvector_t adcs(dig.Samples());
+      raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
-      // delete hFD;
-      // delete hFDWrite;
+      // WC might still have a 6000 tick readout window but just ignoring everything after
+      // 4492
+      for (int iTick = 0; iTick < 4492; iTick++) {
+        const short adc = adcs[iTick] ? short(adcs[iTick]) - dig.GetPedestal() : 0;
+
+        hs[rID]->SetBinContent(dig.Channel() - fGeom->FirstChannelInROP(rID) + 1, iTick + 1, adc);
+      }
+    }
+  }
+
+  for (auto pair : hs) {
+    pair.second->Write();
+    delete pair.second;
+  }
+}
 
 DEFINE_ART_MODULE(extrapolation::NDToFD)
 

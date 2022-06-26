@@ -4,7 +4,7 @@ NDToFD:
 {
   module_type: "NDToFD"
 
-  NDPacketsLabel: "LoadND:NDPackets"
+  NDPacketsLabel: "IonAndScint:NDPackets"
 
   NetworkPathZ: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_tracedmodel.pt"
   NetworkPathU: "/wclustre/dune/awilkins/extrapolation/tscripts/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1_best_bias_mu_tracedmodel.pt"
@@ -44,8 +44,11 @@ NDToFD:
   TickShiftU: -10.1
   TickShiftV: -10.9
 
-  // Save pixel maps to TH2s to check everything is working ok
-  SavePixelMaps: false
+  // Save input and output pixel maps to TH2s to check everything is working ok
+  SavePixelMaps:  false
+  // Save true FD raw digits to TH2s, label needed if true
+  SaveTrueDigits:  false
+  TrueDigitsLabel: "tpcrawdecoder:daq"
 }
 
 END_PROLOG

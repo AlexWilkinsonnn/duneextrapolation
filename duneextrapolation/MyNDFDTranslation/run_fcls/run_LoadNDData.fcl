@@ -25,7 +25,7 @@ outputs:
   out1:
   {
     module_type:      RootOutput
-    fileName:	        "ND_gen_g4_detsim_translated.root"
+    fileName:	        "ND_gen_g4_detsim_tolarsoft.root"
     dataTier:         "simulated"
     compressionLevel: 1
   }
@@ -35,10 +35,11 @@ physics:
 {
   producers:
   {
-    LoadND: @local::LoadNDData
-    rns:    { module_type: "RandomNumberSaver" }
+    // cant find WC detsim config for SED input tag so just use the one it expects (IonAndScint)
+    IonAndScint: @local::LoadNDData
+    rns:         { module_type: "RandomNumberSaver" }
   }
-  simulate:      [ rns, LoadND ]
+  simulate:      [ rns, IonAndScint ]
   stream1:       [ out1 ]
   trigger_paths: [simulate]
   end_paths:     [stream1]
@@ -49,7 +50,7 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.producers.LoadND.NDDataLoc:     "/wclustre/dune/awilkins/extrapolation/output_1-8_radi_vtxcuts_noped_depospackets.root"
-physics.producers.LoadND.LoadTrueDepos: true
+physics.producers.IonAndScint.NDDataLoc:     "/wclustre/dune/awilkins/extrapolation/output_1-8_radi_vtxcuts_noped_depospackets.root"
+physics.producers.IonAndScint.LoadTrueDepos: true
 
 
