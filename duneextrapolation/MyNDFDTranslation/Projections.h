@@ -52,7 +52,10 @@ namespace extrapolation
     void ProjectToWires();
 
     // Get projection information
-    std::vector<ProjectionData> GetProjectionData(const readout::ROPID& rID) { return fProjections[rID]; }
+    std::vector<ProjectionData> GetProjectionData(const readout::ROPID& rID)
+    { return fProjections[rID]; }
+    std::set<std::pair<int, int>> ActiveChTicks(const readout::ROPID& rID)
+    { return fActiveChTicks[rID]; }
     std::vector<readout::ROPID> ActiveROPIDs();
     int GetNumInvalidProjections() { return fNumInvalidProjections; }
 
@@ -68,8 +71,9 @@ namespace extrapolation
     bool                                   fCalcWireDistance;
 
     // Projection data
-    std::map<readout::ROPID, std::vector<ProjectionData>> fProjections;
-    int                                                   fNumInvalidProjections;
+    std::map<readout::ROPID, std::vector<ProjectionData>>   fProjections;
+    std::map<readout::ROPID, std::set<std::pair<int, int>>> fActiveChTicks;
+    int                                                     fNumInvalidProjections;
   };
 
 }

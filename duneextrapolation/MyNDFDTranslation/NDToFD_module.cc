@@ -10,13 +10,11 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include <memory>
+// #include <memory>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -38,7 +36,6 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 #include "duneextrapolation/MyNDFDTranslation/Projections.h"
 #include "duneextrapolation/MyNDFDTranslation/Types.h"
@@ -63,7 +60,7 @@ public:
 
 private:
   void fillNDTensor(torch::Tensor& NDTensor, readout::ROPID rID);
-  void writeTensorToTH2(torch::Tensor tensor, std::string name);
+  void writeTensorToTH2(torch::Tensor tensor, std::string name, const double scaleFactor = 1.0);
   void writeDigitsToTH2(art::Event& e, std::vector<readout::ROPID> rIDs);
 
   const geo::GeometryCore* fGeom;
@@ -197,9 +194,10 @@ void extrapolation::NDToFD::produce(art::Event& e)
   fProj.ProjectToWires();
 
   for (readout::ROPID rID : fProj.ActiveROPIDs()) {
-    int depth = 4 + fExtraChannels[fGeom->View(rID)].size();
+    const geo::View_t view = fGeom->View(rID);
+    const int nChs = (int)fGeom->Nchannels(rID);
 
-    torch::Tensor NDInput = torch::zeros({1, depth, fGeom->Nchannels(rID), 4492},
+    torch::Tensor NDInput = torch::zeros({1, 4 + (int)fExtraChannels[view].size(), nChs, 4492},
       torch::dtype(torch::kFloat32).device(torch::kCPU).requires_grad(false));
 
     // Fill ND tensor with projection information
@@ -211,14 +209,14 @@ void extrapolation::NDToFD::produce(art::Event& e)
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(NDInput.to(torch::kCUDA));
 
-    torch::Tensor FDOutput = fNetworks[fGeom->View(rID)].forward(inputs).toTensor().detach().to(torch::kCPU);
+    torch::Tensor FDOutput = fNetworks[view].forward(inputs).toTensor().detach().to(torch::kCPU);
 
-    FDOutput = FDOutput[0][0] / fOutputScaleFactors[fGeom->View(rID)];
+    FDOutput = FDOutput[0][0] / fOutputScaleFactors[view];
     FDOutput = FDOutput.to(torch::kShort);
 
     // Write out to raw digits
     auto FDOutputAccess = FDOutput.accessor<short, 2>();
-    for (int i = 0; i < (int)fGeom->Nchannels(rID); i++) {
+    for (int i = 0; i < nChs; i++) {
       raw::RawDigit::ADCvector_t adcVec(4492);
       for (int j = 0; j < 4492; j++) {
         adcVec[j] = FDOutputAccess[i][j];
@@ -239,7 +237,7 @@ void extrapolation::NDToFD::produce(art::Event& e)
         std::string NDName = "pm_nd_rop" + std::to_string(rID.ROP) + "_tpcset" +
           std::to_string(rID.TPCset) + "_view" + std::to_string(fGeom->View(rID)) + "_e" +
           std::to_string(e.event()) + "_ch" + std::to_string(iDepth);
-        writeTensorToTH2(NDInput[0][iDepth], NDName);
+        writeTensorToTH2(NDInput[0][iDepth], NDName, fInputScaleFactors[view][iDepth]);
       }
     }
   } // for (readout::ROPID rID : fProj.ActiveROPIDs())
@@ -285,7 +283,7 @@ void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID
   auto NDTensorAccess = NDTensor.accessor<float, 4>();
 
   for (ProjectionData proj : fProj.GetProjectionData(rID)) {
-    int ch = proj.localCh; int tick = proj.tick;
+    const int ch = proj.localCh, tick = proj.tick;
     double adc = (double)proj.packet.adc * fInputScaleFactors[view][0];
     // Drift effect goes like sqrt of drift distance. Also doing weighted average by adc.
     double NDDrift = std::sqrt(proj.packet.NDDrift) * fInputScaleFactors[view][1] * adc;
@@ -325,8 +323,8 @@ void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID
   }
 
   // Last step in the adc weighted average
-  for (ProjectionData proj : fProj.GetProjectionData(rID)) {
-    int ch = proj.localCh; int tick = proj.tick;
+  for (std::pair<int, int> chTick : fProj.ActiveChTicks(rID)) {
+    const int ch = chTick.first, tick = chTick.second;
 
     if (NDTensorAccess[0][0][ch][tick] != 0) {
       NDTensorAccess[0][1][ch][tick] /=
@@ -362,7 +360,8 @@ void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID
   }
 }
 
-void extrapolation::NDToFD::writeTensorToTH2(torch::Tensor tensor, std::string name)
+void extrapolation::NDToFD::writeTensorToTH2(torch::Tensor tensor, std::string name,
+  const double scaleFactor /* = 1.0 */)
 {
   art::ServiceHandle<art::TFileService> tfs;
   auto tensorAccess = tensor.accessor<float, 2>();
@@ -373,7 +372,7 @@ void extrapolation::NDToFD::writeTensorToTH2(torch::Tensor tensor, std::string n
 
   for(int iCh = 0; iCh < nChs; iCh++) {
     for (int iTick = 0; iTick < 4492; iTick++) {
-      h->SetBinContent(iCh + 1, iTick + 1, tensorAccess[iCh][iTick]);
+      h->SetBinContent(iCh + 1, iTick + 1, tensorAccess[iCh][iTick] / scaleFactor);
     }
   }
 

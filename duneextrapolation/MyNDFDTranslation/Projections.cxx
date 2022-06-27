@@ -130,8 +130,9 @@ void extrapolation::Projections::ProjectToWires()
       }
 
       fProjections[rID].push_back(projData);
+      fActiveChTicks[rID].insert(std::make_pair(ch, tick));
     } // for (int j = 0; j < 3; j++)
-  } // for (PacketData& packet : fPackets) 
+  } // for (PacketData& packet : fPackets)
 }
 
 std::vector<readout::ROPID> extrapolation::Projections::ActiveROPIDs()
