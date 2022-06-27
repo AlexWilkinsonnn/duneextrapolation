@@ -77,11 +77,11 @@ private:
 
 extrapolation::LoadNDData::LoadNDData(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDDataLoc            (p.get<std::string>("NDDataLoc")),
-    fXShift               (p.get<double>("XShift")),
-    fYShift               (p.get<double>("YShift")),
-    fZShift               (p.get<double>("ZShift")),
-    fLoadTrueDepos        (p.get<bool>("LoadTrueDepos"))
+    fNDDataLoc     (p.get<std::string>("NDDataLoc")),
+    fXShift        (p.get<double>("XShift")),
+    fYShift        (p.get<double>("YShift")),
+    fZShift        (p.get<double>("ZShift")),
+    fLoadTrueDepos (p.get<bool>("LoadTrueDepos"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>("NDPackets");
   produces<std::vector<sim::SimEnergyDeposit>>("EventID");
