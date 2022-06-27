@@ -32,6 +32,7 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
@@ -60,6 +61,9 @@ public:
 
 private:
   void fillNDTensor(torch::Tensor& NDTensor, readout::ROPID rID);
+
+  void addNDHits(art::Event& e);
+
   void writeTensorToTH2(torch::Tensor tensor, std::string name, const double scaleFactor = 1.0);
   void writeDigitsToTH2(art::Event& e, std::vector<readout::ROPID> rIDs);
 
@@ -92,6 +96,8 @@ private:
   bool                fSavePixelMaps;
   bool                fSaveTrueDigits;
   std::string         fTrueDigitsLabel;
+  bool                fMakeNDHits;
+  double              fNDHitsScaleFactor;
 };
 
 extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
@@ -113,7 +119,9 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
     fDoubleColZWires    (p.get<std::vector<int>>("DoubleColZWires")),
     fSavePixelMaps      (p.get<bool>("SavePixelMaps")),
     fSaveTrueDigits     (p.get<bool>("SaveTrueDigits")),
-    fTrueDigitsLabel    (p.get<std::string>("TrueDigitsLabel"))
+    fTrueDigitsLabel    (p.get<std::string>("TrueDigitsLabel")),
+    fMakeNDHits         (p.get<bool>("MakeNDHits")),
+    fNDHitsScaleFactor  (p.get<double>("NDHitsScaleFactor"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
   if (fSaveTrueDigits) {
@@ -121,6 +129,9 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
   }
 
   produces<std::vector<raw::RawDigit>>("NDTranslated");
+  if (fMakeNDHits) {
+    produces<std::vector<recob::Hit>>("NDPackets");
+  }
 
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
@@ -242,6 +253,10 @@ void extrapolation::NDToFD::produce(art::Event& e)
     }
   } // for (readout::ROPID rID : fProj.ActiveROPIDs())
 
+  if (fMakeNDHits) {
+    addNDHits(e);
+  }
+
   if (fSaveTrueDigits) {
     writeDigitsToTH2(e, fProj.ActiveROPIDs());
   }
@@ -359,6 +374,45 @@ void extrapolation::NDToFD::fillNDTensor(torch::Tensor& NDTensor, readout::ROPID
     }
   }
 }
+
+// Make hits directly out of ND packets and put them on event
+void extrapolation::NDToFD::addNDHits(art::Event& e)
+{
+  auto hits = std::make_unique<std::vector<recob::Hit>>();
+
+  for (readout::ROPID rID : fProj.ActiveROPIDs()) {
+    const geo::View_t view = fGeom->View(rID);
+
+    for (ProjectionData proj : fProj.GetProjectionData(rID)) {
+      raw::ChannelID_t ch = (raw::ChannelID_t)proj.localCh + fGeom->FirstChannelInROP(rID);
+
+      float peakTime = (float)proj.tick;
+      raw::TDCtick_t startTick = (raw::TDCtick_t)(peakTime);
+      raw::TDCtick_t endTick = (raw::TDCtick_t)(peakTime + 5.0);
+
+      // empirical scaling to be ~ FD scale
+      float integral = (float)((double)(proj.packet.adc * 16) * fNDHitsScaleFactor);
+      float peakAmplitude = integral / 5.0;
+      float summedADC = (float)proj.packet.adc * 16;
+
+      float rms = 3.0; // fairly arbitrary choice
+
+      // Gauss hit finder just takes the first wire, I guess the disaambiguation modules will get
+      // correct wireID later
+      // (https://internal.dunescience.org/doxygen/GausHitFinder__module_8cc_source.html)
+      geo::WireID wID = fGeom->ChannelToWire(ch)[0];
+
+      recob::Hit hit(ch, startTick, endTick, peakTime, float(-1.0), rms, peakAmplitude, float(-1.0),
+        summedADC, integral, float(-1.0), short(0), short(-1), float(0.0), int(-1), view,
+        geo::SigType_t(geo::kMysteryType), wID);
+
+      hits->push_back(hit);
+    }
+  }
+
+  e.put(std::move(hits), "NDPackets");
+}
+
 
 void extrapolation::NDToFD::writeTensorToTH2(torch::Tensor tensor, std::string name,
   const double scaleFactor /* = 1.0 */)

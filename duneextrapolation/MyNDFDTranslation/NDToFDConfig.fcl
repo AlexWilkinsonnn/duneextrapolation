@@ -25,6 +25,10 @@ NDToFD:
   OutputScaleFactorU: 0.000425531914893617
   OutputScaleFactorV: 0.000425531914893617
 
+  // NOTE This doesn't make sense anymore because the shift of the pixels in beam direction is
+  // different and inference is being run over muplitple ROPs which will have different
+  // DoubleColZWires. Leave it in for now so stuff just works but will need to think about this
+  // more if I end up actually using this channel.
   DoubleColZWires: [
     0,4,7,12,15,19,23,27,31,34,38,42,46,50,54,57,61,76,80,84,88,92,95,99,103,107,111,115,118,122,
     126,130,134,138,141,145,149,153,157,161,164,168,172,176,180,184,187,191,195,199,203,207,211,
@@ -45,10 +49,14 @@ NDToFD:
   TickShiftV: -10.9
 
   // Save input and output pixel maps to TH2s to check everything is working ok
-  SavePixelMaps:  false
+  SavePixelMaps:   false
   // Save true FD raw digits to TH2s, label needed if true
   SaveTrueDigits:  false
   TrueDigitsLabel: "tpcrawdecoder:daq"
+
+  // Make hits directly out of ND packets and put them on event. Scale them to be ~ FD scale.
+  MakeNDHits:        false
+  NDHitsScaleFactor: 0.37238423544440813
 }
 
 END_PROLOG
