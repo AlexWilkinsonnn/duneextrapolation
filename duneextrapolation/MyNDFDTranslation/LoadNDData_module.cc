@@ -154,7 +154,7 @@ void extrapolation::LoadNDData::produce(art::Event& e)
       // electrons <-> adc, scintYieldRatio <-> NDDrift.
       // TODO Define my own data product to store these.
       sim::SimEnergyDeposit NDPacket = sim::SimEnergyDeposit(
-        0, int(adc), 0, NDDrift, posStart, posEnd, 0,0,0,0);
+        0, int(adc), NDDrift, 0, posStart, posEnd, 0,0,0,0);
       NDPackets->push_back(NDPacket);
     }
 
