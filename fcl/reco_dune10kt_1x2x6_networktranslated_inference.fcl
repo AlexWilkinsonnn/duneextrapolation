@@ -1,0 +1,106 @@
+#include "services_dune.fcl"
+#include "reco3view_workflow.fcl"
+#include "tools_dune.fcl"
+
+process_name: RecoNetworkTranslated
+
+services:
+{
+  # Load the service that manages root files for histograms.
+  TFileService: { fileName: "reco_hist.root" }
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {} #ART native random number generator
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_reco_services_refactored
+  @table::dunefd_1x2x6_reco_services_refactored
+}
+#source is now a root file
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1        # Number of events to create
+  saveMemoryObjectThreshold: 0
+  inputCommands: ["keep *_*_*_*", "drop *_*_*_Reco" ]
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+
+ producers:
+ {
+   @table::reco3view_producers
+ }
+
+ #define the output stream, there could be more than one if using filters
+ stream1:  [ out1 ]
+
+ #trigger_paths is a keyword and contains the paths that modify the art::event,
+ #ie filters and producers
+ reco: [ @sequence::reco3view_workflow_network ]
+ trigger_paths: [ reco ]
+
+ #end_paths is a keyword and contains the paths that do not modify the art::Event,
+ #ie analyzers and output streams.  these all run simultaneously
+ end_paths:     [stream1]
+}
+
+#block to define where the output goes.  if you defined a filter in the physics
+#block and put it in the trigger_paths then you need to put a SelectEvents: {SelectEvents: [XXX]}
+#entry in the output stream you want those to go to, where XXX is the label of the filter module(s)
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "%ifb_reconetwork.root"
+   dataTier:    "full-reconstructed"
+   compressionLevel: 1
+   saveMemoryObjectThreshold: 0
+   outputCommands: ["keep *", "drop *_wclsmcnfsp_wiener_*"]
+ }
+}
+
+physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "translate:NDTranslated:NDToFDTranslation"
+physics.producers.gaushit.CalDataModuleLabel:                  "wclsmcnfsp:gauss:RecoNetworkTranslated"
+
+physics.producers.spsolve.HitLabel:     "gaushit::RecoNetworkTranslated"
+physics.producers.hitfd.HitModuleLabel: "gaushit::RecoNetworkTranslated"
+physics.producers.hitfd.SpModuleLabel:  "spsolve::RecoNetworkTranslated"
+
+physics.producers.linecluster.HitFinderModuleLabel: "hitfd::RecoNetworkTranslated"
+
+physics.producers.pandora.HitFinderModuleLabel:      "linecluster::RecoNetworkTranslated"
+physics.producers.pandoraTrack.PFParticleLabel:      "pandora::RecoNetworkTranslated"
+physics.producers.pandoraShower.PFParticleLabel:     "pandora::RecoNetworkTranslated"
+physics.producers.pandoracalo.TrackModuleLabel:      "pandoraTrack::RecoNetworkTranslated"
+physics.producers.pandoracalo.SpacePointModuleLabel: "pandora::RecoNetworkTranslated"
+physics.producers.pandoracalo.SpacePointModuleLabel: "pandora::RecoNetworkTranslated"
+physics.producers.pandorapid.CalorimetryModuleLabel: "pandoracalo::RecoNetworkTranslated"
+physics.producers.pandorapid.TrackModuleLabel:       "pandoraTrack::RecoNetworkTranslated"
+
+physics.producers.cvnmapnetwork.HitsModuleLabel: "hitfd::RecoNetworkTranslated"
+physics.producers.cvnmapnetwork.ClusterPMLabel:  "cvnmapnetwork" // producer does `art::InputTag itag1(fPixelMapInput, fPixelMapInput)` so need a unique instance and module label >:(
+physics.producers.cvnmapnetwork.MinClusterHits:  0
+
+physics.producers.cvneva.PixelMapInput: "cvnmapnetwork"
+
+physics.producers.energyrecnumu.HitLabel:                "pandora::RecoNetworkTranslated"
+physics.producers.energyrecnumu.HitToSpacePointLabel:    "pandora::RecoNetworkTranslated"
+physics.producers.energyrecnumu.ShowerLabel:             "pandoraShower::RecoNetworkTranslated"
+physics.producers.energyrecnumu.ShowerToSpacePointLabel: "pandoraShower::RecoNetworkTranslated"
+physics.producers.energyrecnumu.TrackLabel:              "pandoraTrack::RecoNetworkTranslated"
+physics.producers.energyrecnumu.TrackToSpacePointLabel:  "pandoraTrack::RecoNetworkTranslated"
+physics.producers.energyrecnumu.WireLabel:               "wclsdatanfsp:gauss:RecoNetworkTranslated"
+physics.producers.energyrecnc.HitLabel:                  "pandora::RecoNetworkTranslated"
+physics.producers.energyrecnc.HitToSpacePointLabel:      "pandora::RecoNetworkTranslated"
+physics.producers.energyrecnc.ShowerLabel:               "pandoraShower::RecoNetworkTranslated"
+physics.producers.energyrecnc.ShowerToSpacePointLabel:   "pandoraShower::RecoNetworkTranslated"
+physics.producers.energyrecnc.TrackLabel:                "pandoraTrack::RecoNetworkTranslated"
+physics.producers.energyrecnc.TrackToSpacePointLabel:    "pandoraTrack::RecoNetworkTranslated"
+physics.producers.energyrecnc.WireLabel:                 "wclsdatanfsp:gauss:RecoNetworkTranslated"
+
