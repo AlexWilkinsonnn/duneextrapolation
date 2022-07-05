@@ -65,7 +65,8 @@ void extrapolation::Projections::ProjectToWires()
     // TODO Confirm these numbers, ~600 too high, the drift is ~[-360, 360].
     // Should only have to worry about the lower bound if xShift is correct since FD is wider than
     // ND.
-    if (std::abs(packet.pos.X()) < 5.239) { //|| std::abs(packet.pos.X()) > 600.019) {
+    // Answer: 600.019 is for the Y coordinate, bruh. 362.916 is maximum drift for the X.
+    if (std::abs(packet.pos.X()) < 5.239 || std::abs(packet.pos.X()) > 362.916) {
       fNumInvalidProjections += 3;
       continue;
     }
