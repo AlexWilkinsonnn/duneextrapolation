@@ -27,6 +27,9 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
+#include "lardataobj/RawData/raw.h"
 
 namespace interactive {
   class Session;
@@ -50,15 +53,16 @@ private:
   const geo::GeometryCore* fGeom;
 
   std::string fSEDLabel;
+  std::string fDigitsLabel;
 };
 
 interactive::Session::Session(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-  fSEDLabel (p.get<std::string>("SEDLabel"))
+  fSEDLabel    (p.get<std::string>("SEDLabel")),
+  fDigitsLabel (p.get<std::string>("DigitsLabel"))
 {
-  if (fSEDLabel != "none") {
-    consumes<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
-  }
+  if (fSEDLabel != "none")    consumes<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
+  if (fDigitsLabel != "none") consumes<std::vector<raw::RawDigit>>(fDigitsLabel);
 }
 
 void interactive::Session::analyze(art::Event const& e)
@@ -106,14 +110,56 @@ void interactive::Session::analyze(art::Event const& e)
       // cout << "\n\n";
     }
   }
+  if (fDigitsLabel != "none") { // Confirm noise has been removed from detsim
+    const auto digs = e.getValidHandle<std::vector<raw::RawDigit>>(fDigitsLabel);
+
+    { using std::cout;
+      bool ZDone = false, UVDone = false;
+      for (const raw::RawDigit& dig : *digs) {
+        raw::RawDigit::ADCvector_t adcs(dig.Samples());
+        raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
+
+        raw::RawDigit::ADCvector_t adcsNoPed(4492);
+        for (unsigned int tick = 0; tick < 4492; tick++) {
+          const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
+
+          adcsNoPed[tick] = adc;
+        }
+
+        if(std::abs(std::accumulate(adcsNoPed.begin(), adcsNoPed.end(), 0)) > 100 && (
+           (!ZDone && fGeom->View(dig.Channel()) == geo::kZ) ||
+           (!UVDone && (fGeom->View(dig.Channel()) == geo::kU || fGeom->View(dig.Channel()) == geo::kV))))
+        {
+          cout << dig.Channel() << "\n";
+
+          for (const short adc : adcsNoPed) {
+            cout << adc << " ";
+          }
+          cout << "\n";
+
+          if (fGeom->View(dig.Channel()) == geo::kZ) {
+            ZDone = true;
+          }
+          else {
+            UVDone = true;
+          }
+        }
+
+        if (ZDone && UVDone) {
+          break;
+        }
+      }
+    }
+  }
 }
+
 
 void interactive::Session::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   // Examine readout plane I have chosen for nd->fd translation
-  if (true) {
+  if (false) {
     using std::cout;
 
     unsigned int cryoIndex = 0;
@@ -147,8 +193,8 @@ void interactive::Session::beginJob()
     const geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
     cout << "tBBGeo.MinX()=" << tBBGeo.MinX() << ", tBBGeo.MaxX()=" << tBBGeo.MaxX() << "\n";
 
-    cout << "tGeo.DriftDistance()=" << tGeo.DriftDistance() << "\n"; 
-  } 
+    cout << "tGeo.DriftDistance()=" << tGeo.DriftDistance() << "\n";
+  }
 
   // Examine induction plane I will use
   if (false) {

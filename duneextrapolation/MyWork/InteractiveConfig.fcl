@@ -4,7 +4,8 @@ InteractiveSession:
 {
   module_type: "Interactive"
 
-  SEDLabel: "none"
+  SEDLabel:    "none"
+  DigitsLabel: "none"
 }
 
 END_PROLOG

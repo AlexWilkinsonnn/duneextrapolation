@@ -176,13 +176,13 @@ void extrapolation::ExportDigits::analyze(art::Event const& e)
   if (fExportSEDs) {
     const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(art::InputTag("IonAndScint", ""));
 
-    for (auto& SED : *SEDs) { 
+    for (auto& SED : *SEDs) {
       auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(e);
       auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
 
-      raw::ChannelID_t chZ = fGeom->NearestChannel(SED.MidPoint(), fPIDZ);  
-      raw::ChannelID_t chU = fGeom->NearestChannel(SED.MidPoint(), fPIDU);  
-      raw::ChannelID_t chV = fGeom->NearestChannel(SED.MidPoint(), fPIDV);  
+      raw::ChannelID_t chZ = fGeom->NearestChannel(SED.MidPoint(), fPIDZ);
+      raw::ChannelID_t chU = fGeom->NearestChannel(SED.MidPoint(), fPIDU);
+      raw::ChannelID_t chV = fGeom->NearestChannel(SED.MidPoint(), fPIDV);
 
       int chLocalZ = (int)(chZ - firstChZ);
       int chLocalU = (int)(chU - firstChU);
@@ -191,20 +191,20 @@ void extrapolation::ExportDigits::analyze(art::Event const& e)
       double tickRawZ = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDZ) + clockData.TPCG4Time2TDC(SED.Time());
       double tickRawU = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDU) + clockData.TPCG4Time2TDC(SED.Time());
       double tickRawV = detProp.ConvertXToTicks(SED.MidPoint().X(), fPIDV) + clockData.TPCG4Time2TDC(SED.Time());
-      
+
       tickRawZ -= 7.8;
       tickRawU -= 10.1;
       tickRawV -= 10.9;
-      
+
       int tickZ = (int)tickRawZ;
       int tickU = (int)tickRawU;
       int tickV = (int)tickRawV;
-      
+
       fSEDsZ.push_back({chLocalZ, tickZ, SED.NumElectrons()});
       fSEDsU.push_back({chLocalU, tickU, SED.NumElectrons()});
       fSEDsV.push_back({chLocalV, tickV, SED.NumElectrons()});
     }
-    
+
     fTreeSEDs->Fill();
   }
 }
