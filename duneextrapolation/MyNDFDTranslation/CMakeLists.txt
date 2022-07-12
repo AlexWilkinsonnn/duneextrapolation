@@ -53,6 +53,7 @@ art_make(
     ${ROOT_ROOFITCORE}
 
     duneextrapolation_MyNDFDTranslation
+    dunereco_CVN_func
 
   LIB_LIBRARIES
     ART_FRAMEWORK_CORE
