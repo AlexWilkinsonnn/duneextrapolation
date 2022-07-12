@@ -6,6 +6,7 @@ trap '{ rm -f /tmp/run_LoadNDData_ammended.tmp.fcl; }' EXIT
 
 FILE=$1
 NEVTS=$2
+OUTNAME=$3
 
 if [ ! -f $FILE ]; then
   FILE=${PWD}/${FILE}
@@ -26,4 +27,8 @@ fi
 
 sed "s/physics\.producers\.IonAndScint\.NDDataLoc:.*/physics\.producers\.IonAndScint\.NDDataLoc: \"${FILE}\"/" ${MRB_TOP}/srcs/duneextrapolation/duneextrapolation/MyNDFDTranslation/run_fcls/run_LoadNDData.fcl > /tmp/run_LoadNDData_ammended.tmp.fcl
 
-lar -c /tmp/run_LoadNDData_ammended.tmp.fcl -n $NEVTS -o test.root
+if [ -z $OUTNAME ]; then
+  lar -c /tmp/run_LoadNDData_ammended.tmp.fcl -n $NEVTS -o $OUTNAME
+else; then
+  lar -c /tmp/run_LoadNDData_ammended.tmp.fcl -n $NEVTS
+fi
