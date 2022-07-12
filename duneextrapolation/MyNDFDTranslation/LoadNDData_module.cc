@@ -57,6 +57,7 @@ private:
   int                               fNEntries;
   int                               fEntry;
   TTree*                            fTreeDeposPackets;
+  int                              fEventID;
   std::vector<std::vector<double>>* fDepos;
   std::vector<std::vector<double>>* fPackets;
   // NOTE Need to decide how to keep track of which events are the same between larsoft and the ND
@@ -126,16 +127,19 @@ void extrapolation::LoadNDData::produce(art::Event& e)
       e.put(std::move(NDDepos));
     }
 
-    // SED that stores an ID for this event.
-    // TODO Implement a proper ND event ID.
+    // SED that stores an ID for this event in the trackID member.
     auto evID = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
 
     geo::Point_t posStart = geo::Point_t(0,0,0);
     geo::Point_t posEnd = geo::Point_t(0,0,0);
-    sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0,0,0,0, posStart, posEnd, 0,0, fEntry);
+    std::cout << "here\n";
+    sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0,0,0,0, posStart, posEnd, 0,0, fEventID);
+    std::cout << "here\n";
     evID->push_back(ID);
 
     e.put(std::move(evID), "EventID");
+
+    std::cout << "Hello\n";
 
     // Write NDPackets into event. Leave projection to the pixelmap maker.
     auto NDPackets = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
@@ -178,6 +182,7 @@ void extrapolation::LoadNDData::beginJob()
   fPackets = nullptr;
   TFile* f = new TFile(fNDDataLoc.c_str());
   fTreeDeposPackets = (TTree*)f->Get("ND_depos_packets");
+  fTreeDeposPackets->SetBranchAddress("eventID", &fEventID);
   fTreeDeposPackets->SetBranchAddress("nd_depos", &fDepos);
   fTreeDeposPackets->SetBranchAddress("nd_packets", &fPackets);
 
