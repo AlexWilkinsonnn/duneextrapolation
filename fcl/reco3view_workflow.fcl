@@ -40,6 +40,11 @@ reco3view_producers:
   energyrecnc:   @local::dunefd_nuenergyreco_pandora_nc
 }
 
+reco3view_sp_deconv:
+[
+  wclsmcnfsp
+]
+
 reco3view_sp:
 [
   wclsmcnfsp,
