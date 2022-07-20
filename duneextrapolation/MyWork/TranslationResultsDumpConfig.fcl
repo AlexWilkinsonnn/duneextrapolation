@@ -10,7 +10,7 @@ TranslationResultsDump:
   NetworkCVNCollectionResultsLabel: ""
   NDCVNResultsLabel:                "cvneva:cvnresult:Reco3viewNDPackets"
   AltCVNResultsLabel:               "cvneva:cvnresult:Reco3viewAltDetsim"
-  
+
   TrueHitsLabel:    "gaushit::Reco3viewTrueTranslated"
   NetworkHitsLabel: "gaushit::Reco3viewNetworkTranslated"
   NDHitsLabel:      "Translate:NDPackets:NDTranslationKeepSED"

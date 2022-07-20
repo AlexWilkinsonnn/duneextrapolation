@@ -1,0 +1,20 @@
+BEGIN_PROLOG
+
+RecoDump:
+{
+  module_type: "RecoDump"
+
+  EventIDSEDLabel: "IonAndScint:EventID:LoadNDData"
+
+  TrueCVNResultsLabel:    "cvneva:cvnresult:RecoTrueTranslated"
+  NetworkCVNResultsLabel: "cvneva:cvnresult:RecoNetworkTranslated"
+
+  TrueNumuEResultsLabel:    "energyrecnumu::RecoTrueTranslated"
+  NetworkNumuEResultsLabel: "energyrecnumu::RecoNetworkTranslated"
+  TrueNueEResultsLabel:     "energyrecnue::RecoTrueTranslated"
+  NetworkNueEResultsLabel:  "energyrecnue::RecoNetworkTranslated"
+  TrueNCEResultsLabel:      "energyrecnc::RecoTrueTranslated"
+  NetworkNCEResultsLabel:   "energyrecnc::RecoNetworkTranslated"
+}
+
+END_PROLOG

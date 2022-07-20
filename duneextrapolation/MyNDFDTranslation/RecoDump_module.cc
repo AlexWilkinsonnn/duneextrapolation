@@ -74,6 +74,8 @@ private:
   std::string fNetworkCVNResultsLabel;
   std::string fTrueNumuEResultsLabel;
   std::string fNetworkNumuEResultsLabel;
+  std::string fTrueNueEResultsLabel;
+  std::string fNetworkNueEResultsLabel;
   std::string fTrueNCEResultsLabel;
   std::string fNetworkNCEResultsLabel;
   std::string fEventIDSEDLabel;
@@ -102,6 +104,12 @@ private:
   double fNetworkNumuHadE;
   double fTrueNumuLepE;
   double fNetworkNumuLepE;
+  double fTrueNueNuE;
+  double fNetworkNueNuE;
+  double fTrueNueHadE;
+  double fNetworkNueHadE;
+  double fTrueNueLepE;
+  double fNetworkNueLepE;
   double fTrueNCNuE;
   double fNetworkNCNuE;
   double fTrueNCHadE;
@@ -117,6 +125,8 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
     fNetworkCVNResultsLabel   (p.get<std::string>("NetworkCVNResultsLabel")),
     fTrueNumuEResultsLabel    (p.get<std::string>("TrueNumuEResultsLabel")),
     fNetworkNumuEResultsLabel (p.get<std::string>("NetworkNumuEResultsLabel")),
+    fTrueNueEResultsLabel     (p.get<std::string>("TrueNueEResultsLabel")),
+    fNetworkNueEResultsLabel  (p.get<std::string>("NetworkNueEResultsLabel")),
     fTrueNCEResultsLabel      (p.get<std::string>("TrueNCEResultsLabel")),
     fNetworkNCEResultsLabel   (p.get<std::string>("NetworkNCEResultsLabel")),
     fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel"))
@@ -128,6 +138,8 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
 
   consumes<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel);
+  consumes<dune::EnergyRecoOutput>(fTrueNueEResultsLabel);
+  consumes<dune::EnergyRecoOutput>(fNetworkNueEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
 
@@ -157,6 +169,12 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
   fTreeReco->Branch("NetworkNumuHadE", &fNetworkNumuHadE, "networknumuhade/D");
   fTreeReco->Branch("TrueNumuLepE", &fTrueNumuLepE, "truenumulepe/D");
   fTreeReco->Branch("NetworkNumuLepE", &fNetworkNumuLepE, "networknumulepe/D");
+  fTreeReco->Branch("TrueNueNuE", &fTrueNueNuE, "truenuenue/D");
+  fTreeReco->Branch("NetworkNueNuE", &fNetworkNueNuE, "networknuenue/D");
+  fTreeReco->Branch("TrueNueHadE", &fTrueNueHadE, "truenuehade/D");
+  fTreeReco->Branch("NetworkNueHadE", &fNetworkNueHadE, "networknuehade/D");
+  fTreeReco->Branch("TrueNueLepE", &fTrueNueLepE, "truenuelepe/D");
+  fTreeReco->Branch("NetworkNueLepE", &fNetworkNueLepE, "networknuelepe/D");
   fTreeReco->Branch("TrueNCNuE", &fTrueNCNuE, "truencnue/D");
   fTreeReco->Branch("NetworkNCNuE", &fNetworkNCNuE, "networkncnue/D");
   fTreeReco->Branch("TrueNCHadE", &fTrueNCHadE, "truenchade/D");
@@ -199,6 +217,8 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
   // Get nu reco information
   const auto trueNumuEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNumuEResultsLabel);
   const auto networkNumuEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNumuEResultsLabel);
+  const auto trueNueEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNueEResultsLabel);
+  const auto networkNueEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNueEResultsLabel);
   const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNCEResultsLabel);
   const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNCEResultsLabel);
 
@@ -208,6 +228,13 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
   fNetworkNumuHadE = networkNumuEOut->fHadLorentzVector.E();
   fTrueNumuLepE = trueNumuEOut->fLepLorentzVector.E();
   fNetworkNumuLepE = networkNumuEOut->fLepLorentzVector.E();
+
+  fTrueNueNuE = trueNueEOut->fNuLorentzVector.E();
+  fNetworkNueNuE = networkNueEOut->fNuLorentzVector.E();
+  fTrueNueHadE = trueNueEOut->fHadLorentzVector.E();
+  fNetworkNueHadE = networkNueEOut->fHadLorentzVector.E();
+  fTrueNueLepE = trueNueEOut->fLepLorentzVector.E();
+  fNetworkNueLepE = networkNueEOut->fLepLorentzVector.E();
 
   fTrueNCNuE = trueNCEOut->fNuLorentzVector.E();
   fNetworkNCNuE = networkNCEOut->fNuLorentzVector.E();
@@ -254,6 +281,12 @@ void extrapolation::RecoDump::reset()
   fNetworkNumuHadE = -1.0;
   fTrueNumuLepE = -1.0;
   fNetworkNumuLepE = -1.0;
+  fTrueNueNuE = -1.0;
+  fNetworkNueNuE = -1.0;
+  fTrueNueHadE = -1.0;
+  fNetworkNueHadE = -1.0;
+  fTrueNueLepE = -1.0;
+  fNetworkNueLepE = -1.0;
   fTrueNCNuE = -1.0;
   fNetworkNCNuE = -1.0;
   fTrueNCHadE = -1.0;

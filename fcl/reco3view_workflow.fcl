@@ -28,7 +28,7 @@ reco3view_producers:
   pandoraShower: @local::dune_pandoraModularShowerCreation
   pandoracalo:   @local::dune10kt_calomc
   pandorapid:    @local::standard_chi2pid
-  
+
   // CVN stuff doesnt use the full art event tag properly so need to do this to have data products like cvnmapnd:cvnmapnd as this is the only format it can read from in CVNEvaluator >:(
   cvnmaptrue:    @local::dunefd_horizdrift_cvnmapper
   cvnmapnetwork: @local::dunefd_horizdrift_cvnmapper
@@ -37,7 +37,7 @@ reco3view_producers:
   cvneva:        @local::dunefd_horizdrift_cvnevaluator
 
   energyrecnumu: @local::dunefd_nuenergyreco_pandora_numu
-  energyrecnue:  @local::dunefd_nuenergyreco_pandora_nue 
+  energyrecnue:  @local::dunefd_nuenergyreco_pandora_nue
   energyrecnc:   @local::dunefd_nuenergyreco_pandora_nc
 }
 
