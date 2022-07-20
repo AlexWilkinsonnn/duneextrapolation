@@ -37,6 +37,7 @@ reco3view_producers:
   cvneva:        @local::dunefd_horizdrift_cvnevaluator
 
   energyrecnumu: @local::dunefd_nuenergyreco_pandora_numu
+  energyrecnue:  @local::dunefd_nuenergyreco_pandora_nue
   energyrecnc:   @local::dunefd_nuenergyreco_pandora_nc
 }
 
@@ -89,6 +90,7 @@ reco3view_cvn_alt:
 reco3view_nuenergy:
 [
   energyrecnumu,
+  energyrecnue,
   energyrecnc
 ]
 
