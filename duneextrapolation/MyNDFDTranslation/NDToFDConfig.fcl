@@ -57,6 +57,10 @@ NDToFD:
   // Make hits directly out of ND packets and put them on event. Scale them to be ~ FD scale.
   MakeNDHits:        false
   NDHitsScaleFactor: 0.37238423544440813
+
+  // Use ND packets to make and apply signal mask to output of models. This can be needed to
+  // prevent hit finder from gettting upset over noise artifacts.
+  ApplySignalMask: false
 }
 
 END_PROLOG

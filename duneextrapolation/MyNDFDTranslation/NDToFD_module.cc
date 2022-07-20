@@ -67,6 +67,9 @@ private:
   void writeTensorToTH2(torch::Tensor tensor, std::string name, const double scaleFactor = 1.0);
   void writeDigitsToTH2(art::Event& e, std::vector<readout::ROPID> rIDs);
 
+  void applySignalMask(torch::Tensor NDAdcTensor, torch::Tensor& FDTensor, const int maxChShift,
+    const int maxTickShift);
+
   const geo::GeometryCore* fGeom;
 
   std::map<geo::View_t, torch::jit::script::Module> fNetworks;
@@ -98,6 +101,7 @@ private:
   std::string         fTrueDigitsLabel;
   bool                fMakeNDHits;
   double              fNDHitsScaleFactor;
+  bool                fApplySignalMask;
 };
 
 extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
@@ -121,7 +125,8 @@ extrapolation::NDToFD::NDToFD(fhicl::ParameterSet const& p)
     fSaveTrueDigits     (p.get<bool>("SaveTrueDigits")),
     fTrueDigitsLabel    (p.get<std::string>("TrueDigitsLabel")),
     fMakeNDHits         (p.get<bool>("MakeNDHits")),
-    fNDHitsScaleFactor  (p.get<double>("NDHitsScaleFactor"))
+    fNDHitsScaleFactor  (p.get<double>("NDHitsScaleFactor")),
+    fApplySignalMask    (p.get<bool>("ApplySignalMask"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fNDPacketsLabel);
   if (fSaveTrueDigits) {
@@ -223,6 +228,11 @@ void extrapolation::NDToFD::produce(art::Event& e)
     torch::Tensor FDOutput = fNetworks[view].forward(inputs).toTensor().detach().to(torch::kCPU);
 
     FDOutput = FDOutput[0][0] / fOutputScaleFactors[view];
+
+    if (fApplySignalMask) {
+      applySignalMask(NDInput.to(torch::kCPU)[0][0] / fInputScaleFactors[view][0], FDOutput, 2, 25);
+    }
+
     FDOutput = FDOutput.to(torch::kShort);
 
     // Write out to raw digits
@@ -470,6 +480,34 @@ void extrapolation::NDToFD::writeDigitsToTH2(art::Event& e, std::vector<readout:
     pair.second->Write();
     delete pair.second;
   }
+}
+
+void extrapolation::NDToFD::applySignalMask(torch::Tensor NDAdcTensor, torch::Tensor& FDTensor,
+  const int maxChShift, const int maxTickShift)
+{
+  // clone to prevent overlapping memory erros in later operations
+  torch::Tensor mask = NDAdcTensor.clone();
+
+  // Make signal mask by smearing ND tensor
+  { using namespace torch::indexing;
+  for (int tickShift = 1; tickShift <= maxTickShift; tickShift++) {
+    mask.index({Slice(), Slice(tickShift, None)}) +=
+      NDAdcTensor.index({Slice(), Slice(None, -tickShift)});
+    mask.index({Slice(), Slice(None, -tickShift)}) +=
+      NDAdcTensor.index({Slice(), Slice(tickShift, None)});
+  }
+
+  for (int chShift = 1; chShift <= maxChShift; chShift++) {
+    mask.index({Slice(chShift, None), Slice()}) +=
+      NDAdcTensor.index({Slice(None, -chShift), Slice()});
+    mask.index({Slice(None, -chShift), Slice()}) +=
+      NDAdcTensor.index({Slice(chShift, None), Slice()});
+  }
+  } // using namespace torch::indexing;
+
+  mask = mask.to(torch::kBool).to(torch::kFloat32);
+
+  FDTensor.mul_(mask);
 }
 
 DEFINE_ART_MODULE(extrapolation::NDToFD)

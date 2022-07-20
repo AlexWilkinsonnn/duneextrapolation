@@ -46,6 +46,7 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.producers.translate.SavePixelMaps:  true
-physics.producers.translate.SaveTrueDigits: true
-physics.producers.translate.MakeNDHits:     true
+physics.producers.translate.SavePixelMaps:   true
+physics.producers.translate.SaveTrueDigits:  true
+physics.producers.translate.MakeNDHits:      false
+physics.producers.translate.ApplySignalMask: true

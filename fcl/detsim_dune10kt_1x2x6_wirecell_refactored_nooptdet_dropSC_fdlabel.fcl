@@ -15,3 +15,4 @@ physics.producers:
 outputs.out1.outputCommands: [ "keep *", "drop sim::SimChannels*_*_*_*" ]
 outputs.out1.fileName:       "%ifb_fddetsim.root"
 
+services.TFileService: { fileName: "%ifb_fddetsim_hist.root" }
