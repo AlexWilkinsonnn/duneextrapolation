@@ -20,15 +20,6 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "art_root_io/TFileService.h"
 #include "art_root_io/TFileDirectory.h"
-// #include "nusimdata/SimulationBase/MCTruth.h"
-// #include "nusimdata/SimulationBase/MCParticle.h"
-// #include "nusimdata/SimulationBase/MCNeutrino.h"
-// #include "lardataobj/AnalysisBase/ParticleID.h"
-// #include "lardataobj/RecoBase/Track.h"
-// #include "lardataobj/RecoBase/PFParticle.h"
-// #include "lardataobj/RecoBase/Shower.h"
-// #include "lardataobj/AnalysisBase/Calorimetry.h"
-// #include "lardataobj/RecoBase/Wire.h"
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
@@ -98,24 +89,24 @@ private:
   float fTrueAntiNuScore;
   float fNetworkAntiNuScore;
   // Nu energy reco information
-  double fTrueNumuNuE;
-  double fNetworkNumuNuE;
-  double fTrueNumuHadE;
-  double fNetworkNumuHadE;
-  double fTrueNumuLepE;
-  double fNetworkNumuLepE;
-  double fTrueNueNuE;
-  double fNetworkNueNuE;
-  double fTrueNueHadE;
-  double fNetworkNueHadE;
-  double fTrueNueLepE;
-  double fNetworkNueLepE;
-  double fTrueNCNuE;
-  double fNetworkNCNuE;
-  double fTrueNCHadE;
-  double fNetworkNCHadE;
-  double fTrueNCLepE;
-  double fNetworkNCLepE;
+  float fTrueNumuNuE;
+  float fNetworkNumuNuE;
+  float fTrueNumuHadE;
+  float fNetworkNumuHadE;
+  float fTrueNumuLepE;
+  float fNetworkNumuLepE;
+  float fTrueNueNuE;
+  float fNetworkNueNuE;
+  float fTrueNueHadE;
+  float fNetworkNueHadE;
+  float fTrueNueLepE;
+  float fNetworkNueLepE;
+  float fTrueNCNuE;
+  float fNetworkNCNuE;
+  float fTrueNCHadE;
+  float fNetworkNCHadE;
+  float fTrueNCLepE;
+  float fNetworkNCLepE;
 };
 
 
@@ -163,24 +154,24 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
   fTreeReco->Branch("TrueAntiNuScore", &fTrueAntiNuScore, "trueantinuscore/F");
   fTreeReco->Branch("NetworkAntiNuScore", &fNetworkAntiNuScore, "networkantinuscore/F");
   // Nu energy reco information
-  fTreeReco->Branch("TrueNumuNuE", &fTrueNumuNuE, "truenumunue/D");
-  fTreeReco->Branch("NetworkNumuNuE", &fNetworkNumuNuE, "networknumunue/D");
-  fTreeReco->Branch("TrueNumuHadE", &fTrueNumuHadE, "truenumuhade/D");
-  fTreeReco->Branch("NetworkNumuHadE", &fNetworkNumuHadE, "networknumuhade/D");
-  fTreeReco->Branch("TrueNumuLepE", &fTrueNumuLepE, "truenumulepe/D");
-  fTreeReco->Branch("NetworkNumuLepE", &fNetworkNumuLepE, "networknumulepe/D");
-  fTreeReco->Branch("TrueNueNuE", &fTrueNueNuE, "truenuenue/D");
-  fTreeReco->Branch("NetworkNueNuE", &fNetworkNueNuE, "networknuenue/D");
-  fTreeReco->Branch("TrueNueHadE", &fTrueNueHadE, "truenuehade/D");
-  fTreeReco->Branch("NetworkNueHadE", &fNetworkNueHadE, "networknuehade/D");
-  fTreeReco->Branch("TrueNueLepE", &fTrueNueLepE, "truenuelepe/D");
-  fTreeReco->Branch("NetworkNueLepE", &fNetworkNueLepE, "networknuelepe/D");
-  fTreeReco->Branch("TrueNCNuE", &fTrueNCNuE, "truencnue/D");
-  fTreeReco->Branch("NetworkNCNuE", &fNetworkNCNuE, "networkncnue/D");
-  fTreeReco->Branch("TrueNCHadE", &fTrueNCHadE, "truenchade/D");
-  fTreeReco->Branch("NetworkNCHadE", &fNetworkNCHadE, "networknchade/D");
-  fTreeReco->Branch("TrueNCLepE", &fTrueNCLepE, "truenclepe/D");
-  fTreeReco->Branch("NetworkNCLepE", &fNetworkNCLepE, "networknclepe/D");
+  fTreeReco->Branch("TrueNumuNuE", &fTrueNumuNuE, "truenumunue/F");
+  fTreeReco->Branch("NetworkNumuNuE", &fNetworkNumuNuE, "networknumunue/F");
+  fTreeReco->Branch("TrueNumuHadE", &fTrueNumuHadE, "truenumuhade/F");
+  fTreeReco->Branch("NetworkNumuHadE", &fNetworkNumuHadE, "networknumuhade/F");
+  fTreeReco->Branch("TrueNumuLepE", &fTrueNumuLepE, "truenumulepe/F");
+  fTreeReco->Branch("NetworkNumuLepE", &fNetworkNumuLepE, "networknumulepe/F");
+  fTreeReco->Branch("TrueNueNuE", &fTrueNueNuE, "truenuenue/F");
+  fTreeReco->Branch("NetworkNueNuE", &fNetworkNueNuE, "networknuenue/F");
+  fTreeReco->Branch("TrueNueHadE", &fTrueNueHadE, "truenuehade/F");
+  fTreeReco->Branch("NetworkNueHadE", &fNetworkNueHadE, "networknuehade/F");
+  fTreeReco->Branch("TrueNueLepE", &fTrueNueLepE, "truenuelepe/F");
+  fTreeReco->Branch("NetworkNueLepE", &fNetworkNueLepE, "networknuelepe/F");
+  fTreeReco->Branch("TrueNCNuE", &fTrueNCNuE, "truencnue/F");
+  fTreeReco->Branch("NetworkNCNuE", &fNetworkNCNuE, "networkncnue/F");
+  fTreeReco->Branch("TrueNCHadE", &fTrueNCHadE, "truenchade/F");
+  fTreeReco->Branch("NetworkNCHadE", &fNetworkNCHadE, "networknchade/F");
+  fTreeReco->Branch("TrueNCLepE", &fTrueNCLepE, "truenclepe/F");
+  fTreeReco->Branch("NetworkNCLepE", &fNetworkNCLepE, "networknclepe/F");
 }
 
 void extrapolation::RecoDump::analyze(art::Event const& e)
@@ -222,26 +213,26 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
   const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNCEResultsLabel);
   const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNCEResultsLabel);
 
-  fTrueNumuNuE = trueNumuEOut->fNuLorentzVector.E();
-  fNetworkNumuNuE = networkNumuEOut->fNuLorentzVector.E();
-  fTrueNumuHadE = trueNumuEOut->fHadLorentzVector.E();
-  fNetworkNumuHadE = networkNumuEOut->fHadLorentzVector.E();
-  fTrueNumuLepE = trueNumuEOut->fLepLorentzVector.E();
-  fNetworkNumuLepE = networkNumuEOut->fLepLorentzVector.E();
+  fTrueNumuNuE = (float)trueNumuEOut->fNuLorentzVector.E();
+  fNetworkNumuNuE = (float)networkNumuEOut->fNuLorentzVector.E();
+  fTrueNumuHadE = (float)trueNumuEOut->fHadLorentzVector.E();
+  fNetworkNumuHadE = (float)networkNumuEOut->fHadLorentzVector.E();
+  fTrueNumuLepE = (float)trueNumuEOut->fLepLorentzVector.E();
+  fNetworkNumuLepE = (float)networkNumuEOut->fLepLorentzVector.E();
 
-  fTrueNueNuE = trueNueEOut->fNuLorentzVector.E();
-  fNetworkNueNuE = networkNueEOut->fNuLorentzVector.E();
-  fTrueNueHadE = trueNueEOut->fHadLorentzVector.E();
-  fNetworkNueHadE = networkNueEOut->fHadLorentzVector.E();
-  fTrueNueLepE = trueNueEOut->fLepLorentzVector.E();
-  fNetworkNueLepE = networkNueEOut->fLepLorentzVector.E();
+  fTrueNueNuE = (float)trueNueEOut->fNuLorentzVector.E();
+  fNetworkNueNuE = (float)networkNueEOut->fNuLorentzVector.E();
+  fTrueNueHadE = (float)trueNueEOut->fHadLorentzVector.E();
+  fNetworkNueHadE = (float)networkNueEOut->fHadLorentzVector.E();
+  fTrueNueLepE = (float)trueNueEOut->fLepLorentzVector.E();
+  fNetworkNueLepE = (float)networkNueEOut->fLepLorentzVector.E();
 
-  fTrueNCNuE = trueNCEOut->fNuLorentzVector.E();
-  fNetworkNCNuE = networkNCEOut->fNuLorentzVector.E();
-  fTrueNCHadE = trueNCEOut->fHadLorentzVector.E();
-  fNetworkNCHadE = networkNCEOut->fHadLorentzVector.E();
-  fTrueNCLepE = trueNCEOut->fLepLorentzVector.E();
-  fNetworkNCLepE = networkNCEOut->fLepLorentzVector.E();
+  fTrueNCNuE = (float)trueNCEOut->fNuLorentzVector.E();
+  fNetworkNCNuE = (float)networkNCEOut->fNuLorentzVector.E();
+  fTrueNCHadE = (float)trueNCEOut->fHadLorentzVector.E();
+  fNetworkNCHadE = (float)networkNCEOut->fHadLorentzVector.E();
+  fTrueNCLepE = (float)trueNCEOut->fLepLorentzVector.E();
+  fNetworkNCLepE = (float)networkNCEOut->fLepLorentzVector.E();
 
   fTreeReco->Fill();
 }
