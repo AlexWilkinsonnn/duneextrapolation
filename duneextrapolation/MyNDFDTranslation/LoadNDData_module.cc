@@ -57,14 +57,9 @@ private:
   int                               fNEntries;
   int                               fEntry;
   TTree*                            fTreeDeposPackets;
-  int                              fEventID;
+  int                               fEventID;
   std::vector<std::vector<double>>* fDepos;
   std::vector<std::vector<double>>* fPackets;
-  // NOTE Need to decide how to keep track of which events are the same between larsoft and the ND
-  // reco chain. An int wont be good enough but but fine for now. Currently am just goint to use
-  // the entry number in the tree but will eventually need to have it created in the ND chain and
-  // read into here throught the ND input tree.
-  // int                               fNDEventID;
 
   // fhicl params
   std::string  fNDDataLoc;
@@ -132,9 +127,7 @@ void extrapolation::LoadNDData::produce(art::Event& e)
 
     geo::Point_t posStart = geo::Point_t(0,0,0);
     geo::Point_t posEnd = geo::Point_t(0,0,0);
-    std::cout << "here\n";
     sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0,0,0,0, posStart, posEnd, 0,0, fEventID);
-    std::cout << "here\n";
     evID->push_back(ID);
 
     e.put(std::move(evID), "EventID");
