@@ -29,13 +29,7 @@ sed "s/physics\.producers\.IonAndScint\.NDDataLoc:.*/physics\.producers\.IonAndS
 
 
 if [ ! -z $OUTNAME ]; then
-  echo
-  echo HERE
-  echo
   lar -c /tmp/run_LoadNDData_ammended.tmp.fcl -n $NEVTS -o $OUTNAME
 else
-  echo
-  echo WRONG HERE
-  echo
   lar -c /tmp/run_LoadNDData_ammended.tmp.fcl -n $NEVTS
 fi
