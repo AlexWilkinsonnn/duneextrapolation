@@ -7,32 +7,14 @@
 #SBATCH --mail-type=FAIL
 #SBATCH -o ./logs/slurm-%j.out
 
-# Path relative to indir eg 0m/00/FHC.1000000.edep_dump.h5
-RELATIVEPATH=$1
-KRBCACHE=$2
+# Paths relative to indir eg 0m/00/FHC.1000000.edep_dump.h5
+RELATIVEPATHS="$@"
 
 ###############################################################################
 # Prepare for job
 
-# indir=/wclustre/dune/awilkins/extrapolation/cafmaker_jobs/data/edep
-# outdir=/wclustre/dune/awilkins/extrapolation/cafmaker_jobs/data/translated
 indir=/pnfs/dune/persistent/users/awilkins/cafmaker/edep
 outdir=/pnfs/dune/persistent/users/awilkins/cafmaker/translated
-
-infilename=${RELATIVEPATH##*/}
-
-echo "Reading ${RELATIVEPATH} from ${indir}"
-
-# Copy kerberos credentials cache to node /tmp
-echo "Getting kereberos credentials from ${KRBCACHE}"
-krbroot=${KRBCACHE#/}
-krbroot=${krbroot%%/*}
-if [[ "$krbroot" != "wclustre" ]] && [[ "$krbroot" != "work1" ]]; then
-  echo "kerberos credential cache needs to be reachable (full path somewhere in /wclustre or /work1)"
-  exit 0
-fi
-
-cp $KRBCACHE /tmp
 
 # ifdhc doen't have a mkdir -p equivalent, which is fine
 # as long as you always remember to include this convenient function in your scripts
@@ -70,39 +52,43 @@ export CUDA_HOME=${nvccloc%/bin/nvcc}
 # Cupy needs a valid HOME to write cache stuff to
 export HOME=/scratch
 
-ifdh cp ${indir}/${RELATIVEPATH} /scratch/${infilename}
 cd /scratch
 
 ###############################################################################
-# Run ND detsim
+# Process files and copy results back
 
-detsimout=${infilename%.edep_dump.h5}.larnd-sim.h5
-python simulate_pixels.py \
-  --input_filename $infilename \
-  --detector_properties /work1/dune/users/awilkins/larnd-sim/larndsim/detector_properties/ndlar-module.yaml \
-  --pixel_layout /work1/dune/users/awilkins/larnd-sim/larndsim/pixel_layouts/multi_tile_layout-3.0.40.yaml \
-  --response_file /work1/dune/users/awilkins/larnd-sim/larndsim/response_38.npy \
-  --output_filename $detsimout
+for relativepath in $RELATIVEPATHS; do
+  echo "Reading ${relativepath} from ${indir}"
 
-detsimdump=${detsimout%.h5}.root
-python export_depos_packets_toroot.py \
-  -o $detsimdump \
-  --ped 74 \
-  --segment_length 0.04 \
-  --no_cuts \
-  $detsimout
+  infilename=${relativepath##*/}
+  ifdh cp ${indir}/${relativepath} /scratch/${infilename}
 
-###############################################################################
-# Run translation network
+  # ND detsim
+  detsimout=${infilename%.edep_dump.h5}.larnd-sim.h5
+  python simulate_pixels.py \
+    --input_filename $infilename \
+    --detector_properties /work1/dune/users/awilkins/larnd-sim/larndsim/detector_properties/ndlar-module.yaml \
+    --pixel_layout /work1/dune/users/awilkins/larnd-sim/larndsim/pixel_layouts/multi_tile_layout-3.0.40.yaml \
+    --response_file /work1/dune/users/awilkins/larnd-sim/larndsim/response_38.npy \
+    --n_tracks 100 \
+    --output_filename $detsimout
 
-detsimloaded=${detsimdump%.root}.tolarsoft.root
-./run_LoadNDData_auto.sh $detsimdump -1 $detsimloaded
+  detsimdump=${detsimout%.h5}.root
+  python export_depos_packets_toroot.py \
+    -o $detsimdump \
+    --ped 74 \
+    --segment_length 0.04 \
+    --no_cuts \
+    $detsimout
 
-lar -c run_NDToFD_inference.fcl -s $detsimloaded
+  # Translate to FD response
+  detsimloaded=${detsimdump%.root}.tolarsoft.root
+  ./run_LoadNDData_auto.sh $detsimdump -1 $detsimloaded
 
-###############################################################################
-# Copy results back to pnfs
+  lar -c run_NDToFD_inference.fcl -s $detsimloaded
 
-translated=${detsimloaded%.root}_ndtranslated.root
-ifdh_mkdir_p ${outdir}/${RELATIVEPATH%/*}
-ifdh cp $translated ${outdir}/${RELATIVEPATH%/*}/${translated}
+  # copy results back
+  translated=${detsimloaded%.root}_ndtranslated.root
+  ifdh_mkdir_p ${outdir}/${relativepath%/*}
+  ifdh cp $translated ${outdir}/${relativepath%/*}/${translated}
+done
