@@ -1,0 +1,18 @@
+#include "detsim_dune10kt_wirecell_refactored_nooptdet.fcl"
+
+services:
+{
+    @table::services
+    @table::dunefd_1x2x6_simulation_services_refactored
+}
+
+physics.producers:
+{
+    @table::physics.producers
+    tpcrawdecoder: @local::tpcrawdecoder_dunefd_horizdrift_1x2x6
+}
+
+outputs.out1.outputCommands: [ "keep *", "drop sim::SimChannels*_*_*_*" ]
+outputs.out1.fileName:       "%ifb_fddetsim.root"
+
+services.TFileService: { fileName: "%ifb_fddetsim_hist.root" }
