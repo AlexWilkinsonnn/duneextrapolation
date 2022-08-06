@@ -77,7 +77,7 @@ private:
   std::string fNetworkCVNCollectionResultsLabel;
   std::string fNDCVNResultsLabel;
   std::string fAltCVNResultsLabel;
-  std::string fTrueHitsLabel; 
+  std::string fTrueHitsLabel;
   std::string fNetworkHitsLabel;
   std::string fNDHitsLabel;
   std::string fAltHitsLabel;
@@ -88,10 +88,10 @@ private:
   std::string fNetworkNCEResultsLabel;
   std::string fAltNCEResultsLabel;
 
-   // Options from fcl 
+   // Options from fcl
   bool fLegacy;
   bool fCollectionComparison;
-  
+
   TTree*             fTreeCVNResults;
   int                fRun;
   int                fSubRun;
@@ -225,8 +225,8 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
     fNetworkCVNCollectionResultsLabel (p.get<std::string> ("NetworkCVNCollectionResultsLabel")),
     fNDCVNResultsLabel                (p.get<std::string> ("NDCVNResultsLabel")),
     fAltCVNResultsLabel               (p.get<std::string> ("AltCVNResultsLabel")),
-    fTrueHitsLabel                    (p.get<std::string> ("TrueHitsLabel")),    
-    fNetworkHitsLabel                 (p.get<std::string> ("NetworkHitsLabel")),      
+    fTrueHitsLabel                    (p.get<std::string> ("TrueHitsLabel")),
+    fNetworkHitsLabel                 (p.get<std::string> ("NetworkHitsLabel")),
     fNDHitsLabel                      (p.get<std::string> ("NDHitsLabel")),
     fAltHitsLabel                     (p.get<std::string> ("AltHitsLabel")),
     fTrueNumuEResultsLabel            (p.get<std::string> ("TrueNumuEResultsLabel")),
@@ -247,12 +247,12 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
   consumes<std::vector<recob::Hit>>(fNDHitsLabel);
 
   if (!fLegacy) {
-    consumes<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel); 
-    consumes<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel); 
-    consumes<dune::EnergyRecoOutput>(fAltNumuEResultsLabel); 
-    consumes<dune::EnergyRecoOutput>(fTrueNCEResultsLabel); 
-    consumes<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel); 
-    consumes<dune::EnergyRecoOutput>(fAltNCEResultsLabel); 
+    consumes<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel);
+    consumes<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel);
+    consumes<dune::EnergyRecoOutput>(fAltNumuEResultsLabel);
+    consumes<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
+    consumes<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
+    consumes<dune::EnergyRecoOutput>(fAltNCEResultsLabel);
 
     consumes<std::vector<cvn::Result>>(fAltCVNResultsLabel);
 
@@ -281,8 +281,8 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
   fTreeCVNResults->Branch("TrueCollectionNueScore", &fTrueCollectionNueScore, "truecollectionnuescore/F");
   fTreeCVNResults->Branch("NetworkNueScore", &fNetworkNueScore, "networknuescore/F");
   fTreeCVNResults->Branch("NetworkCollectionNueScore", &fNetworkCollectionNueScore, "networkcollectionnuescore/F");
-  fTreeCVNResults->Branch("NDNueScore", &fNDNueScore, "ndnuescore/F");  
-  fTreeCVNResults->Branch("AltNueScore", &fAltNueScore, "altnuescore/F");  
+  fTreeCVNResults->Branch("NDNueScore", &fNDNueScore, "ndnuescore/F");
+  fTreeCVNResults->Branch("AltNueScore", &fAltNueScore, "altnuescore/F");
   fTreeCVNResults->Branch("TrueNCScore", &fTrueNCScore, "truencscore/F");
   fTreeCVNResults->Branch("TrueCollectionNCScore", &fTrueCollectionNCScore, "truecollectionncscore/F");
   fTreeCVNResults->Branch("NetworkNCScore", &fNetworkNCScore, "networkncscore/F");
@@ -350,8 +350,8 @@ extrapolation::TranslationResultsDump::TranslationResultsDump(fhicl::ParameterSe
   fTreeCVNResults->Branch("TrueCollectionOtherScore", &fTrueCollectionOtherScore, "truecollectionotherscore/F");
   fTreeCVNResults->Branch("NetworkOtherScore", &fNetworkOtherScore, "networkotherscore/F");
   fTreeCVNResults->Branch("NetworkCollectionOtherScore", &fNetworkCollectionOtherScore, "networkcollectionotherscore/F");
-  fTreeCVNResults->Branch("NDOtherScore", &fNDOtherScore, "ndotherscore/F"); 
-  fTreeCVNResults->Branch("AltOtherScore", &fAltOtherScore, "altotherscore/F"); 
+  fTreeCVNResults->Branch("NDOtherScore", &fNDOtherScore, "ndotherscore/F");
+  fTreeCVNResults->Branch("AltOtherScore", &fAltOtherScore, "altotherscore/F");
   // Hit information
   fTreeCVNResults->Branch("TrueHitIntegralSumZ", &fTrueHitIntegralSumZ, "truehitintegralsumz/F");
   fTreeCVNResults->Branch("NetworkHitIntegralSumZ", &fNetworkHitIntegralSumZ, "networkhitintegralsumz/F");
@@ -396,19 +396,19 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
 
   // Get event id info
   fRun = e.id().run();
-  fSubRun = e.id().subRun(); 
+  fSubRun = e.id().subRun();
   fEventNum = e.id().event();
 
   // Get results from CVN
   const auto trueCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fTrueCVNResultsLabel);
   const auto networkCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fNetworkCVNResultsLabel);
   const auto NDCVNResults = e.getValidHandle<std::vector<cvn::Result>> (fNDCVNResultsLabel);
-  
+
   // Get hits
   const auto trueHits = e.getValidHandle<std::vector<recob::Hit>> (fTrueHitsLabel);
   const auto networkHits = e.getValidHandle<std::vector<recob::Hit>> (fNetworkHitsLabel);
   const auto NDHits = e.getValidHandle<std::vector<recob::Hit>> (fNDHitsLabel);
-  
+
   // Get flavour scores
   fTrueNumuScore = trueCVNResults->at(0).GetNumuProbability();
   fNetworkNumuScore = networkCVNResults->at(0).GetNumuProbability();
@@ -422,7 +422,7 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   fTrueNutauScore = trueCVNResults->at(0).GetNutauProbability();
   fNetworkNutauScore = networkCVNResults->at(0).GetNutauProbability();
   fNDNutauScore = NDCVNResults->at(0).GetNutauProbability();
-  
+
   // Get pred number of daughter particle types (3 means >2)
   fTrueNumPions = (int)trueCVNResults->at(0).PredictedPions();
   fNetworkNumPions = (int)networkCVNResults->at(0).PredictedPions();
@@ -455,7 +455,7 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   fTrueOtherScore = trueCVNResults->at(0).GetOtherProbability();
   fNetworkOtherScore = networkCVNResults->at(0).GetOtherProbability();
   fNDOtherScore = NDCVNResults->at(0).GetOtherProbability();
-  
+
   // Get Hit information
   std::map<raw::ChannelID_t, int> chZHitCntr;
   for (const recob::Hit& hit : *trueHits) {
@@ -496,7 +496,7 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
       fNDHitIntegralSumV += hit.Integral();
     }
   }
-  
+
   for (const auto& chCntrPair : chZHitCntr) {
     fTrueHitNumPerChZ.push_back(chCntrPair.second);
   }
@@ -549,25 +549,25 @@ void extrapolation::TranslationResultsDump::analyze(art::Event const& e)
   const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNCEResultsLabel);
   const auto altNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fAltNCEResultsLabel);
 
-  fTrueNumuNuE = trueNumuEOut->fNuLorentzVector.E(); 
-  fNetworkNumuNuE = networkNumuEOut->fNuLorentzVector.E(); 
-  fAltNumuNuE = altNumuEOut->fNuLorentzVector.E(); 
-  fTrueNumuHadE = trueNumuEOut->fHadLorentzVector.E(); 
-  fNetworkNumuHadE = networkNumuEOut->fHadLorentzVector.E(); 
-  fAltNumuHadE = altNumuEOut->fHadLorentzVector.E(); 
-  fTrueNumuLepE = trueNumuEOut->fLepLorentzVector.E(); 
-  fNetworkNumuLepE = networkNumuEOut->fLepLorentzVector.E(); 
-  fAltNumuLepE = altNumuEOut->fLepLorentzVector.E(); 
-  
-  fTrueNCNuE = trueNCEOut->fNuLorentzVector.E(); 
-  fNetworkNCNuE = networkNCEOut->fNuLorentzVector.E(); 
-  fAltNCNuE = altNCEOut->fNuLorentzVector.E(); 
-  fTrueNCHadE = trueNCEOut->fHadLorentzVector.E(); 
-  fNetworkNCHadE = networkNCEOut->fHadLorentzVector.E(); 
-  fAltNCHadE = altNCEOut->fHadLorentzVector.E(); 
-  fTrueNCLepE = trueNCEOut->fLepLorentzVector.E(); 
-  fNetworkNCLepE = networkNCEOut->fLepLorentzVector.E(); 
-  fAltNCLepE = networkNCEOut->fLepLorentzVector.E(); 
+  fTrueNumuNuE = trueNumuEOut->fNuLorentzVector.E();
+  fNetworkNumuNuE = networkNumuEOut->fNuLorentzVector.E();
+  fAltNumuNuE = altNumuEOut->fNuLorentzVector.E();
+  fTrueNumuHadE = trueNumuEOut->fHadLorentzVector.E();
+  fNetworkNumuHadE = networkNumuEOut->fHadLorentzVector.E();
+  fAltNumuHadE = altNumuEOut->fHadLorentzVector.E();
+  fTrueNumuLepE = trueNumuEOut->fLepLorentzVector.E();
+  fNetworkNumuLepE = networkNumuEOut->fLepLorentzVector.E();
+  fAltNumuLepE = altNumuEOut->fLepLorentzVector.E();
+
+  fTrueNCNuE = trueNCEOut->fNuLorentzVector.E();
+  fNetworkNCNuE = networkNCEOut->fNuLorentzVector.E();
+  fAltNCNuE = altNCEOut->fNuLorentzVector.E();
+  fTrueNCHadE = trueNCEOut->fHadLorentzVector.E();
+  fNetworkNCHadE = networkNCEOut->fHadLorentzVector.E();
+  fAltNCHadE = altNCEOut->fHadLorentzVector.E();
+  fTrueNCLepE = trueNCEOut->fLepLorentzVector.E();
+  fNetworkNCLepE = networkNCEOut->fLepLorentzVector.E();
+  fAltNCLepE = networkNCEOut->fLepLorentzVector.E();
 
   if (!fCollectionComparison) {
     fTreeCVNResults->Fill();
@@ -620,7 +620,7 @@ void extrapolation::TranslationResultsDump::endJob()
 {
 }
 
-void extrapolation::TranslationResultsDump::reset() 
+void extrapolation::TranslationResultsDump::reset()
 {
   fRun = -999;
   fSubRun = -999;
@@ -707,7 +707,7 @@ void extrapolation::TranslationResultsDump::reset()
   fNetworkCollectionOtherScore = -999.0;
   fNDOtherScore = -999.0;
   fAltOtherScore = -999.0;
-  
+
   fTrueHitIntegralSumZ = 0.0;
   fNetworkHitIntegralSumZ = 0.0;
   fNDHitIntegralSumZ = 0.0;

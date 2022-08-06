@@ -23,6 +23,7 @@
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
+#include "lardataobj/RecoBase/Hit.h"
 
 #include <string>
 
@@ -69,13 +70,15 @@ private:
   std::string fNetworkNueEResultsLabel;
   std::string fTrueNCEResultsLabel;
   std::string fNetworkNCEResultsLabel;
+  std::string fTrueHitsLabel;
+  std::string fNetworkHitsLabel;
   std::string fEventIDSEDLabel;
 
-  TTree*  fTreeReco;
-  int     fEventID;
-  int     fRun;
-  int     fSubRun;
-  int     fEventNum;
+  TTree* fTreeReco;
+  int    fEventID;
+  int    fRun;
+  int    fSubRun;
+  int    fEventNum;
   // Flavour scores
   float fTrueNumuScore;
   float fNetworkNumuScore;
@@ -107,6 +110,9 @@ private:
   float fNetworkNCHadE;
   float fTrueNCLepE;
   float fNetworkNCLepE;
+  // Hit information
+  int fTrueNumHits;
+  int fNetworkNumHits;
 };
 
 
@@ -120,6 +126,8 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
     fNetworkNueEResultsLabel  (p.get<std::string>("NetworkNueEResultsLabel")),
     fTrueNCEResultsLabel      (p.get<std::string>("TrueNCEResultsLabel")),
     fNetworkNCEResultsLabel   (p.get<std::string>("NetworkNCEResultsLabel")),
+    fTrueHitsLabel            (p.get<std::string>("TrueHitsLabel")),
+    fNetworkHitsLabel         (p.get<std::string>("NetworkHitsLabel")),
     fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
@@ -133,6 +141,9 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
   consumes<dune::EnergyRecoOutput>(fNetworkNueEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
+
+  consumes<std::vector<recob::Hit>>(fTrueHitsLabel);
+  consumes<std::vector<recob::Hit>>(fNetworkHitsLabel);
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -172,6 +183,10 @@ extrapolation::RecoDump::RecoDump(fhicl::ParameterSet const& p)
   fTreeReco->Branch("NetworkNCHadE", &fNetworkNCHadE, "networknchade/F");
   fTreeReco->Branch("TrueNCLepE", &fTrueNCLepE, "truenclepe/F");
   fTreeReco->Branch("NetworkNCLepE", &fNetworkNCLepE, "networknclepe/F");
+  // Hit information
+  fTreeReco->Branch("TrueNumHits", &fTrueNumHits, "truenumhits/I");
+  fTreeReco->Branch("NetworkNumHits", &fNetworkNumHits, "networknumhits/I");
+
 }
 
 void extrapolation::RecoDump::analyze(art::Event const& e)
@@ -206,12 +221,12 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
   fNetworkAntiNuScore = networkCVNResults->at(0).GetIsAntineutrinoProbability();
 
   // Get nu reco information
-  const auto trueNumuEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNumuEResultsLabel);
-  const auto networkNumuEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNumuEResultsLabel);
-  const auto trueNueEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNueEResultsLabel);
-  const auto networkNueEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNueEResultsLabel);
-  const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fTrueNCEResultsLabel);
-  const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput> (fNetworkNCEResultsLabel);
+  const auto trueNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel);
+  const auto networkNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel);
+  const auto trueNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNueEResultsLabel);
+  const auto networkNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNueEResultsLabel);
+  const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
+  const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
 
   fTrueNumuNuE = (float)trueNumuEOut->fNuLorentzVector.E();
   fNetworkNumuNuE = (float)networkNumuEOut->fNuLorentzVector.E();
@@ -233,6 +248,13 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
   fNetworkNCHadE = (float)networkNCEOut->fHadLorentzVector.E();
   fTrueNCLepE = (float)trueNCEOut->fLepLorentzVector.E();
   fNetworkNCLepE = (float)networkNCEOut->fLepLorentzVector.E();
+
+  // Get hit information
+  const auto trueHits = e.getValidHandle<std::vector<recob::Hit>>(fTrueHitsLabel);
+  const auto networkHits = e.getValidHandle<std::vector<recob::Hit>>(fNetworkHitsLabel);
+
+  fTrueNumHits = (int)trueHits->size();
+  fNetworkNumHits = (int)networkHits->size();
 
   fTreeReco->Fill();
 }
@@ -262,7 +284,6 @@ void extrapolation::RecoDump::reset()
   fTrueNutauScore = -999.0;
   fNetworkNutauScore = -999.0;
 
-
   fTrueAntiNuScore = -999.0;
   fNetworkAntiNuScore = -999.0;
 
@@ -284,6 +305,9 @@ void extrapolation::RecoDump::reset()
   fNetworkNCHadE = -1.0;
   fTrueNCLepE = -1.0;
   fNetworkNCLepE = -1.0;
+
+  fTrueNumHits = -1;
+  fNetworkNumHits = -1;
 }
 
 DEFINE_ART_MODULE(extrapolation::RecoDump)

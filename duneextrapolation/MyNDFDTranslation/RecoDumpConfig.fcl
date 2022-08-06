@@ -15,6 +15,9 @@ RecoDump:
   NetworkNueEResultsLabel:  "energyrecnue::RecoNetworkTranslated"
   TrueNCEResultsLabel:      "energyrecnc::RecoTrueTranslated"
   NetworkNCEResultsLabel:   "energyrecnc::RecoNetworkTranslated"
+
+  TrueHitsLabel:    "gaushit::RecoTrueTranslated"
+  NetworkHitsLabel: "gaushit::RecoNetworkTranslated"
 }
 
 END_PROLOG
