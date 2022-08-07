@@ -49,4 +49,4 @@ services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 physics.producers.translate.SavePixelMaps:   false
 physics.producers.translate.SaveTrueDigits:  false
 physics.producers.translate.MakeNDHits:      false
-physics.producers.translate.ApplySignalMask: false
+physics.producers.translate.ApplySignalMask: true
