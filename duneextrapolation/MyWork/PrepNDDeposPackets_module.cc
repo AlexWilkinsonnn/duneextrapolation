@@ -4,6 +4,15 @@
 // File:        PrepNDDeposPackets_module.cc
 //
 // Generated at Thu Apr 07 2022 by Alexander Wilkinson.
+//
+// Module to read ND packets and deposition from TTree outputtted by
+// export_depos_packets_toroot.py. The geometry service is used to
+// project packets onto wire + tick and calculate other FD projection
+// related quantities, they are written out to a flat tree with an ID
+// that is also written into a SED to keep track of. The depositions are
+// save as SEDs in the art-root file. All non-active volume (in ND LAr)
+// depositiona are projected to a wire + tick and written out along with
+// the packets in order to create an infill mask later.
 ////////////////////////////////////////////////////////////////////////
 
 #include "art/Framework/Core/EDProducer.h"
@@ -18,6 +27,7 @@
 
 #include <memory>
 #include <iostream>
+#include <set>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -73,6 +83,9 @@ private:
   // Writing output ND projectiosn tree
   TTree*                           fTreePacketProjections;
   std::vector<std::vector<double>> fPacketProjection;
+  std::vector<std::vector<int>>    fInfillMaskZ;
+  std::vector<std::vector<int>>    fInfillMaskU;
+  std::vector<std::vector<int>>    fInfillMaskV;
   int                              fEventID;
   std::vector<double>              fVertexOut;
 
@@ -119,18 +132,27 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
 
   fTreePacketProjections = tfs->make<TTree>("packet_projections", "packet_projections");
   fTreePacketProjections->Branch("projection", &fPacketProjection);
+  fTreePacketProjections->Branch("infillmaskz", &fInfillMaskZ);
+  fTreePacketProjections->Branch("infillmasku", &fInfillMaskU);
+  fTreePacketProjections->Branch("infillmaskv", &fInfillMaskV);
   fTreePacketProjections->Branch("eventid", &fEventID);
   fTreePacketProjections->Branch("vertex", &fVertexOut);
 }
 
 void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
 {
-  this ->reset();
-
-  auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
-  // std::cout << detProp.ConvertTicksToX(2000, fPIDZ) << "\n"; = 163.705
+  this->reset();
 
   if (fEntry < fNEntries) {
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(e);
+    // std::cout << detProp.ConvertTicksToX(2000, fPIDZ) << "\n"; = 163.705
+    const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
+    const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
+    const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
+    const geo::BoxBoundedGeo pGeoBoxZ = pGeoZ.BoundingBox();
+    const geo::BoxBoundedGeo pGeoBoxU = pGeoU.BoundingBox();
+    const geo::BoxBoundedGeo pGeoBoxV = pGeoV.BoundingBox();
+
     fTreeDeposPackets->GetEntry(fEntry);
 
     // Get Vertex alignment info
@@ -139,11 +161,22 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     double tickDiff = 2000 - vtxTick;
     double XShift = tickDiff * detProp.GetXTicksCoefficient(fTID.TPC, fTID.Cryostat);
 
+    // std::cout << XShift << "\n";
+    // std::cout << fGeom->TPC(fTID).MinX() << " - " << fGeom->TPC(fTID).MaxX() << "\n";
+    // std::cout << fGeom->TPC(fTID).MinY() << " - " << fGeom->TPC(fTID).MaxY() << "\n";
+    // std::cout << fGeom->TPC(fTID).MinZ() << " - " << fGeom->TPC(fTID).MaxZ() << "\n";
+    // std::cout << pGeoBoxZ.MinX() << " - " << pGeoBoxZ.MaxX() << ", " << pGeoBoxZ.MinY() << " - " << pGeoBoxZ.MaxY() << ", " << pGeoBoxZ.MinZ() << " - " << pGeoBoxZ.MaxZ() << "\n";
+    // std::cout << pGeoBoxU.MinX() << " - " << pGeoBoxU.MaxX() << ", " << pGeoBoxU.MinY() << " - " << pGeoBoxU.MaxY() << ", " << pGeoBoxU.MinZ() << " - " << pGeoBoxU.MaxZ() << "\n";
+    // std::cout << pGeoBoxV.MinX() << " - " << pGeoBoxV.MaxX() << ", " << pGeoBoxV.MinY() << " - " << pGeoBoxV.MaxY() << ", " << pGeoBoxV.MinZ() << " - " << pGeoBoxV.MaxZ() << "\n";
+
     // Make and add the ND depos
     auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
     auto evNum = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
 
     if (!fOnlyProjections) {
+      std::map<geo::View_t, std::set<std::pair<raw::ChannelID_t, unsigned int>>>
+        infillMaskChTIcks = { { geo::kZ, { } }, { geo::kU, { } }, { geo::kV, { } } };
+
       for (const std::vector<double>& depo : *fDepos) {
         int trackID = (int)depo[0];
         int pdg = (int)depo[1];
@@ -161,9 +194,87 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         geo::Point_t posStart = geo::Point_t(xMin, yMin, zMin);
         geo::Point_t posEnd = geo::Point_t(xMax, yMax, zMax);
 
+        // A better way to do this is cut out these depos before larnd-sim stage to ensure there
+        // no packets partially induced by depos that get cut here.
+        try {
+          if (fGeom->PositionToTPC(posStart).ID() != fTID) {
+            continue;
+          }
+        }
+        catch(...) { // Also want to skip if between TPCs
+          continue;
+        }
+
         sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
             0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg);
         SEDs->push_back(SED);
+
+        double activeVol = depo[12]; // 1.0 if active, -1.0 of not
+        if (activeVol < 0) {
+          // Didn't need to cut out depos that are goind into SEDs since these will be cut when
+          // WC drifts them anyway
+          // If deposition is not going to drifted by WC we don't want it
+          if (std::abs(posStart.X()) < 5.239 || std::abs(posStart.X()) > 362.916) {
+            continue;
+          }
+
+          if (pGeoBoxZ.ContainsY(posStart.Y()) &&
+              (posStart.Z() > (pGeoBoxZ.MinZ() - (pGeoZ.WirePitch()/2.1)) &&
+               posStart.Z() < (pGeoBoxZ.MaxZ() + (pGeoZ.WirePitch()/2.1)))) {
+            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
+
+            double tickRaw = detProp.ConvertXToTicks(xMin, fPIDZ);
+            tickRaw += fTickShiftZ;
+            unsigned int tick = (unsigned int)tickRaw;
+
+            infillMaskChTIcks[geo::kZ].insert(std::make_pair(ch, tick));
+          }
+
+          if (pGeoBoxU.ContainsY(posStart.Y()) &&
+              (posStart.Z() > (pGeoBoxU.MinZ() - (pGeoU.WirePitch()/2.1)) &&
+               posStart.Z() < (pGeoBoxU.MaxZ() + (pGeoU.WirePitch()/2.1)))) {
+            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDU) - fGeom->FirstChannelInROP(fRIDZ);
+
+            double tickRaw = detProp.ConvertXToTicks(xMin, fPIDU);
+            tickRaw += fTickShiftU;
+            unsigned int tick = (unsigned int)tickRaw;
+
+            infillMaskChTIcks[geo::kU].insert(std::make_pair(ch, tick));
+          }
+
+          if (pGeoBoxV.ContainsY(posStart.Y()) &&
+              (posStart.Z() > (pGeoBoxV.MinZ() - (pGeoV.WirePitch()/2.1)) &&
+               posStart.Z() < (pGeoBoxV.MaxZ() + (pGeoV.WirePitch()/2.1)))) {
+            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDV) - fGeom->FirstChannelInROP(fRIDZ);
+
+            double tickRaw = detProp.ConvertXToTicks(xMin, fPIDV);
+            tickRaw += fTickShiftV;
+            unsigned int tick = (unsigned int)tickRaw;
+
+            infillMaskChTIcks[geo::kV].insert(std::make_pair(ch, tick));
+          }
+        }
+      }
+
+      for (std::pair<raw::ChannelID_t, unsigned int> chTick : infillMaskChTIcks[geo::kZ] ) {
+        std::vector<int> infillMask(2, 0);
+        infillMask[0] = (int)chTick.first;
+        infillMask[1] = (int)chTick.second;
+        fInfillMaskZ.push_back(infillMask);
+      }
+
+      for (std::pair<raw::ChannelID_t, unsigned int> chTick : infillMaskChTIcks[geo::kU] ) {
+        std::vector<int> infillMask(2, 0);
+        infillMask[0] = (int)chTick.first;
+        infillMask[1] = (int)chTick.second;
+        fInfillMaskU.push_back(infillMask);
+      }
+
+      for (std::pair<raw::ChannelID_t, unsigned int> chTick : infillMaskChTIcks[geo::kV] ) {
+        std::vector<int> infillMask(2, 0);
+        infillMask[0] = (int)chTick.first;
+        infillMask[1] = (int)chTick.second;
+        fInfillMaskV.push_back(infillMask);
       }
     }
 
@@ -184,38 +295,107 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       double x = packet[2] + XShift;
       double adc = packet[4];
       double NDDrift = packet[5];
+      double NDModuleX = packet[6]; // x coord (z in FD) relative to ND drift volume
 
       geo::Point_t packetLoc(x, y, z);
 
-      const geo::PlaneGeo pGeoZ = fGeom->Plane(fPIDZ);
-      const geo::PlaneGeo pGeoU = fGeom->Plane(fPIDU);
-      const geo::PlaneGeo pGeoV = fGeom->Plane(fPIDV);
+      // If deposition is not going to drifted by WC we don't want it
+      if (std::abs(packetLoc.X()) < 5.239 || std::abs(packetLoc.X()) > 362.916) {
+        continue;
+      }
 
-      raw::ChannelID_t chZ = fGeom->NearestChannel(packetLoc, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
-      raw::ChannelID_t chU = fGeom->NearestChannel(packetLoc, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
-      raw::ChannelID_t chV = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
+      try {
+        if (fGeom->PositionToTPC(packetLoc).ID() != fTID) {
+          continue;
+        }
+      }
+      catch(...) { // Also want to skip if between TPCs
+        continue;
+      }
 
-      double tickRawZ = detProp.ConvertXToTicks(x, fPIDZ);
-      tickRawZ += fTickShiftZ;
-      unsigned int tickZ = (unsigned int)tickRawZ;
-      double tickRawU = detProp.ConvertXToTicks(x, fPIDU);
-      tickRawU += fTickShiftU;
-      unsigned int tickU = (unsigned int)tickRawU;
-      double tickRawV = detProp.ConvertXToTicks(x, fPIDV);
-      tickRawV += fTickShiftV;
-      unsigned int tickV = (unsigned int)tickRawV;
 
-      double driftDistanceZ = pGeoZ.DistanceFromPlane(packetLoc);
-      double driftDistanceU = pGeoU.DistanceFromPlane(packetLoc);
-      double driftDistanceV = pGeoV.DistanceFromPlane(packetLoc);
+      std::vector<double> projection(18, 0.0);
+      projection[0] = z;
+      projection[1] = y;
+      projection[2] = x;
+      projection[9] = adc;
+      projection[10] = NDDrift;
+      projection[17] = NDModuleX;
 
-      double wireCoordZ = pGeoZ.WireCoordinate(packetLoc);
-      double wireDistanceZ = (wireCoordZ - (double)(int)(0.5 + wireCoordZ)) * pGeoZ.WirePitch();
-      double wireCoordU = pGeoU.WireCoordinate(packetLoc);
-      double wireDistanceU = (wireCoordU - (double)(int)(0.5 + wireCoordU)) * pGeoU.WirePitch();
-      double wireCoordV = pGeoV.WireCoordinate(packetLoc);
-      double wireDistanceV = (wireCoordV - (double)(int)(0.5 + wireCoordV)) * pGeoV.WirePitch();
+      // 2.1 to be safe from NearestChannel exceptions
+      if (pGeoBoxZ.ContainsY(posStart.Y()) &&
+          (posStart.Z() > (pGeoBoxZ.MinZ() - (pGeoZ.WirePitch()/2.1)) &&
+           posStart.Z() < (pGeoBoxZ.MaxZ() + (pGeoZ.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
 
+        double tickRaw = detProp.ConvertXToTicks(x, fPIDZ);
+        tickRaw += fTickShiftZ;
+        unsigned int tick = (unsigned int)tickRaw;
+
+        double driftDistance = pGeoZ.DistanceFromPlane(packetLoc);
+
+        double wireCoord = pGeoZ.WireCoordinate(packetLoc);
+        double wireDistance = (wireCoord - (double)(int)(0.5 + wireCoord)) * pGeoZ.WirePitch();
+
+        projection[3] = ch;
+        projection[4] = tick;
+        projection[11] = driftDistance;
+        projection[14] = wireDistance;
+      }
+      else {
+        projection[3] = -1;
+      }
+
+      if (pGeoBoxU.ContainsY(posStart.Y()) &&
+          (posStart.Z() > (pGeoBoxU.MinZ() - (pGeoU.WirePitch()/2.1)) &&
+           posStart.Z() < (pGeoBoxU.MaxZ() + (pGeoU.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
+
+        double tickRaw = detProp.ConvertXToTicks(x, fPIDU);
+        tickRaw += fTickShiftU;
+        unsigned int tick = (unsigned int)tickRaw;
+
+        double driftDistance = pGeoU.DistanceFromPlane(packetLoc);
+
+        double wireCoord = pGeoU.WireCoordinate(packetLoc);
+        double wireDistance = (wireCoord - (double)(int)(0.5 + wireCoord)) * pGeoU.WirePitch();
+
+        projection[5] = ch;
+        projection[6] = tick;
+        projection[12] = driftDistance;
+        projection[15] = wireDistance;
+      }
+      else {
+        projection[5] = -1;
+      }
+
+      if (pGeoBoxV.ContainsY(posStart.Y()) &&
+          (posStart.Z() > (pGeoBoxV.MinZ() - (pGeoV.WirePitch()/2.1)) &&
+           posStart.Z() < (pGeoBoxV.MaxZ() + (pGeoV.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
+
+        double tickRaw = detProp.ConvertXToTicks(x, fPIDV);
+        tickRaw += fTickShiftV;
+        unsigned int tick = (unsigned int)tickRaw;
+
+        double driftDistance = pGeoV.DistanceFromPlane(packetLoc);
+
+        double wireCoord = pGeoV.WireCoordinate(packetLoc);
+        double wireDistance = (wireCoord - (double)(int)(0.5 + wireCoord)) * pGeoV.WirePitch();
+
+        projection[7] = ch;
+        projection[8] = tick;
+        projection[13] = driftDistance;
+        projection[16] = wireDistance;
+      }
+      else {
+        projection[7] = -1;
+      }
+
+      fPacketProjection.push_back(projection);
+
+      /* // I dont think this will work now that I slightly refactored the way the projection
+         // vector gets filled, fix it when I need to.
       // Project to wires and ticks with a much higher resolution
       // Try 9 also
       if (fHighResProjection) {
@@ -259,26 +439,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         tickV = (unsigned int)((tickRawV * 8.0) + 0.5);
         // std::cout << tickV << "\n";
       }
-
-      std::vector<double> projection(17, 0.0);
-      projection[0] = z;
-      projection[1] = y;
-      projection[2] = x;
-      projection[3] = chZ;
-      projection[4] = tickZ;
-      projection[5] = chU;
-      projection[6] = tickU;
-      projection[7] = chV;
-      projection[8] = tickV;
-      projection[9] = adc;
-      projection[10] = NDDrift;
-      projection[11] = driftDistanceZ;
-      projection[12] = driftDistanceU;
-      projection[13] = driftDistanceV;
-      projection[14] = wireDistanceZ;
-      projection[15] = wireDistanceU;
-      projection[16] = wireDistanceV;
-      fPacketProjection.push_back(projection);
+      */
     }
 
     // Store Event id number
