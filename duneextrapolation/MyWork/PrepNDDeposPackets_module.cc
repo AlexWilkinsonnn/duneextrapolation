@@ -313,7 +313,6 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         continue;
       }
 
-
       std::vector<double> projection(18, 0.0);
       projection[0] = z;
       projection[1] = y;
@@ -323,10 +322,10 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       projection[17] = NDModuleX;
 
       // 2.1 to be safe from NearestChannel exceptions
-      if (pGeoBoxZ.ContainsY(posStart.Y()) &&
-          (posStart.Z() > (pGeoBoxZ.MinZ() - (pGeoZ.WirePitch()/2.1)) &&
-           posStart.Z() < (pGeoBoxZ.MaxZ() + (pGeoZ.WirePitch()/2.1)))) {
-        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
+      if (pGeoBoxZ.ContainsY(packetLoc.Y()) &&
+          (packetLoc.Z() > (pGeoBoxZ.MinZ() - (pGeoZ.WirePitch()/2.1)) &&
+           packetLoc.Z() < (pGeoBoxZ.MaxZ() + (pGeoZ.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(packetLoc, fPIDZ) - fGeom->FirstChannelInROP(fRIDZ);
 
         double tickRaw = detProp.ConvertXToTicks(x, fPIDZ);
         tickRaw += fTickShiftZ;
@@ -346,10 +345,10 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         projection[3] = -1;
       }
 
-      if (pGeoBoxU.ContainsY(posStart.Y()) &&
-          (posStart.Z() > (pGeoBoxU.MinZ() - (pGeoU.WirePitch()/2.1)) &&
-           posStart.Z() < (pGeoBoxU.MaxZ() + (pGeoU.WirePitch()/2.1)))) {
-        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
+      if (pGeoBoxU.ContainsY(packetLoc.Y()) &&
+          (packetLoc.Z() > (pGeoBoxU.MinZ() - (pGeoU.WirePitch()/2.1)) &&
+           packetLoc.Z() < (pGeoBoxU.MaxZ() + (pGeoU.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(packetLoc, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
 
         double tickRaw = detProp.ConvertXToTicks(x, fPIDU);
         tickRaw += fTickShiftU;
@@ -369,10 +368,10 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
         projection[5] = -1;
       }
 
-      if (pGeoBoxV.ContainsY(posStart.Y()) &&
-          (posStart.Z() > (pGeoBoxV.MinZ() - (pGeoV.WirePitch()/2.1)) &&
-           posStart.Z() < (pGeoBoxV.MaxZ() + (pGeoV.WirePitch()/2.1)))) {
-        raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
+      if (pGeoBoxV.ContainsY(packetLoc.Y()) &&
+          (packetLoc.Z() > (pGeoBoxV.MinZ() - (pGeoV.WirePitch()/2.1)) &&
+           packetLoc.Z() < (pGeoBoxV.MaxZ() + (pGeoV.WirePitch()/2.1)))) {
+        raw::ChannelID_t ch = fGeom->NearestChannel(packetLoc, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
 
         double tickRaw = detProp.ConvertXToTicks(x, fPIDV);
         tickRaw += fTickShiftV;
