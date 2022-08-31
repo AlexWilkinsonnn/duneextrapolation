@@ -94,7 +94,6 @@ private:
   unsigned int fCIndex;
   unsigned int fTIndex;
   double       fYShift;
-  double       fZShift;
   double       fTickShiftZ;
   double       fTickShiftU;
   double       fTickShiftV;
@@ -118,7 +117,6 @@ extrapolation::PrepNDDeposPackets::PrepNDDeposPackets(fhicl::ParameterSet const&
     fCIndex            (p.get<unsigned int>("CryoIndex")),
     fTIndex            (p.get<unsigned int>("TpcIndex")),
     fYShift            (p.get<double>("YShift")),
-    fZShift            (p.get<double>("ZShift")),
     fTickShiftZ        (p.get<double>("TickShiftZ")),
     fTickShiftU        (p.get<double>("TickShiftU")),
     fTickShiftV        (p.get<double>("TickShiftV")),
@@ -161,7 +159,13 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     double tickDiff = 2000 - vtxTick;
     double XShift = tickDiff * detProp.GetXTicksCoefficient(fTID.TPC, fTID.Cryostat);
 
-    // std::cout << XShift << "\n";
+    double vtxZ = fVertex->at(0);
+    double ZShift = 0.0;
+    if (vtxZ < pGeoBoxZ.MinZ() + 10 || vtxZ > pGeoBoxZ.MaxZ() - 10) { 
+      ZShift = (pGeoBoxZ.MinZ() + 50) - vtxZ;
+    }
+    std::cout << ZShift << "\n";
+
     // std::cout << fGeom->TPC(fTID).MinX() << " - " << fGeom->TPC(fTID).MaxX() << "\n";
     // std::cout << fGeom->TPC(fTID).MinY() << " - " << fGeom->TPC(fTID).MaxY() << "\n";
     // std::cout << fGeom->TPC(fTID).MinZ() << " - " << fGeom->TPC(fTID).MaxZ() << "\n";
@@ -180,8 +184,8 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
       for (const std::vector<double>& depo : *fDepos) {
         int trackID = (int)depo[0];
         int pdg = (int)depo[1];
-        double zMin = depo[2] + fZShift;
-        double zMax = depo[3] + fZShift;
+        double zMin = depo[2] + ZShift;
+        double zMax = depo[3] + ZShift;
         double yMin = depo[4] + fYShift;
         double yMax = depo[5] + fYShift;
         double xMin = depo[6] + XShift;
@@ -290,7 +294,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     // Dont want to use this pair so dont write out the packet projections
     // Get the wires and ticks of the ND packets using the vertex alignment
     for (const std::vector<double>& packet : *fPackets) {
-      double z = packet[0] + fZShift;
+      double z = packet[0] + ZShift;
       double y = packet[1] + fYShift;
       double x = packet[2] + XShift;
       double adc = packet[4];
