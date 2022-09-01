@@ -164,7 +164,6 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
     if (vtxZ < pGeoBoxZ.MinZ() + 10 || vtxZ > pGeoBoxZ.MaxZ() - 10) { 
       ZShift = (pGeoBoxZ.MinZ() + 50) - vtxZ;
     }
-    std::cout << ZShift << "\n";
 
     // std::cout << fGeom->TPC(fTID).MinX() << " - " << fGeom->TPC(fTID).MaxX() << "\n";
     // std::cout << fGeom->TPC(fTID).MinY() << " - " << fGeom->TPC(fTID).MaxY() << "\n";
@@ -237,7 +236,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
           if (pGeoBoxU.ContainsY(posStart.Y()) &&
               (posStart.Z() > (pGeoBoxU.MinZ() - (pGeoU.WirePitch()/2.1)) &&
                posStart.Z() < (pGeoBoxU.MaxZ() + (pGeoU.WirePitch()/2.1)))) {
-            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDU) - fGeom->FirstChannelInROP(fRIDZ);
+            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDU) - fGeom->FirstChannelInROP(fRIDU);
 
             double tickRaw = detProp.ConvertXToTicks(xMin, fPIDU);
             tickRaw += fTickShiftU;
@@ -249,7 +248,7 @@ void extrapolation::PrepNDDeposPackets::produce(art::Event& e)
           if (pGeoBoxV.ContainsY(posStart.Y()) &&
               (posStart.Z() > (pGeoBoxV.MinZ() - (pGeoV.WirePitch()/2.1)) &&
                posStart.Z() < (pGeoBoxV.MaxZ() + (pGeoV.WirePitch()/2.1)))) {
-            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDV) - fGeom->FirstChannelInROP(fRIDZ);
+            raw::ChannelID_t ch = fGeom->NearestChannel(posStart, fPIDV) - fGeom->FirstChannelInROP(fRIDV);
 
             double tickRaw = detProp.ConvertXToTicks(xMin, fPIDV);
             tickRaw += fTickShiftV;
