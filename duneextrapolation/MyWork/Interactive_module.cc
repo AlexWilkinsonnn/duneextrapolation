@@ -30,6 +30,8 @@
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 
 namespace interactive {
   class Session;
@@ -54,15 +56,31 @@ private:
 
   std::string fSEDLabel;
   std::string fDigitsLabel;
+  std::string fERecProcess;
+
+  std::string fERecNumuLabel;
+  std::string fERecNCLabel;
+  std::string fERecNueLabel;
+
 };
 
 interactive::Session::Session(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
   fSEDLabel    (p.get<std::string>("SEDLabel")),
-  fDigitsLabel (p.get<std::string>("DigitsLabel"))
+  fDigitsLabel (p.get<std::string>("DigitsLabel")),
+  fERecProcess (p.get<std::string>("ERecProcess"))
 {
   if (fSEDLabel != "none")    consumes<std::vector<sim::SimEnergyDeposit>>(fSEDLabel);
   if (fDigitsLabel != "none") consumes<std::vector<raw::RawDigit>>(fDigitsLabel);
+
+  if (fERecProcess != "none") {
+    fERecNumuLabel = "energyrecnumu::" + fERecProcess;
+    consumes<std::vector<dune::EnergyRecoOutput>>(fERecNumuLabel);
+    fERecNCLabel = "energyrecnc::" + fERecProcess;
+    consumes<std::vector<dune::EnergyRecoOutput>>(fERecNCLabel);
+    fERecNueLabel = + "energyrecnue::" + fERecProcess;
+    consumes<std::vector<dune::EnergyRecoOutput>>(fERecNueLabel);
+  }
 }
 
 void interactive::Session::analyze(art::Event const& e)
@@ -110,6 +128,7 @@ void interactive::Session::analyze(art::Event const& e)
       // cout << "\n\n";
     }
   }
+
   if (fDigitsLabel != "none") { // Confirm noise has been removed from detsim
     const auto digs = e.getValidHandle<std::vector<raw::RawDigit>>(fDigitsLabel);
 
@@ -150,6 +169,36 @@ void interactive::Session::analyze(art::Event const& e)
         }
       }
     }
+  }
+
+  if (false) {
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(e);
+
+    std::cout << "clockData.TriggerTime()=" << clockData.TriggerTime()
+              << "\nclockData.TPCClock().TickPeriod()=" << clockData.TPCClock().TickPeriod()
+              << "\ndetinfo::trigger_offset(clockData)=" << detinfo::trigger_offset(clockData)
+              << "\n";
+  }
+
+  if (fERecProcess != "none") {
+    const auto numuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fERecNumuLabel);
+    const auto ncEOut = e.getValidHandle<dune::EnergyRecoOutput>(fERecNCLabel);
+    const auto nueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fERecNueLabel);
+
+    std::cout << "E_numu:\n";
+    std::cout << "E=" << numuEOut->fNuLorentzVector.E()
+              << ", E_Had=" << numuEOut->fHadLorentzVector.E()
+              << ", E_Lep=" << numuEOut->fLepLorentzVector.E() << "\n";
+
+    std::cout << "E_nc:\n";
+    std::cout << "E=" << ncEOut->fNuLorentzVector.E()
+              << ", E_Had=" << ncEOut->fHadLorentzVector.E()
+              << ", E_Lep=" << ncEOut->fLepLorentzVector.E() << "\n";
+
+    std::cout << "E_nue:\n";
+    std::cout << "E=" << nueEOut->fNuLorentzVector.E()
+              << ", E_Had=" << nueEOut->fHadLorentzVector.E()
+              << ", E_Lep=" << nueEOut->fLepLorentzVector.E() << "\n";
   }
 }
 

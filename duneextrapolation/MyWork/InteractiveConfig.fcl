@@ -6,6 +6,7 @@ InteractiveSession:
 
   SEDLabel:    "none"
   DigitsLabel: "none"
+  ERecProcess: "none"
 }
 
 END_PROLOG
