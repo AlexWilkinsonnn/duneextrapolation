@@ -113,6 +113,8 @@ private:
   // Hit information
   int fTrueNumHits;
   int fNetworkNumHits;
+
+  int fNumOORErrs;
 };
 
 
@@ -193,79 +195,89 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
 {
   this->reset();
 
-  // Get SED containing eventID
-  const auto eventIDSEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
-  fEventID = eventIDSEDs->at(0).TrackID();
+  try {
+    // Get SED containing eventID
+    const auto eventIDSEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
+    fEventID = eventIDSEDs->at(0).TrackID();
 
-  // Get event id info
-  fRun = e.id().run();
-  fSubRun = e.id().subRun();
-  fEventNum = e.id().event();
+    // Get event id info
+    fRun = e.id().run();
+    fSubRun = e.id().subRun();
+    fEventNum = e.id().event();
 
-  // Get results from CVN
-  const auto trueCVNResults = e.getValidHandle<std::vector<cvn::Result>>(fTrueCVNResultsLabel);
-  const auto networkCVNResults = e.getValidHandle<std::vector<cvn::Result>>(fNetworkCVNResultsLabel);
+    // Get results from CVN
+    const auto trueCVNResults = e.getValidHandle<std::vector<cvn::Result>>(fTrueCVNResultsLabel);
+    const auto networkCVNResults = e.getValidHandle<std::vector<cvn::Result>>(fNetworkCVNResultsLabel);
 
-  // Get flavour scores
-  fTrueNumuScore = trueCVNResults->at(0).GetNumuProbability();
-  fNetworkNumuScore = networkCVNResults->at(0).GetNumuProbability();
-  fTrueNueScore = trueCVNResults->at(0).GetNueProbability();
-  fNetworkNueScore = networkCVNResults->at(0).GetNueProbability();
-  fTrueNCScore = trueCVNResults->at(0).GetNCProbability();
-  fNetworkNCScore = networkCVNResults->at(0).GetNCProbability();
-  fTrueNutauScore = trueCVNResults->at(0).GetNutauProbability();
-  fNetworkNutauScore = networkCVNResults->at(0).GetNutauProbability();
+    // Get flavour scores
+    fTrueNumuScore = trueCVNResults->at(0).GetNumuProbability();
+    fNetworkNumuScore = networkCVNResults->at(0).GetNumuProbability();
+    fTrueNueScore = trueCVNResults->at(0).GetNueProbability();
+    fNetworkNueScore = networkCVNResults->at(0).GetNueProbability();
+    fTrueNCScore = trueCVNResults->at(0).GetNCProbability();
+    fNetworkNCScore = networkCVNResults->at(0).GetNCProbability();
+    fTrueNutauScore = trueCVNResults->at(0).GetNutauProbability();
+    fNetworkNutauScore = networkCVNResults->at(0).GetNutauProbability();
 
-  // Get antineutrino score
-  fTrueAntiNuScore = trueCVNResults->at(0).GetIsAntineutrinoProbability();
-  fNetworkAntiNuScore = networkCVNResults->at(0).GetIsAntineutrinoProbability();
+    // Get antineutrino score
+    fTrueAntiNuScore = trueCVNResults->at(0).GetIsAntineutrinoProbability();
+    fNetworkAntiNuScore = networkCVNResults->at(0).GetIsAntineutrinoProbability();
 
-  // Get nu reco information
-  const auto trueNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel);
-  const auto networkNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel);
-  const auto trueNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNueEResultsLabel);
-  const auto networkNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNueEResultsLabel);
-  const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
-  const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
+    // Get nu reco information
+    const auto trueNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNumuEResultsLabel);
+    const auto networkNumuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNumuEResultsLabel);
+    const auto trueNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNueEResultsLabel);
+    const auto networkNueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNueEResultsLabel);
+    const auto trueNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fTrueNCEResultsLabel);
+    const auto networkNCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNetworkNCEResultsLabel);
 
-  fTrueNumuNuE = (float)trueNumuEOut->fNuLorentzVector.E();
-  fNetworkNumuNuE = (float)networkNumuEOut->fNuLorentzVector.E();
-  fTrueNumuHadE = (float)trueNumuEOut->fHadLorentzVector.E();
-  fNetworkNumuHadE = (float)networkNumuEOut->fHadLorentzVector.E();
-  fTrueNumuLepE = (float)trueNumuEOut->fLepLorentzVector.E();
-  fNetworkNumuLepE = (float)networkNumuEOut->fLepLorentzVector.E();
+    fTrueNumuNuE = (float)trueNumuEOut->fNuLorentzVector.E();
+    fNetworkNumuNuE = (float)networkNumuEOut->fNuLorentzVector.E();
+    fTrueNumuHadE = (float)trueNumuEOut->fHadLorentzVector.E();
+    fNetworkNumuHadE = (float)networkNumuEOut->fHadLorentzVector.E();
+    fTrueNumuLepE = (float)trueNumuEOut->fLepLorentzVector.E();
+    fNetworkNumuLepE = (float)networkNumuEOut->fLepLorentzVector.E();
 
-  fTrueNueNuE = (float)trueNueEOut->fNuLorentzVector.E();
-  fNetworkNueNuE = (float)networkNueEOut->fNuLorentzVector.E();
-  fTrueNueHadE = (float)trueNueEOut->fHadLorentzVector.E();
-  fNetworkNueHadE = (float)networkNueEOut->fHadLorentzVector.E();
-  fTrueNueLepE = (float)trueNueEOut->fLepLorentzVector.E();
-  fNetworkNueLepE = (float)networkNueEOut->fLepLorentzVector.E();
+    fTrueNueNuE = (float)trueNueEOut->fNuLorentzVector.E();
+    fNetworkNueNuE = (float)networkNueEOut->fNuLorentzVector.E();
+    fTrueNueHadE = (float)trueNueEOut->fHadLorentzVector.E();
+    fNetworkNueHadE = (float)networkNueEOut->fHadLorentzVector.E();
+    fTrueNueLepE = (float)trueNueEOut->fLepLorentzVector.E();
+    fNetworkNueLepE = (float)networkNueEOut->fLepLorentzVector.E();
 
-  fTrueNCNuE = (float)trueNCEOut->fNuLorentzVector.E();
-  fNetworkNCNuE = (float)networkNCEOut->fNuLorentzVector.E();
-  fTrueNCHadE = (float)trueNCEOut->fHadLorentzVector.E();
-  fNetworkNCHadE = (float)networkNCEOut->fHadLorentzVector.E();
-  fTrueNCLepE = (float)trueNCEOut->fLepLorentzVector.E();
-  fNetworkNCLepE = (float)networkNCEOut->fLepLorentzVector.E();
+    fTrueNCNuE = (float)trueNCEOut->fNuLorentzVector.E();
+    fNetworkNCNuE = (float)networkNCEOut->fNuLorentzVector.E();
+    fTrueNCHadE = (float)trueNCEOut->fHadLorentzVector.E();
+    fNetworkNCHadE = (float)networkNCEOut->fHadLorentzVector.E();
+    fTrueNCLepE = (float)trueNCEOut->fLepLorentzVector.E();
+    fNetworkNCLepE = (float)networkNCEOut->fLepLorentzVector.E();
 
-  // Get hit information
-  const auto trueHits = e.getValidHandle<std::vector<recob::Hit>>(fTrueHitsLabel);
-  const auto networkHits = e.getValidHandle<std::vector<recob::Hit>>(fNetworkHitsLabel);
+    // Get hit information
+    const auto trueHits = e.getValidHandle<std::vector<recob::Hit>>(fTrueHitsLabel);
+    const auto networkHits = e.getValidHandle<std::vector<recob::Hit>>(fNetworkHitsLabel);
 
-  fTrueNumHits = (int)trueHits->size();
-  fNetworkNumHits = (int)networkHits->size();
+    fTrueNumHits = (int)trueHits->size();
+    fNetworkNumHits = (int)networkHits->size();
+  }
+  catch (const std::out_of_range& err) {
+    fNumOORErrs++;
 
-  fTreeReco->Fill();
+    this->reset();
+    fTreeReco->Fill();
+  }
 }
 
 void extrapolation::RecoDump::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+
+  fNumOORErrs = 0;
 }
 
 void extrapolation::RecoDump::endJob()
 {
+  std::cout << "There were " << fNumOORErrs << 
+               " out of range errors when accessing data products\n";
 }
 
 void extrapolation::RecoDump::reset()
