@@ -258,6 +258,8 @@ void extrapolation::RecoDump::analyze(art::Event const& e)
 
     fTrueNumHits = (int)trueHits->size();
     fNetworkNumHits = (int)networkHits->size();
+
+    fTreeReco->Fill();
   }
   catch (const std::out_of_range& err) {
     fNumOORErrs++;
