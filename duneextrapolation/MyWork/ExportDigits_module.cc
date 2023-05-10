@@ -215,7 +215,7 @@ void extrapolation::ExportDigits::beginJob()
 
   const geo::CryostatID cID(fCIndex);
   const geo::TPCID tID(cID, fTIndex);
-  for (geo::PlaneID pID : fGeom->IteratePlaneIDs(tID)) {
+  for (geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
     if (fGeom->View(pID) == geo::kZ) {
       std::cout << "Z plane: " << pID << "\n";
       fPIDZ = pID;

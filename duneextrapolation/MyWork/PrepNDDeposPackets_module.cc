@@ -467,7 +467,7 @@ void extrapolation::PrepNDDeposPackets::beginJob()
 
   const geo::CryostatID cID(fCIndex);
   fTID = geo::TPCID(cID, fTIndex);
-  for (geo::PlaneID pID : fGeom->IteratePlaneIDs(fTID)) {
+  for (geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(fTID)) {
     if (fGeom->View(pID) == geo::kZ) {
       std::cout << "Z plane: " << pID << "\n";
       fPIDZ = pID;

@@ -5,10 +5,10 @@ art_make(
 
                 lardataobj_RecoBase
                 lardataobj_RawData
-		lardataobj_Simulation
-		nusimdata_SimulationBase
+                lardataobj_Simulation
+                nusimdata_SimulationBase
                 larcorealg_Geometry
-		larcore_Geometry_Geometry_service
+                larcore_Geometry_Geometry_service
                 lardataalg_DetectorInfo
                 #dune-raw-data_Overlays
                 #dune_ArtSupport
