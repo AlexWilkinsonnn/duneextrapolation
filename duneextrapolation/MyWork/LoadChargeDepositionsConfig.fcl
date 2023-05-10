@@ -1,0 +1,20 @@
+BEGIN_PROLOG
+
+LoadChargeDepositions:
+{
+  module_type: "LoadChargeDepositions"
+
+  DepoDataLoc: ""
+
+  // Shifts the event up so that it can be fully contained by the top half of 1x2x6 geometry
+  XShift: 0
+  YShift: 200
+  ZShift: 0
+
+  // Remove depositions outside of these Z ranges.
+  // For ND simulation use [413.72, 916.68] to cut out depositions not in ND LAr (ND GAr or SAND)
+  ZCutLow:  413.72
+  ZCutHigh: 916.68
+}
+
+END_PROLOG
