@@ -272,6 +272,34 @@ void interactive::Session::beginJob()
       ", U wire pitch = " << fGeom->WirePitch(geo::kU) <<
       ", V wire pitch = " << fGeom->WirePitch(geo::kV) << "\n";
   }
+
+  // Get total size of FD
+  if (true) {
+    using std::cout;
+
+    unsigned int cryoIndex = 0;
+    const geo::CryostatID cID(cryoIndex);
+
+    std::vector<double> XBoundaries, YBoundaries, ZBoundaries;
+
+    for (geo::TPCID tID : fGeom->Iterate<geo::TPCID>(cID)) {
+      geo::TPCGeo tGeo = fGeom->TPC(tID);
+      geo::BoxBoundedGeo tBBGeo = tGeo.BoundingBox();
+      XBoundaries.push_back(tBBGeo.MinX());
+      XBoundaries.push_back(tBBGeo.MaxX());
+      YBoundaries.push_back(tBBGeo.MinY());
+      YBoundaries.push_back(tBBGeo.MaxY());
+      ZBoundaries.push_back(tBBGeo.MinZ());
+      ZBoundaries.push_back(tBBGeo.MaxZ());
+    }
+
+    cout << "MaxX: " << *std::max_element(XBoundaries.begin(), XBoundaries.end()) <<
+      "\nMinX: " << *std::min_element(XBoundaries.begin(), XBoundaries.end()) << "\n\n";
+    cout << "MaxY: " << *std::max_element(YBoundaries.begin(), YBoundaries.end()) <<
+      "\nMinY: " << *std::min_element(YBoundaries.begin(), YBoundaries.end()) << "\n\n";
+    cout << "MaxZ: " << *std::max_element(ZBoundaries.begin(), ZBoundaries.end()) <<
+      "\nMinZ: " << *std::min_element(ZBoundaries.begin(), ZBoundaries.end()) << "\n\n";
+  }
 }
 
 void interactive::Session::endJob()
