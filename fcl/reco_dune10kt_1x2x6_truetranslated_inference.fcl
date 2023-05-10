@@ -6,7 +6,6 @@ process_name: RecoTrueTranslated
 
 services:
 {
-  # Load the service that manages root files for histograms.
   TFileService: { fileName: "reco_hist.root" }
   MemoryTracker:     {}
   TimeTracker:       {}
@@ -16,7 +15,7 @@ services:
                         @table::dunefd_reco_services_refactored
   @table::dunefd_1x2x6_reco_services_refactored
 }
-#source is now a root file
+
 source:
 {
   module_type: RootInput
