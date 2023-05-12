@@ -40,7 +40,7 @@ physics:
 
  # trigger_paths is a keyword and contains the paths that modify the art::event,
  # ie filters and producers
- reco: [ @sequence::reco3view_workflow_true ]
+ reco: [ @sequence::reco3view_workflow ]
  trigger_paths: [ reco ]
 
  # end_paths is a keyword and contains the paths that do not modify the art::Event,

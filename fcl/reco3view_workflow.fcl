@@ -70,6 +70,12 @@ reco3view_pandora:
   pandorapid
 ]
 
+reco3view_cvn:
+[
+  cvnmap,
+  cvneva
+]
+
 reco3view_cvn_true:
 [
   cvnmaptrue,
@@ -99,6 +105,16 @@ reco3view_nuenergy:
   energyrecnumu,
   energyrecnue,
   energyrecnc
+]
+
+reco3view_workflow:
+[
+  @sequence::reco3view_sp,
+  @sequence::reco3view_2dclustering,
+  @sequence::reco3view_pandora,
+  @sequence::reco3view_cvn,
+  @sequence::reco3view_nuenergy,
+  rns
 ]
 
 reco3view_workflow_true:
