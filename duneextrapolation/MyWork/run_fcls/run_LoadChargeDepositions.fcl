@@ -51,4 +51,3 @@ services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
 physics.producers.IonAndScint.DepoDataLoc: "/dune/app/users/awilkins/duneextrapolation_larsoft/FHC.1000071.edep_flat.root"
 
-

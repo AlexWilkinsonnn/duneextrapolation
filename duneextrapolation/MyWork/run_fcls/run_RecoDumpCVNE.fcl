@@ -1,0 +1,33 @@
+#include "services_dune.fcl"
+#include "RecoDumpCVNEConfig.fcl"
+
+process_name: RecoDumpCVNE
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+services:
+{
+  @table::dunefd_services
+  TFileService: { fileName: "%ifb_recodump.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    recodump: @local::RecoDumpCVNE
+  }
+
+  path0:     [ recodump ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+

@@ -1,0 +1,16 @@
+BEGIN_PROLOG
+
+RecoDumpCVNE:
+{
+  module_type: "RecoDumpCVNE"
+
+  EventIDSEDLabel: "IonAndScint:EventNumber:LoadDepos"
+
+  CVNResultsLabel:    "cvneva:cvnresult:RecoLoadedDepos"
+
+  NumuEResultsLabel:    "energyrecnumu::RecoLoadedDepos"
+  NueEResultsLabel:     "energyrecnue::RecoLoadedDepos"
+  NCEResultsLabel:      "energyrecnc::RecoLoadedDepos"
+}
+
+END_PROLOG
