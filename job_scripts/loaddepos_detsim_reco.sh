@@ -10,6 +10,8 @@ OUTPUT_DIR="/pnfs/dune/scratch/users/awilkins/lep_contained_pairs/test/fd"
 
 EDEP_DIR="/pnfs/dune/scratch/users/awilkins/lep_contained_pairs/test/edep"
 
+LARSOFT_LOCAL_DIRNAME="duneextrapolation_larsoft"
+
 ################################################################################
 
 echo "Running on $(hostname) at ${GLIDEIN_Site}. GLIDEIN_DUNESite = ${GLIDEIN_DUNESite}"
@@ -20,14 +22,17 @@ line_num=$((PROCESS+1))
 file_num=$(sed "${num}q;d" file_nums.txt)
 edep_file=FHC.${file_num}.edep_flat.root
 
-source ${INPUT_TAR_DIR_LOCAL}/setup.sh
-setup ifdhc v2_6_6
+source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
+source ${INPUT_TAR_DIR_LOCAL}/${LARSOFT_LOCAL_DIRNAME}/localProducts_larsoft_*/setup_grid
+mrbslp
+
+ups active
 
 ifdh cp -D ${EDEP_DIR}/${edep_file}
 edep_filepath=$(realpath $edep_file)
 
 sed -e "s#physics.producers.IonAndScint.DepoDataLoc:.*#physics.producers.IonAndScint.DepoDataLoc: \"${edep_filepath}\"#" \
-    ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/MyWork/run_fcls/run_LoadChargeDepositions.fcl > \
+    ${INPUT_TAR_DIR_LOCAL}/${LARSOFT_LOCAL_DIRNAME}/srcs/duneextrapolation/duneextrapolation/MyWork/run_fcls/run_LoadChargeDepositions.fcl > \
     run_LoadChargeDepositions_local.fcl
 
 n_evts=$(echo "std::cout << nd_depos->GetEntries() << std::endl;" | \
