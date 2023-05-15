@@ -85,6 +85,7 @@ private:
   TTree*                            fTreeDepos;
   std::vector<std::vector<double>>* fDepos;
   std::vector<double>*              fVertex;
+  int                               fEventID;
 
   // fhicl params
   std::string fDepoDataLoc;
@@ -93,9 +94,6 @@ private:
   double      fZShift;
   double      fZCutLow;
   double      fZCutHigh;
-
-   // Other members
-  int            fEventNumber;
 };
 
 extrapolation::LoadChargeDepositions::LoadChargeDepositions(fhicl::ParameterSet const& p)
@@ -165,15 +163,12 @@ void extrapolation::LoadChargeDepositions::produce(art::Event& e)
   // SED that stores an ID for this event
   geo::Point_t posStart = geo::Point_t(0,0,0);
   geo::Point_t posEnd = geo::Point_t(0,0,0);
-  sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(
-    0, 0, 0, 0, posStart, posEnd, 0, 0, fEventNumber
-  );
+  sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(0, 0, 0, 0, posStart, posEnd, 0, 0, fEventID);
   evNum->push_back(ID);
 
   e.put(std::move(SEDs));
   e.put(std::move(evNum), "EventNumber");
 
-  fEventNumber++;
   fEntry++;
 }
 
@@ -182,13 +177,14 @@ void extrapolation::LoadChargeDepositions::beginJob()
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
   std::cout << "Reading file from " << fDepoDataLoc << "\n";
-  fEntry = 0; fDepos = nullptr; fVertex = nullptr;
+  fDepos = nullptr; fVertex = nullptr; fEventID = -1;
   TFile* fileDepos = new TFile(fDepoDataLoc.c_str());
   fTreeDepos = (TTree*)fileDepos->Get("nd_depos");
   fTreeDepos->SetBranchAddress("nd_depos", &fDepos);
   fTreeDepos->SetBranchAddress("vertex", &fVertex);
+  fTreeDepos->SetBranchAddress("eventID", &fEventID);
 
-  fEventNumber = 0;
+  fEntry = 0;
   fNEntries = fTreeDepos->GetEntries();
   std::cout << "File has " << fNEntries << " entries\n";
 }
