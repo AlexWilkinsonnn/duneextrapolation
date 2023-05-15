@@ -241,7 +241,6 @@ void extrapolation::RecoDumpCVNE::analyze(art::Event const& e)
     fNCRecoMethod = (int)NCEOut->recoMethodUsed;
 
     fTreeReco->Fill();
-    std::cout << "filled\n";
   }
   catch (const std::out_of_range& err) {
     fNumOORErrs++;
