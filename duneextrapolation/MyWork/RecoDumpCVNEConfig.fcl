@@ -6,11 +6,11 @@ RecoDumpCVNE:
 
   EventIDSEDLabel: "IonAndScint:EventNumber:LoadDepos"
 
-  CVNResultsLabel:    "cvneva:cvnresult:RecoLoadedDepos"
+  CVNResultsLabel:    "cvneva:cvnresult:"
 
-  NumuEResultsLabel:    "energyrecnumu::RecoLoadedDepos"
-  NueEResultsLabel:     "energyrecnue::RecoLoadedDepos"
-  NCEResultsLabel:      "energyrecnc::RecoLoadedDepos"
+  NumuEResultsLabel:    "energyrecnumu::"
+  NueEResultsLabel:     "energyrecnue::"
+  NCEResultsLabel:      "energyrecnc::"
 }
 
 END_PROLOG

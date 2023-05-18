@@ -124,6 +124,10 @@ void extrapolation::LoadChargeDepositions::produce(art::Event& e)
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
   auto evNum = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
 
+  // std::vector<double> xs;
+  // std::vector<double> ys;
+  // std::vector<double> zs;
+
   // For moving events from ND LAr, using YShift=200 the rest 0
   for (const std::vector<double>& depo : *fDepos) {
     int trackID = (int)depo[0];
@@ -154,11 +158,19 @@ void extrapolation::LoadChargeDepositions::produce(art::Event& e)
     //   std::cout << "!!!!!!!!!!" << xMin << "," << yMin << "," << zMin << "!!!!!!!!!!\n";
     // }
 
+    // xs.push_back(xMin); xs.push_back(xMax);
+    // ys.push_back(yMin); ys.push_back(yMax);
+    // zs.push_back(zMin); zs.push_back(zMax);
+
     sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
       0, electrons, 0, dE, posStart, posEnd, tMin, tMax, trackID, pdg
     );
     SEDs->push_back(SED);
   }
+
+  // std::cout << *std::max_element(xs.begin(), xs.end()) << " " << *std::min_element(xs.begin(), xs.end()) << "\n";
+  // std::cout << *std::max_element(ys.begin(), ys.end()) << " " << *std::min_element(ys.begin(), ys.end()) << "\n";
+  // std::cout << *std::max_element(zs.begin(), zs.end()) << " " << *std::min_element(zs.begin(), zs.end()) << "\n";
 
   // SED that stores an ID for this event
   geo::Point_t posStart = geo::Point_t(0,0,0);
