@@ -274,7 +274,7 @@ void interactive::Session::beginJob()
   }
 
   // Get total size of FD
-  if (true) {
+  if (false) {
     using std::cout;
 
     unsigned int cryoIndex = 0;
