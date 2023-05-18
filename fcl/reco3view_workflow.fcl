@@ -56,6 +56,14 @@ reco3view_sp:
   hitfd
 ]
 
+reco3view_sp_nowc:
+[
+  caldata,
+  gaushit,
+  spsolve,
+  hitfd
+]
+
 reco3view_2dclustering:
 [
   linecluster
@@ -117,6 +125,16 @@ reco3view_workflow:
   rns
 ]
 
+reco3view_nowc_workflow:
+[
+  @sequence::reco3view_sp_nowc,
+  @sequence::reco3view_2dclustering,
+  @sequence::reco3view_pandora,
+  @sequence::reco3view_cvn,
+  @sequence::reco3view_nuenergy,
+  rns
+]
+
 reco3view_workflow_true:
 [
   @sequence::reco3view_sp,
@@ -142,6 +160,7 @@ reco3view_workflow_nd:
   @sequence::reco3view_cvn_nd,
   rns
 ]
+
 reco3view_workflow_alt:
 [
   @sequence::reco3view_sp,

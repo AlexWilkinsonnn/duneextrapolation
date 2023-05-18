@@ -40,7 +40,7 @@ physics:
 
  # trigger_paths is a keyword and contains the paths that modify the art::event,
  # ie filters and producers
- reco: [ @sequence::reco3view_workflow ]
+ reco: [ @sequence::reco3view_nowc_workflow ]
  trigger_paths: [ reco ]
 
  # end_paths is a keyword and contains the paths that do not modify the art::Event,
@@ -67,6 +67,7 @@ outputs:
 
 physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "tpcrawdecoder:daq:detsim"
 physics.producers.gaushit.CalDataModuleLabel:                  "wclsmcnfsp:gauss:RecoLoadedDepos"
+# physics.producers.gaushit.CalDataModuleLabel:                  "caldata"
 
 physics.producers.spsolve.HitLabel:     "gaushit::RecoLoadedDepos"
 physics.producers.hitfd.HitModuleLabel: "gaushit::RecoLoadedDepos"
@@ -92,25 +93,28 @@ physics.producers.cvnmap.MinClusterHits:  0
 
 physics.producers.cvneva.PixelMapInput: "cvnmap"
 
-physics.producers.energyrecnumu.HitLabel:             "linecluster::RecoLoadedDepos"
+physics.producers.energyrecnumu.HitLabel:             "gaushit::RecoLoadedDepos"
 physics.producers.energyrecnumu.HitToSpacePointLabel: "pandora::RecoLoadedDepos"
 physics.producers.energyrecnumu.ShowerLabel:          "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnumu.ShowerToHitLabel:     "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnumu.TrackLabel:           "pandoraTrack::RecoLoadedDepos"
 physics.producers.energyrecnumu.TrackToHitLabel:      "pandoraTrack::RecoLoadedDepos"
-physics.producers.energyrecnumu.WireLabel:            "wclsmcnfsp:gauss:RecoLoadedDepos"
-physics.producers.energyrecnc.HitLabel:               "linecluster::RecoLoadedDepos"
+physics.producers.energyrecnumu.WireLabel:            "caldata"
+# physics.producers.energyrecnumu.WireLabel:            "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.energyrecnc.HitLabel:               "gaushit::RecoLoadedDepos"
 physics.producers.energyrecnc.HitToSpacePointLabel:   "pandora::RecoLoadedDepos"
 physics.producers.energyrecnc.ShowerLabel:            "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnc.ShowerToHitLabel:       "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnc.TrackLabel:             "pandoraTrack::RecoLoadedDepos"
 physics.producers.energyrecnc.TrackToHitLabel:        "pandoraTrack::RecoLoadedDepos"
-physics.producers.energyrecnc.WireLabel:              "wclsmcnfsp:gauss:RecoLoadedDepos"
-physics.producers.energyrecnue.HitLabel:              "linecluster::RecoLoadedDepos"
+physics.producers.energyrecnc.WireLabel:              "caldata"
+# physics.producers.energyrecnc.WireLabel:              "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.energyrecnue.HitLabel:              "gaushit::RecoLoadedDepos"
 physics.producers.energyrecnue.HitToSpacePointLabel:  "pandora::RecoLoadedDepos"
 physics.producers.energyrecnue.ShowerLabel:           "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnue.ShowerToHitLabel:      "pandoraShower::RecoLoadedDepos"
 physics.producers.energyrecnue.TrackLabel:            "pandoraTrack::RecoLoadedDepos"
 physics.producers.energyrecnue.TrackToHitLabel:       "pandoraTrack::RecoLoadedDepos"
-physics.producers.energyrecnue.WireLabel:             "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.energyrecnue.WireLabel:             "caldata"
+# physics.producers.energyrecnue.WireLabel:             "wclsmcnfsp:gauss:RecoLoadedDepos"
 

@@ -1,0 +1,185 @@
+#include "services_dune.fcl"
+#include "reco_workflow_dune10kt_rerefactored.fcl"
+#include "tools_dune.fcl"
+
+process_name: RecoLoadedDepos
+
+services:
+{
+  TFileService: { fileName: "reco_hist.root" }
+  MemoryTracker:     {}
+  TimeTracker:       {}
+  RandomNumberGenerator: {}
+  message:              @local::dune_message_services_prod
+  FileCatalogMetadata:  @local::art_file_catalog_mc
+                        @table::dunefd_reco_services_refactored
+  @table::dunefd_1x2x6_reco_services_refactored
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1
+  saveMemoryObjectThreshold: 0
+  inputCommands: ["keep *_*_*_*", "drop *_*_*_Reco" ]
+}
+
+# Define and configure some modules to do work on each event.
+# First modules are defined; they are scheduled later.
+# Modules are grouped by type.
+physics:
+{
+
+ producers:
+ {
+  @table::dunefd_horizdrift_producers
+ }
+
+ # define the output stream, there could be more than one if using filters
+ stream1:  [ out1 ]
+
+ # trigger_paths is a keyword and contains the paths that modify the art::event,
+ # ie filters and producers
+ reco: [ @sequence::dunefd_horizdrift_workflow_reco ]
+ trigger_paths: [ reco ]
+
+ # end_paths is a keyword and contains the paths that do not modify the art::Event,
+ # ie analyzers and output streams.  these all run simultaneously
+ end_paths:     [stream1]
+}
+
+# block to define where the output goes. if you defined a filter in the physics
+# block and put it in the trigger_paths then you need to put a SelectEvents: {SelectEvents: [XXX]}
+# entry in the output stream you want those to go to,
+# where XXX is the label of the filter module(s)
+outputs:
+{
+ out1:
+ {
+   module_type: RootOutput
+   fileName:    "%ifb_reco.root"
+   dataTier:    "full-reconstructed"
+   compressionLevel: 1
+   saveMemoryObjectThreshold: 0
+   outputCommands: ["keep *", "drop *_wclsmcnfsp_wiener_*"]
+ }
+}
+
+physics.producers.wclsmcnfsp.wcls_main.params.raw_input_label: "tpcrawdecoder:daq:detsim"
+physics.producers.gaushit.CalDataModuleLabel:                  "wclsmcnfsp:gauss:RecoLoadedDepos"
+
+physics.producers.linecluster.HitFinderModuleLabel: "hitfd"
+
+physics.producers.pmtrack.WireModuleLabel: "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.pmtrack.HitModuleLabel: "linecluster"
+physics.producers.pmtrack.ClusterModuleLabel: "linecluster"
+physics.producers.pmtrack.EmClusterModuleLabel: "trkshowersplit"
+physics.producers.pmtrack.PMAlgTracking.RunVertexing: true
+physics.producers.pmtrack.PMAlgTracking.MinSeedSize2ndPass: 2
+physics.producers.pmtrack.PMAlgTracking.FlipToBeam: false
+physics.producers.pmtrack.PMAlgTracking.AutoFlip_dQdx: true
+
+physics.producers.pmtracktc.WireModuleLabel: "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.pmtracktc.HitModuleLabel: "trajcluster"
+physics.producers.pmtracktc.ClusterModuleLabel: "trajcluster"
+physics.producers.pmtracktc.PMAlgTracking.RunVertexing: true
+physics.producers.pmtracktc.PMAlgTracking.MinSeedSize2ndPass: 2
+physics.producers.pmtracktc.PMAlgTracking.FlipToBeam: false
+physics.producers.pmtracktc.PMAlgTracking.AutoFlip_dQdx: true
+
+physics.producers.pmtrajfittc.HitModuleLabel:            "trajcluster"
+physics.producers.pmtrajfittc.PfpModuleLabel:            "trajcluster"
+physics.producers.pmtrajfittc.PMAlgFitting.RunVertexing: true
+
+physics.producers.pmtrajfit.HitModuleLabel: "linecluster"
+physics.producers.pmtrajfit.PfpModuleLabel: "pandora"
+
+physics.producers.pmtrackcalo.TrackModuleLabel:      "pmtrack"
+physics.producers.pmtrackcalo.SpacePointModuleLabel: "pmtrack"
+physics.producers.pmtrackcalo.T0ModuleLabel:         ""
+physics.producers.pmtrackcalo.MakeTree:              false
+
+physics.producers.pmtrajfitcalo.TrackModuleLabel:      "pmtrajfit"
+physics.producers.pmtrajfitcalo.SpacePointModuleLabel: "pmtrajfit"
+physics.producers.pmtrajfitcalo.T0ModuleLabel:         ""
+physics.producers.pmtrajfitcalo.MakeTree:              false
+
+physics.producers.pmtracktccalo.TrackModuleLabel:      "pmtracktc"
+physics.producers.pmtracktccalo.SpacePointModuleLabel: "pmtracktc"
+physics.producers.pmtracktccalo.T0ModuleLabel:         ""
+physics.producers.pmtracktccalo.MakeTree:              false
+
+
+physics.producers.pmtrackpid.CalorimetryModuleLabel:   "pmtrackcalo"
+physics.producers.pmtrackpid.TrackModuleLabel:         "pmtrack"
+physics.producers.pmtrajfitpid.CalorimetryModuleLabel: "pmtrajfitcalo"
+physics.producers.pmtrajfitpid.TrackModuleLabel:       "pmtrajfit"
+physics.producers.pmtracktcpid.CalorimetryModuleLabel: "pmtracktccalo"
+physics.producers.pmtracktcpid.TrackModuleLabel:       "pmtracktc"
+
+physics.producers.pmtrajfittccalo.TrackModuleLabel:      "pmtrajfittc"
+physics.producers.pmtrajfittccalo.SpacePointModuleLabel: "pmtrajfittc"
+physics.producers.pmtrajfittccalo.T0ModuleLabel:         ""
+physics.producers.pmtrajfittccalo.MakeTree:              false
+physics.producers.pmtrajfittcpid.CalorimetryModuleLabel: "pmtrajfittccalo"
+physics.producers.pmtrajfittcpid.TrackModuleLabel:       "pmtrajfittc"
+
+physics.producers.pandora.HitFinderModuleLabel:  "hitfd"
+physics.producers.pandoraTrack.PFParticleLabel:  "pandora"
+physics.producers.pandoraShower.PFParticleLabel: "pandora"
+
+physics.producers.pandoracalo.TrackModuleLabel:      "pandoraTrack"
+physics.producers.pandoracalo.SpacePointModuleLabel: "pandora"
+physics.producers.pandoracalo.T0ModuleLabel:         ""
+physics.producers.pandoracalo.MakeTree:              false
+physics.producers.pandorapid.CalorimetryModuleLabel: "pandoracalo"
+physics.producers.pandorapid.TrackModuleLabel:       "pandoraTrack"
+
+physics.producers.blurredcluster.HitsModuleLabel:   "linecluster"
+physics.producers.blurredcluster.TrackModuleLabel:  "pmtrack"
+physics.producers.blurredcluster.CreateDebugPDF:    false
+physics.producers.blurredcluster.MergeClusters:     false
+physics.producers.blurredcluster.GlobalTPCRecon:    true
+physics.producers.blurredcluster.ShowerReconOnly:   false
+physics.producers.blurredcluster.VertexModuleLabel: "linecluster"
+
+physics.producers.emtrkmichelid.WireLabel: "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.emtrkmichelid.PointIdAlg.NNetModelFile: "CnnModels/cnn_ndkemtrk_pitch_5_wire_44_drift_48_down_6_mean_notes_AtmAndNdk.nnet"
+physics.producers.emtrkmichelid.PointIdAlg.NNetOutputs: ["track", "em", "michel", "none"]
+physics.producers.emtrkmichelid.PointIdAlg.PatchSizeW: 44
+physics.producers.emtrkmichelid.PointIdAlg.PatchSizeD: 48
+physics.producers.emtrkmichelid.PointIdAlg.DriftWindow: 6
+physics.producers.emtrkmichelid.PointIdAlg.DownscaleFn: "mean"
+physics.producers.emtrkmichelid.PointIdAlg.DownscaleFullView: false
+physics.producers.emtrkmichelid.HitModuleLabel: "linecluster"
+physics.producers.emtrkmichelid.ClusterModuleLabel: "linecluster"
+physics.producers.emtrkmichelid.Views: []
+
+physics.producers.emshower.ClusterModuleLabel:    "pandora"
+physics.producers.emshower.HitsModuleLabel:       "linecluster"
+physics.producers.emshower.PFParticleModuleLabel: "pandora"
+physics.producers.emshower.TrackModuleLabel:      "pandoraTrack"
+physics.producers.emshower.CNNEMModuleLabel:      "emtrkmichelid:emtrkmichel"
+physics.producers.emshower.UseCNNtoIDEMPFP:       true
+physics.producers.emshower.UseCNNtoIDEMHit:       false
+physics.producers.emshower.MinTrackLikeScore:     0.1
+
+physics.producers.energyrecnumu.WireLabel: "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.energyrecnue.WireLabel:  "wclsmcnfsp:gauss:RecoLoadedDepos"
+physics.producers.energyrecnc.WireLabel:   "wclsmcnfsp:gauss:RecoLoadedDepos"
+
+# Extra stuff from the _nu_ part
+physics.producers.blurredclusterdc.ShowerReconOnly: true
+physics.producers.blurredcluster.ShowerReconOnly: true
+physics.producers.emtrkmichelid.PointIdAlg.NNetModelFile: "CnnModels/pdune_em-trk-michel_clean_on_neutrinos_iter100_aw.nnet"
+physics.producers.emtrkmichelid.PointIdAlg.NNetOutputs: ["track", "em", "michel", "none"]
+physics.producers.pmtrack.PMAlgTracking.FlipToBeam: true
+physics.producers.pmtrack.PMAlgTracking.AutoFlip_dQdx: false
+physics.producers.pmtrackdc.PMAlgTracking.FlipToBeam: true
+physics.producers.pmtrackdc.PMAlgTracking.AutoFlip_dQdx: false
+physics.producers.pandoracalo.Flip_dQdx: false
+physics.producers.pmtrackcalo.Flip_dQdx: false
+physics.producers.pmtrajfitcalo.Flip_dQdx: false
+physics.producers.pmtracktccalo.Flip_dQdx: false
+physics.producers.pmtrajfittccalo.Flip_dQdx: false
+
