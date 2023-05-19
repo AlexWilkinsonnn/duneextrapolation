@@ -8,7 +8,7 @@
 
 OUTPUT_DIR="/pnfs/dune/scratch/users/awilkins/lep_contained_pairs/fd"
 
-EDEP_DIR="/pnfs/dune/scratch/users/awilkins/lep_contained_pairs/edep"
+EDEP_DIR="/pnfs/dune/persistent/users/awilkins/lep_contained_pairs/edep"
 
 LARSOFT_LOCAL_DIRNAME="duneextrapolation_larsoft"
 
@@ -46,9 +46,9 @@ echo "$n_evts in edep-sim file"
 
 lar -c ./run_LoadChargeDepositions_local.fcl -n $n_evts
 
-lar -c detsim_dune10kt_1x2x6_wirecell_refactored_nooptdet_dropSC.fcl -s LoadedDepos.root
+lar -c domRefactor_standard_detsim_dune10kt_1x2x6_loadeddepos.fcl -s LoadedDepos.root
 
-lar -c reco_dune10kt_1x2x6_loadeddepos.fcl -s LoadedDepos_detsim.root
+lar -c domRefactor_standard_reco_dune10kt_nu_1x2x6.fcl -s LoadedDepos_detsim.root
 
 lar -c run_RecoDumpCVNE.fcl -s LoadedDepos_detsim_reco.root
 

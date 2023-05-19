@@ -188,7 +188,10 @@ void interactive::Session::analyze(art::Event const& e)
     std::cout << "E_numu:\n";
     std::cout << "E=" << numuEOut->fNuLorentzVector.E()
               << ", E_Had=" << numuEOut->fHadLorentzVector.E()
-              << ", E_Lep=" << numuEOut->fLepLorentzVector.E() << "\n";
+              << ", E_Lep=" << numuEOut->fLepLorentzVector.E()
+              << ", RecoMethod=" << numuEOut->recoMethodUsed
+              << ", LongestTrackContained=" << numuEOut->longestTrackContained
+              << ", TrackMomMethod=" << numuEOut->trackMomMethod << "\n";
 
     std::cout << "E_nc:\n";
     std::cout << "E=" << ncEOut->fNuLorentzVector.E()
