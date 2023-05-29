@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+CheckBackTrackingSCWires:
+{
+  module_type: "CheckBackTrackingSCWires"
+
+  SCLabel:   "tpcrawdecoder:simpleSC"
+  WireLabel: "tpcrawdecoder:gauss"
+}
+
+END_PROLOG
