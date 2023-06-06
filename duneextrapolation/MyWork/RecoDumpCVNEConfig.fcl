@@ -1,3 +1,5 @@
+#include "calorimetry_dune10kt.fcl"
+
 BEGIN_PROLOG
 
 RecoDumpCVNE:
@@ -6,11 +8,15 @@ RecoDumpCVNE:
 
   EventIDSEDLabel: "IonAndScint:EventNumber:LoadDepos"
 
-  CVNResultsLabel:    "cvneva:cvnresult:"
+  CVNResultsLabel: "cvneva:cvnresult:"
 
-  NumuEResultsLabel:    "energyrecnumu::"
-  NueEResultsLabel:     "energyrecnue::"
-  NCEResultsLabel:      "energyrecnc::"
+  NumuEResultsLabel: "energyrecnumu::"
+  NueEResultsLabel:  "energyrecnue::"
+  NCEResultsLabel:   "energyrecnc::"
+
+  CalcOldHadEReco: false
+  CaloAlg:         @local::dune10kt_calorimetryalg
+  fRecombFactor:   0.63
 }
 
 END_PROLOG

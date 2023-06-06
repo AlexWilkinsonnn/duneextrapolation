@@ -10,6 +10,7 @@ art_make(
                 larcorealg_Geometry
                 larcore_Geometry_Geometry_service
                 lardataalg_DetectorInfo
+                larreco_Calorimetry
                 #dune-raw-data_Overlays
                 #dune_ArtSupport
                 #dune_CVN_func

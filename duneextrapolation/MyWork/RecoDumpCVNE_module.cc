@@ -25,8 +25,14 @@
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 #include <string>
+#include <vector>
+#include <map>
 
 #include "TTree.h"
 #include "TBranch.h"
@@ -62,12 +68,16 @@ public:
 private:
   const geo::GeometryCore* fGeom;
 
+  bool                 fCalcOldHadEReco;
+  calo::CalorimetryAlg fCaloAlg;
+  double               fRecombFactor;
   // Labels from fcl
   std::string fCVNResultsLabel;
   std::string fNumuEResultsLabel;
   std::string fNueEResultsLabel;
   std::string fNCEResultsLabel;
   std::string fEventIDSEDLabel;
+  std::string fOldHadERecoHitLabel;
 
   TTree* fTreeReco;
   int    fEventID;
@@ -110,6 +120,13 @@ private:
   float fNCLepE;
   float fNCHadE;
   int   fNCRecoMethod;
+  // Nu Had energy reco old implementation
+  float fEDepP;
+  float fEDepN;
+  float fEDepPip;
+  float fEDepPim;
+  float fEDepPi0;
+  float fEDepOther;
 
   // Protect against indexing empty reco vectors
   int fNumOORErrs;
@@ -118,11 +135,16 @@ private:
 
 extrapolation::RecoDumpCVNE::RecoDumpCVNE(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fCVNResultsLabel   (p.get<std::string>("CVNResultsLabel")),
-    fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
-    fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
-    fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
-    fEventIDSEDLabel   (p.get<std::string>("EventIDSEDLabel"))
+    fCalcOldHadEReco     (p.get<bool>("CalcOldHadEReco")),
+    fCaloAlg             (p.get<fhicl::ParameterSet>("CaloAlg")),
+    fRecombFactor        (p.get<double>("RecombFactor")),
+    fCVNResultsLabel     (p.get<std::string>("CVNResultsLabel")),
+    fNumuEResultsLabel   (p.get<std::string>("NumuEResultsLabel")),
+    fNueEResultsLabel    (p.get<std::string>("NueEResultsLabel")),
+    fNCEResultsLabel     (p.get<std::string>("NCEResultsLabel")),
+    fEventIDSEDLabel     (p.get<std::string>("EventIDSEDLabel")),
+    fOldHadERecoHitLabel (p.get<std::string>("OldHadRecoHitLabel"))
+
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
 
@@ -131,6 +153,8 @@ extrapolation::RecoDumpCVNE::RecoDumpCVNE(fhicl::ParameterSet const& p)
   consumes<dune::EnergyRecoOutput>(fNumuEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNueEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNCEResultsLabel);
+
+  consumes<std::vector<recob::Hit>>(fNCEResultsLabel);
 
   art::ServiceHandle<art::TFileService> tfs;
 
@@ -176,6 +200,15 @@ extrapolation::RecoDumpCVNE::RecoDumpCVNE(fhicl::ParameterSet const& p)
   fTreeReco->Branch("NCHadE", &fNCHadE, "NCHadE/F");
   fTreeReco->Branch("NCLepE", &fNCLepE, "NCLepE/F");
   fTreeReco->Branch("NCRecoMethod", &fNCRecoMethod, "NCRecoMethod/I");
+  // Nu Had energy reco old implementation
+  if (fCalcOldHadEReco) {
+    fTreeReco->Branch("eDepP", &fEDepP, "eDepP/F");
+    fTreeReco->Branch("eDepN", &fEDepN, "eDepN/F");
+    fTreeReco->Branch("eDepPip", &fEDepPip, "eDepPip/F");
+    fTreeReco->Branch("eDepPim", &fEDepPim, "eDepPim/F");
+    fTreeReco->Branch("eDepPi0", &fEDepPi0, "eDepPi0/F");
+    fTreeReco->Branch("eDepOther", &fEDepOther, "eDepOther/F");
+  }
 }
 
 void extrapolation::RecoDumpCVNE::analyze(art::Event const& e)
@@ -239,6 +272,23 @@ void extrapolation::RecoDumpCVNE::analyze(art::Event const& e)
     fNCHadE = (float)NCEOut->fHadLorentzVector.E();
     fNCLepE = (float)NCEOut->fLepLorentzVector.E();
     fNCRecoMethod = (int)NCEOut->recoMethodUsed;
+
+    if (fCalcOldHadEReco) {
+      // auto const *detprop = lar::providerFrom<detinfo::DetectorPropertiesService>();
+      // double t0 = detprop->TriggerOffset();
+
+      // std::map<int, double> tIDEDep;
+
+      // const auto hits = e.getValidHandle<std::vector<recob::Hit>>(fOldHadERecoHitLabel);
+
+      // for (recob::Hit hit : *hits) {
+      //   double qeLifetimeCorrected = hit->Integral() * fCaloAlg.LifetimeCorrection(hit->PeakTime(), t0);
+      // }
+
+      // NOTE stopped implementing as I think there is no point trying to replicate this visible
+      // energy variable identically as FD sim/reco has changed so much since TDR days so that
+      // would need to be addressed also
+    }
 
     fTreeReco->Fill();
   }
@@ -304,6 +354,13 @@ void extrapolation::RecoDumpCVNE::reset()
   fNCLepE = -99.0;
   fNCHadE = -99.0;
   fNCRecoMethod = -99;
+
+  fEDepP = -99.0;
+  fEDepN = -99.0;
+  fEDepPip = -99.0;
+  fEDepPim = -99.0;
+  fEDepPi0 = -99.0;
+  fEDepOther = -99.0;
 }
 
 DEFINE_ART_MODULE(extrapolation::RecoDumpCVNE)
