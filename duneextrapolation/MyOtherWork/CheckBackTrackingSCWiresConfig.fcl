@@ -6,6 +6,11 @@ CheckBackTrackingSCWires:
 
   SCLabel:   "tpcrawdecoder:simpleSC"
   WireLabel: "tpcrawdecoder:gauss"
+
+  SpecifyChannel: false
+  TPCIndex:       0
+  PlaneIndex:     0
+  ChannelLocal:   0
 }
 
 END_PROLOG

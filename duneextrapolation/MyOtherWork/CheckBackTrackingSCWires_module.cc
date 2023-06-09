@@ -33,11 +33,6 @@
 #include "art_root_io/TFileDirectory.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "lardataobj/RecoBase/Wire.h"
-// #include "lardataobj/RecoBase/Hit.h"
-// #include "lardataobj/Simulation/SimEnergyDeposit.h"
-// #include "lardataobj/RawData/RawDigit.h"
-// #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
-// #include "lardataobj/RawData/raw.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include <map>
@@ -64,8 +59,15 @@ public:
 private:
   const geo::GeometryCore* fGeom;
 
+  bool         fSpecifyCh;
+  unsigned int fTPCIndex;
+  unsigned int fPlaneIndex;
+  unsigned int fChLocal;
+
   std::string fSCLabel;
   std::string fWireLabel;
+
+  unsigned int fSpecificChGlobal;
 
   TTree*                           fTreeWires;
   std::vector<std::vector<double>> fWires;
@@ -73,13 +75,20 @@ private:
   std::vector<std::vector<double>> fSC;
   std::vector<int>                 fSCChs;
   std::map<int, int>               fChTypes; // 0 induction, 1 collection
+  std::vector<double>              fSpecificWire;
+  std::vector<double>              fSpecificSC;
+  std::vector<int>                 fSpecificTPCPlaneCh;
 };
 
 
 extrapolation::CheckBackTrackingSCWires::CheckBackTrackingSCWires(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fSCLabel   (p.get<std::string> ("SCLabel")),
-    fWireLabel (p.get<std::string> ("WireLabel"))
+    fSpecifyCh  (p.get<bool>         ("SpecifyChannel")),
+    fTPCIndex   (p.get<unsigned int> ("TPCIndex")),
+    fPlaneIndex (p.get<unsigned int> ("PlaneIndex")),
+    fChLocal    (p.get<unsigned int> ("ChannelLocal")),
+    fSCLabel    (p.get<std::string>  ("SCLabel")),
+    fWireLabel  (p.get<std::string>  ("WireLabel"))
 {
   consumes<std::vector<sim::SimChannel>>(fSCLabel);
   consumes<std::vector<recob::Wire>>(fWireLabel);
@@ -92,6 +101,11 @@ extrapolation::CheckBackTrackingSCWires::CheckBackTrackingSCWires(fhicl::Paramet
   fTreeWires->Branch("wires", &fWires);
   fTreeWires->Branch("wires_chs", &fWiresChs);
   fTreeWires->Branch("ch_types", &fChTypes);
+  if (fSpecifyCh) {
+    fTreeWires->Branch("specific_wire", &fSpecificWire);
+    fTreeWires->Branch("specific_simchannel", &fSpecificSC);
+    fTreeWires->Branch("specific_tpc_plane_ch", &fSpecificTPCPlaneCh);
+  }
 }
 
 void extrapolation::CheckBackTrackingSCWires::analyze(art::Event const& e)
@@ -142,6 +156,19 @@ void extrapolation::CheckBackTrackingSCWires::analyze(art::Event const& e)
 void extrapolation::CheckBackTrackingSCWires::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+
+  // // XXX In progess
+  // if (fSpecifyCh) {
+  //   const geo::CryostatID cID(0);
+  //   const geo::TPCID tID(cID, fTPCIndex);
+  //   const geo::PlaneID pID(tID, fPlaneIndex);
+  //   const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
+  //   fSpecificChGlobal = fChLocal + fGeom->FirstChannelInROP(rID);
+  //   std::cout << "TPC " << fTPCIndex
+  //             << " Plane " << fPlaneIndex << " (" <<
+  //             fGeom->SignalType(pID) == geo::SigType_t::kCollection ? "collection" : "induction"
+  //             << ") ch " << fChLocal << " is global ch " << fSpecificChGlobal << "\n";
+  // }
 }
 
 void extrapolation::CheckBackTrackingSCWires::endJob()
@@ -155,6 +182,9 @@ void extrapolation::CheckBackTrackingSCWires::reset()
   fWires.clear();
   fWiresChs.clear();
   fChTypes.clear();
+  fSpecificWire.clear();
+  fSpecificSC.clear();
+  fSpecificTPCPlaneCh.clear();
 }
 
 DEFINE_ART_MODULE(extrapolation::CheckBackTrackingSCWires)
