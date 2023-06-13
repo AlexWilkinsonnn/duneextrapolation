@@ -1,0 +1,11 @@
+BEGIN_PROLOG
+
+CheckSpSolveDisambig:
+{
+  module_type: "CheckSpSolveDisambig"
+
+  BasicDisambigHitLabel:   "hitfd"
+  SpSolveDisambigHitLabel: "hitfdsp"
+}
+
+END_PROLOG

@@ -1,0 +1,32 @@
+#include "services_dune.fcl"
+#include "CheckSpSolveDisambigConfig.fcl"
+
+process_name: checkdisambig
+
+source:
+{
+  module_type: RootInput
+               maxEvents: -1
+}
+
+services:
+{
+  @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+}
+
+physics:
+{
+  analyzers:
+  {
+    checkdisambig: @local::CheckSpSolveDisambig
+  }
+  path0:     [ checkdisambig ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
