@@ -127,6 +127,12 @@ void extrapolation::CheckSpSolveDisambig::analyze(art::Event const& e)
 void extrapolation::CheckSpSolveDisambig::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+
+  // std::vector<geo::WireID> wires = fGeom->ChannelToWire(1000);
+  // for (auto wire : wires) {
+  //   std::cout << wire.parentID() << " | ";
+  // }
+  // std::cout << "\n!!!!!\n";
 }
 
 
