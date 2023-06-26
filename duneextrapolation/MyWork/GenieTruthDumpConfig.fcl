@@ -1,0 +1,10 @@
+BEGIN_PROLOG
+
+GenieTruthDump:
+{
+  module_type: "GenieTruthDump"
+
+  MCTruthLabel: "generator::"
+}
+
+END_PROLOG
