@@ -23,6 +23,7 @@
 #include "art_root_io/TFileDirectory.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCNeutrino.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
 #include <string>
@@ -76,6 +77,7 @@ private:
   double fP_x;
   double fP_y;
   double fP_z;
+  int    fTargetPdg;
 };
 
 
@@ -96,6 +98,7 @@ extrapolation::GenieTruthDump::GenieTruthDump(fhicl::ParameterSet const& p)
   fTreeTruth->Branch("p_x", &fP_x, "p_x/D");
   fTreeTruth->Branch("p_y", &fP_y, "p_y/D");
   fTreeTruth->Branch("p_z", &fP_z, "p_z/D");
+  fTreeTruth->Branch("target_pdg", &fTargetPdg, "target_pdg/I");
 }
 
 void extrapolation::GenieTruthDump::analyze(art::Event const& e)
@@ -105,7 +108,9 @@ void extrapolation::GenieTruthDump::analyze(art::Event const& e)
   fEventNum = e.id().event();
 
   const auto mcTruth = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTruthLabel);
-  const simb::MCParticle nuParticle = mcTruth->at(0).GetNeutrino().Nu();
+
+  const simb::MCNeutrino nu = mcTruth->at(0).GetNeutrino();
+  const simb::MCParticle nuParticle = nu.Nu();
 
   fX = nuParticle.Vx();
   fY = nuParticle.Vy();
@@ -113,6 +118,7 @@ void extrapolation::GenieTruthDump::analyze(art::Event const& e)
   fP_x = nuParticle.Px();
   fP_y = nuParticle.Py();
   fP_z = nuParticle.Pz();
+  fTargetPdg = nu.Target();
 
   fTreeTruth->Fill();
 
@@ -141,6 +147,7 @@ void extrapolation::GenieTruthDump::reset()
   fP_x = -99.0;
   fP_y = -99.0;
   fP_z = -99.0;
+  fTargetPdg = -1;
 }
 
 DEFINE_ART_MODULE(extrapolation::GenieTruthDump)
