@@ -1,0 +1,16 @@
+BEGIN_PROLOG
+
+CheckVDHits:
+{
+  module_type: "CheckVDHits"
+
+  SCLabel:   "tpcrawdecoder:simpleSC"
+  WireLabel: "tpcrawdecoder:gauss"
+  HitLabel:  "gaushit"
+
+  TPCIndex:      20
+  PlaneIndex:    0
+  ChannelsLocal: [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 ]
+}
+
+END_PROLOG

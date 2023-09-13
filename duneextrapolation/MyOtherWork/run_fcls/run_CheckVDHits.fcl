@@ -1,0 +1,34 @@
+#include "services_dune.fcl"
+#include "CheckVDHitsConfig.fcl"
+
+process_name: checks
+
+source:
+{
+  module_type: RootInput
+               maxEvents: -1
+}
+
+services:
+{
+  @table::dunefdvd_simulation_services
+  @table::dunefdvd_1x8x6_3view_30deg_simulation_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  TFileService: { fileName: "%ifb_vdhitsscwiresdump.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    checkvdhits: @local::CheckVDHits
+  }
+  path0:     [ checkvdhits ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry.GDML: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.gdml"
+services.Geometry.Name: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref"
+services.Geometry.ROOT: "dunevd10kt_3view_30deg_v5_refactored_1x8x6ref.gdml"
+

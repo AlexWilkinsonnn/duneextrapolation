@@ -33,7 +33,6 @@
 #include "art_root_io/TFileDirectory.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "lardataobj/RecoBase/Wire.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include <map>
 
