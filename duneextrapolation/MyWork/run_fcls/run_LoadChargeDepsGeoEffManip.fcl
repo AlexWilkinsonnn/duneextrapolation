@@ -34,12 +34,12 @@ outputs:
 physics:
 {
   producers:
-  { 
-    // Give it the same name IonAndScint looks for
-    LArG4DetectorServicevolTPCActive: @local::LoadChargeDepsGeoEffManip
+  {
+    // Match module label incase this is relied upon upstream
+    largeant: @local::LoadChargeDepsGeoEffManip
     rns:         { module_type: "RandomNumberSaver" }
   }
-  simulate:      [ rns, LArG4DetectorServicevolTPCActive ]
+  simulate:      [ rns, largeant ]
   stream1:       [ out1 ]
   trigger_paths: [simulate]
   end_paths:     [stream1]
@@ -50,5 +50,5 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.producers.LArG4DetectorServicevolTPCActive.DepoDataLoc: "/dune/data/users/awilkins/n2fd_paired_evts_Sep8.root"
+physics.producers.largeant.DepoDataLoc: "/dune/data/users/awilkins/n2fd_paired_evts_Sep8.root"
 

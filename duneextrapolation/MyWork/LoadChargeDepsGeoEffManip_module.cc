@@ -90,9 +90,9 @@ private:
 
 extrapolation::LoadChargeDepsGeoEffManip::LoadChargeDepsGeoEffManip(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fDepoDataLoc (p.get<std::string>("DepoDataLoc"))
+    fDepoDataLoc        (p.get<std::string>("DepoDataLoc"))
 {
-  produces<std::vector<sim::SimEnergyDeposit>>();
+  produces<std::vector<sim::SimEnergyDeposit>>("LArG4DetectorServicevolTPCActive");
 }
 
 void extrapolation::LoadChargeDepsGeoEffManip::produce(art::Event& e)
@@ -125,7 +125,7 @@ void extrapolation::LoadChargeDepsGeoEffManip::produce(art::Event& e)
     SEDs->push_back(SED);
   }
 
-  e.put(std::move(SEDs));
+  e.put(std::move(SEDs), "LArG4DetectorServicevolTPCActive");
 
   fEntry++;
 }
