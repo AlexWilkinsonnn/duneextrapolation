@@ -1,0 +1,54 @@
+#include "services_dune.fcl"
+#include "LoadChargeDepsGeoEffManipConfig.fcl"
+
+process_name: LoadDepsGeoEffManip
+
+source:
+{
+  module_type: EmptyEvent
+  timestampPlugin: { plugin_type: "GeneratedEventTimestamp" }
+  maxEvents:   10
+  firstRun:    1
+  firstEvent:  1
+}
+
+services:
+{
+  @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  RandomNumberGenerator: {} # ART native random number generator
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type:      RootOutput
+    fileName:	        "LoadedDeps.root"
+    dataTier:         "simulated"
+    compressionLevel: 1
+  }
+}
+
+physics:
+{
+  producers:
+  { 
+    // Give it the same name IonAndScint looks for
+    LArG4DetectorServicevolTPCActive: @local::LoadChargeDepsGeoEffManip
+    rns:         { module_type: "RandomNumberSaver" }
+  }
+  simulate:      [ rns, LArG4DetectorServicevolTPCActive ]
+  stream1:       [ out1 ]
+  trigger_paths: [simulate]
+  end_paths:     [stream1]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+
+physics.producers.LArG4DetectorServicevolTPCActive.DepoDataLoc: "/dune/data/users/awilkins/n2fd_paired_evts_Sep8.root"
+

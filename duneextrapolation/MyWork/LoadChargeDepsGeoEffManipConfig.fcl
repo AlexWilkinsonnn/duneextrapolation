@@ -1,0 +1,10 @@
+BEGIN_PROLOG
+
+LoadChargeDepsGeoEffManip:
+{
+  module_type: "LoadChargeDepsGeoEffManip"
+
+  DepoDataLoc: ""
+}
+
+END_PROLOG
