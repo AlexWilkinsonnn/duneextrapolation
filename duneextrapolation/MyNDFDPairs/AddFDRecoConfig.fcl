@@ -1,0 +1,16 @@
+BEGIN_PROLOG
+
+AddFDReco:
+{
+  module_type: "AddFDReco"
+
+  CVNResultsLabel: "cvneva:cvnresult:"
+
+  NumuEResultsLabel: "energyrecnumu::"
+  NueEResultsLabel:  "energyrecnue::"
+  NCEResultsLabel:   "energyrecnc::"
+
+  NDH5FileLoc: ""
+}
+
+END_PROLOG

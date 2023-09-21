@@ -69,6 +69,10 @@ if(( DEFINED ENV{TENSORFLOW_DIR} ) AND ( DEFINED ENV{TRITON_DIR} ))
   set(TENSORFLOW TENSORFLOW_CC TENSORFLOW_FRAMEWORK)
   cet_find_library(PROTOBUF NAMES protobuf PATHS ENV PROTOBUF_LIB NO_DEFAULT_PATH )
 endif()
+if(DEFINED ENV{HEP_HPC_DIR} )
+  find_ups_product( hdf5 )
+  find_ups_product( hep_hpc )
+endif()
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
