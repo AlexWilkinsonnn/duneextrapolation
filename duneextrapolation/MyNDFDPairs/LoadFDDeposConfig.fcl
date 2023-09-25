@@ -1,0 +1,10 @@
+BEGIN_PROLOG
+
+LoadFDDepos:
+{
+  module_type: "LoadFDDepos"
+
+  NDFDH5FileLoc: ""
+}
+
+END_PROLOG

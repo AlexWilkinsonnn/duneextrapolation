@@ -1,0 +1,51 @@
+#include "services_dune.fcl"
+#include "LoadFDDepos.fcl"
+
+process_name: LoadFDDepos
+
+source:
+{
+  module_type: EmptyEvent
+  timestampPlugin: { plugin_type: "GeneratedEventTimestamp" }
+  maxEvents:   10
+  firstRun:    1
+  firstEvent:  1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type:      RootOutput
+    fileName:	        "LoadedFDDeps.root"
+    dataTier:         "simulated"
+    compressionLevel: 1
+  }
+}
+
+physics:
+{
+  producers:
+  {
+    // Match module label incase this is relied upon upstream
+    largeant: @local::LoadFDDeps
+    rns:      { module_type: "RandomNumberSaver" }
+  }
+  simulate:      [ rns, largeant ]
+  stream1:       [ out1 ]
+  trigger_paths: [simulate]
+  end_paths:     [stream1]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+
+physics.producers.largeant.NDFDH5FileLoc: "/dune/app/users/awilkins/duneextrapolation_larsoft_updated/test_out_ndfddeps_larndsim.h5"
+
