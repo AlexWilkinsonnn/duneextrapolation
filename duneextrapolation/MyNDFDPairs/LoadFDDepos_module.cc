@@ -79,7 +79,12 @@ extrapolation::LoadFDDepos::LoadFDDepos(fhicl::ParameterSet const& p)
 
 void extrapolation::LoadFDDepos::produce(art::Event& e)
 {
-  std::cout << fFile["fd_deps"]["eventID"][0] << "\n";
+  // hep_hpc::hdf5::Group grp(fFile, "/fd_deps", hep_hpc::hdf5::Group::OPEN_MODE);
+  hep_hpc::hdf5::Dataset dset(fFile, "/fd_deps");
+
+  // std::cout << fFile << "\n";
+  // std::cout << fFile[0] << "\n";
+  // std::cout << fFile["fd_deps"]["eventID"][0] << "\n";
 
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
   e.put(std::move(SEDs), "LArG4DetectorServicevolTPCActive");

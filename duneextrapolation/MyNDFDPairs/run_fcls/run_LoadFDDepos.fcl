@@ -1,5 +1,5 @@
 #include "services_dune.fcl"
-#include "LoadFDDepos.fcl"
+#include "LoadFDDeposConfig.fcl"
 
 process_name: LoadFDDepos
 
@@ -15,6 +15,9 @@ source:
 services:
 {
   @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  RandomNumberGenerator: {} # ART native random number generator
 }
 
 outputs:
@@ -33,7 +36,7 @@ physics:
   producers:
   {
     // Match module label incase this is relied upon upstream
-    largeant: @local::LoadFDDeps
+    largeant: @local::LoadFDDepos
     rns:      { module_type: "RandomNumberSaver" }
   }
   simulate:      [ rns, largeant ]
@@ -47,5 +50,5 @@ services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v4_1x2x6"
 services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
 
-physics.producers.largeant.NDFDH5FileLoc: "/dune/app/users/awilkins/duneextrapolation_larsoft_updated/test_out_ndfddeps_larndsim.h5"
+physics.producers.largeant.NDFDH5FileLoc: "/dune/data/users/awilkins/test_out_ndfddeps_larndsim.h5"
 
