@@ -73,6 +73,8 @@ if(DEFINED ENV{HEP_HPC_DIR} )
   find_ups_product( hdf5 )
   find_ups_product( hep_hpc )
 endif()
+find_package( HighFive )
+include_directories( $ENV{HIGHFIVE_INC} )
 
 # macros for artdaq_dictionary and simple_plugin
 include(ArtDictionary)
