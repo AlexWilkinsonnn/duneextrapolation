@@ -108,7 +108,6 @@ public:
   // then there is a build error "looser throw specifier ..." coming from the destructor being
   // noexcept in ED{Analyzer/Producer}. Defining the destructor as below is the only way I found
   // to remove  build error. duhduhduhhhhh code????
-  virtual ~LoadFDDepos() noexcept { };
 
   // Plugins should not be copied or assigned.
   LoadFDDepos(LoadFDDepos const&) = delete;
@@ -127,8 +126,6 @@ public:
   void reset();
 
 private:
-  const geo::GeometryCore* fGeom;
-
   HighFive::File* fFile;
   std::map<int, throwVtx> fVertices;
   std::map<int, std::vector<depo>> fDepos;
@@ -142,6 +139,7 @@ extrapolation::LoadFDDepos::LoadFDDepos(fhicl::ParameterSet const& p)
     fNDFDH5FileLoc (p.get<std::string>("NDFDH5FileLoc"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>("LArG4DetectorServicevolTPCActive");
+  produces<std::vector<sim::SimEnergyDeposit>>("eventID");
   produces<std::vector<sim::SimEnergyDeposit>>("fdThrowVtx");
 }
 
@@ -156,6 +154,16 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   fEventIDs.pop_back();
   const throwVtx eventVtx = fVertices[currEventID];
   const std::vector<depo> eventDepos = fDepos[currEventID];
+
+  // SED vector with single SED that stores the eventID for matching with ND data later
+  // eventID is being stored in the trackID member
+  auto evNum = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
+  geo::Point_t posStart = geo::Point_t(0,0,0);
+  geo::Point_t posEnd = geo::Point_t(0,0,0);
+  sim::SimEnergyDeposit ID = sim::SimEnergyDeposit(
+    0, 0, 0, 0, posStart, posEnd, 0, 0, currEventID, 0
+  );
+  evNum->push_back(ID);
 
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
   for (const depo dep : eventDepos) { 
@@ -173,13 +181,12 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   vtxSED->push_back(vtx);
 
   e.put(std::move(SEDs), "LArG4DetectorServicevolTPCActive");
+  e.put(std::move(evNum), "eventID");
   e.put(std::move(vtxSED), "fdThrowVtx");
 }
 
 void extrapolation::LoadFDDepos::beginJob()
 {
-  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
-
   std::cout << "Readng data from " << fNDFDH5FileLoc << "\n";
   fFile = new HighFive::File(fNDFDH5FileLoc, HighFive::File::ReadOnly);
 
@@ -207,6 +214,7 @@ void extrapolation::LoadFDDepos::beginJob()
       << "No data to read in " << fNDFDH5FileLoc
       << " - Line " << __LINE__ << " in file " << __FILE__ << "\n";
   }
+  std::sort(fEventIDs.begin(), fEventIDs.end(), std::greater<>()); // sort desc so to pop from back
   std::cout << fEventIDs.size() << " unique eventIDs in input\n";
 }
 
