@@ -1,0 +1,63 @@
+#include "standard_reco_dune10kt_1x2x6.fcl"
+
+process_name: Reco
+
+dunefd_horizdrift_workflow_reco2_nooptreco:
+[
+    @sequence::dunefd_horizdrift_2dclustering,
+    @sequence::dunefd_horizdrift_pandora,
+    @sequence::dunefd_horizdrift_pmtrack,
+    @sequence::dunefd_horizdrift_pmtrack_trajcluster,
+    @sequence::dunefd_horizdrift_pmtrack_trajcluster_pfp,
+    @sequence::dunefd_horizdrift_cvn,
+    @sequence::dunefd_horizdrift_nuenergy,
+    rns
+]
+
+dunefd_horizdrift_workflow_reco_nooptreco: 
+[ 
+    @sequence::dunefd_horizdrift_workflow_reco1,
+    @sequence::dunefd_horizdrift_workflow_reco2_nooptreco
+]
+
+physics.reco: [ @sequence::dunefd_horizdrift_workflow_reco_nooptreco ]
+
+physics.producers.blurredclusterdc.ShowerReconOnly: true
+physics.producers.blurredcluster.ShowerReconOnly: true
+physics.producers.emtrkmichelid.PointIdAlg.NNetModelFile:   "CnnModels/pdune_em-trk-michel_clean_on_neutrinos_iter100_aw.nnet"
+physics.producers.emtrkmichelid.PointIdAlg.NNetOutputs:     ["track", "em", "michel", "none"]
+physics.producers.pmtrack.PMAlgTracking.FlipToBeam:     true
+physics.producers.pmtrack.PMAlgTracking.AutoFlip_dQdx:  false
+physics.producers.pmtrackdc.PMAlgTracking.FlipToBeam:     true
+physics.producers.pmtrackdc.PMAlgTracking.AutoFlip_dQdx:  false
+physics.producers.pandoracalo.Flip_dQdx: false
+physics.producers.pmtrackcalo.Flip_dQdx: false
+physics.producers.pmtrajfitcalo.Flip_dQdx: false
+physics.producers.pmtracktccalo.Flip_dQdx: false
+physics.producers.pmtrajfittccalo.Flip_dQdx: false
+
+outputs.out1.fileName: "%ifb_reconoopt.root"
+# Saving some disk space (procrastinating...)
+# I think this is the correct ClassName for associations but they dont seem to be dropping *shrug*
+# It looks like some but not all get dropped
+outputs.out1.outputCommands:
+[
+  "keep *",
+  "drop recob::SpacePoints_*_*_*",
+  "drop recob::Tracks_*_*_*",
+  "drop recob::Showers_*_*_*",
+  "drop recob::PointCharges_*_*_*",
+  "drop recob::PFParticlerecob::SpacePointvoidart::Assns_*_*_*",
+  "drop recob::Showerrecob::Hitvoidart::Assns_*_*_*",
+  "drop recob::Wirerecob::Hitvoidart::Assns_*_*_*",
+  "drop recob::Slicerecob::Hitvoidart::Assns_*_*_*",
+  "drop recob::Trackrecob::Hitvoidart::Assns_*_*_*",
+  "drop recob::Clusterreco::Hitvoidart::Assns_*_*_*",
+  "drop recob::Hitrecob::SpacePointvoidart::Assns_*_*_*",
+  "drop recob::Showerrecob::SpacePointvoidart::Assns_*_*_*",
+  "drop recob::SpacePointrecob::Hitvoidart::Assns_*_*_*",
+  "drop recob::Trackrecob::Hitrecob::TrackHitMetaart::Assns_*_*_*",
+  "drop recob::Trackrecob::SpacePointvoidart::Assns_*_*_*"
+]
+
+
