@@ -15,8 +15,8 @@
 #include "canvas/Utilities/Exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "duneextrapolation/MyCVN/art/MyTFNetHandler.h"
-#include "duneextrapolation/MyCVN/func/MyCVNImageUtils.h"
+#include "duneextrapolation/Misc/MyCVN/art/MyTFNetHandler.h"
+#include "duneextrapolation/Misc/MyCVN/func/MyCVNImageUtils.h"
 
 namespace cvn
 {

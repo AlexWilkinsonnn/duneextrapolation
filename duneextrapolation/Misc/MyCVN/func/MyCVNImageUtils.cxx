@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 
-#include "duneextrapolation/MyCVN/func/MyCVNImageUtils.h"
+#include "duneextrapolation/Misc/MyCVN/func/MyCVNImageUtils.h"
 
 cvn::MyCVNImageUtils::MyCVNImageUtils(){
   // Set a default image size

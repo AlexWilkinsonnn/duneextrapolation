@@ -26,7 +26,7 @@
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/CVN/func/PixelMap.h"
 //#include "dunereco/CVN/art/CaffeNetHandler.h"
-#include "duneextrapolation/MyCVN/art/MyTFNetHandler.h"
+#include "duneextrapolation/Misc/MyCVN/art/MyTFNetHandler.h"
 #include "dunereco/CVN/func/AssignLabels.h"
 #include "dunereco/CVN/func/InteractionType.h"
 

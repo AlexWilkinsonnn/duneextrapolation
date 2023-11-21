@@ -15,7 +15,7 @@
 #include "dunereco/CVN/func/PixelMap.h"
 #include "dunereco/CVN/func/InteractionType.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "duneextrapolation/MyCVN/tf/Mytf_graph.h"
+#include "duneextrapolation/Misc/MyCVN/tf/Mytf_graph.h"
 
 namespace cvn
 {

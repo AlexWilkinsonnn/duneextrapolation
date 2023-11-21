@@ -37,8 +37,8 @@ art_make(BASENAME_ONLY
   EXCLUDE ${EXCLUDE_HEPHPC}
   LIB_LIBRARIES dunereco_CVN_func
   dunereco_CVN_tf
-  duneextrapolation_MyCVN_tf
-  duneextrapolation_MyCVN_func
+  duneextrapolation_Misc_MyCVN_tf
+  duneextrapolation_Misc_MyCVN_func
   ART_FRAMEWORK_CORE
   ART_FRAMEWORK_PRINCIPAL
   ART_FRAMEWORK_SERVICES_REGISTRY
@@ -66,9 +66,9 @@ art_make(BASENAME_ONLY
   MODULE_LIBRARIES dunereco_CVN_func
   dunereco_CVN_tf
   dunereco_CVN_art
-  duneextrapolation_MyCVN_art
-  duneextrapolation_MyCVN_func
-  duneextrapolation_MyCVN_tf
+  duneextrapolation_Misc_MyCVN_art
+  duneextrapolation_Misc_MyCVN_func
+  duneextrapolation_Misc_MyCVN_tf
   stdc++fs
   )
 
