@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////
-// Class:       AddFDReco
+// Class:       AddFDData
 // Plugin Type: analyzer (Unknown Unknown)
-// File:        AddFDReco_module.cc
+// File:        AddFDData_module.cc
 //
 // Crated on 20 Sep 23 Alex Wilkinson
 // Dump reco data products to the larnd-sim HDF5 file
@@ -25,39 +25,158 @@
 #include "dunereco/CVN/func/Result.h"
 #include "dunereco/FDSensOpt/FDSensOptData/EnergyRecoOutput.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
-#include "lardataobj/RecoBase/Hit.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
-#include "hep_hpc/hdf5/File.hpp"
-#include "hep_hpc/hdf5/make_ntuple.hpp"
+#include "highfive/H5DataSet.hpp"
+#include "highfive/H5File.hpp"
+#include "highfive/H5Group.hpp"
+#include "highfive/H5Object.hpp"
+#include "highfive/H5DataType.hpp"
+#include "highfive/H5DataSpace.hpp"
 
 #include <string>
 #include <vector>
 #include <map>
 
-namespace extrapolation {
-  class AddFDReco;
+typedef struct packet3d {
+  int eventID;
+  double adc;
+  double x;
+  double x_module;
+  double y;
+  double z;
+  double z_module;
+} packet3d;
+
+HighFive::CompoundType make_packet3d() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"adc", HighFive::AtomicType<double>{}},
+    {"x", HighFive::AtomicType<double>{}},
+    {"x_module", HighFive::AtomicType<double>{}},
+    {"y", HighFive::AtomicType<double>{}},
+    {"z", HighFive::AtomicType<double>{}},
+    {"z_module", HighFive::AtomicType<double>{}}
+  };
 }
 
+typedef struct packetProj {
+  int eventID;
+  float adc;
+  int local_ch;
+  int tick;
+  float drift_dist;
+} packetProj;
 
-class extrapolation::AddFDReco : public art::EDAnalyzer {
+HighFive::CompoundType make_packetProj() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"adc", HighFive::AtomicType<float>{}},
+    {"local_ch", HighFive::AtomicType<int>{}},
+    {"tick", HighFive::AtomicType<int>{}},
+    {"drift_dist", HighFive::AtomicType<float>{}}
+  };
+}
+
+typedef struct recoFD {
+  int eventID;
+  float numu_score;
+  float nue_score;
+  float nuc_score;
+  float nutau_score;
+  float antinu_score;
+  float p_0_score;
+  float p_1_score;
+  float p_2_score;
+  float p_N_score;
+  float pi_0_score;
+  float pi_1_score;
+  float pi_2_score;
+  float pi_N_score;
+  float pi0_0_score;
+  float pi0_1_score;
+  float pi0_2_score;
+  float pi0_N_score;
+  float n_0_score;
+  float n_1_score;
+  float n_2_score;
+  float n_N_score;
+  float numu_nu_E;
+  float numu_had_E;
+  float numu_lep_E;
+  int numu_reco_method;
+  int numu_longest_track_contained;
+  int numu_longest_track_mom_method;
+  float nue_nu_E;
+  float nue_had_E;
+  float nue_lep_E;
+  int nue_reco_method;
+  float nc_nu_E;
+  float nc_had_E;
+  float nc_lep_E;
+  int nc_reco_method;
+} recoFD;
+
+HighFive::CompoundType make_recoFD() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"numu_score", HighFive::AtomicType<float>{}},
+    {"nue_score", HighFive::AtomicType<float>{}},
+    {"nuc_score", HighFive::AtomicType<float>{}},
+    {"nutau_score", HighFive::AtomicType<float>{}},
+    {"antinu_score", HighFive::AtomicType<float>{}},
+    {"0_p_score", HighFive::AtomicType<float>{}},
+    {"1_p_score", HighFive::AtomicType<float>{}},
+    {"2_p_score", HighFive::AtomicType<float>{}},
+    {"N_p_score", HighFive::AtomicType<float>{}},
+    {"0_pi_score", HighFive::AtomicType<float>{}},
+    {"1_pi_score", HighFive::AtomicType<float>{}},
+    {"2_pi_score", HighFive::AtomicType<float>{}},
+    {"N_pi_score", HighFive::AtomicType<float>{}},
+    {"0_pi0_score", HighFive::AtomicType<float>{}},
+    {"1_pi0_score", HighFive::AtomicType<float>{}},
+    {"2_pi0_score", HighFive::AtomicType<float>{}},
+    {"N_pi0_score", HighFive::AtomicType<float>{}},
+    {"0_n_score", HighFive::AtomicType<float>{}},
+    {"1_n_score", HighFive::AtomicType<float>{}},
+    {"2_n_score", HighFive::AtomicType<float>{}},
+    {"N_n_score", HighFive::AtomicType<float>{}},
+    {"numu_nu_E", HighFive::AtomicType<float>{}},
+    {"numu_had_E", HighFive::AtomicType<float>{}},
+    {"numu_lep_E", HighFive::AtomicType<float>{}},
+    {"numu_reco_method", HighFive::AtomicType<int>{}},
+    {"numu_longest_track_contained", HighFive::AtomicType<int>{}},
+    {"numu_longest_track_mom_method", HighFive::AtomicType<int>{}},
+    {"nue_nu_E", HighFive::AtomicType<float>{}},
+    {"nue_had_E", HighFive::AtomicType<float>{}},
+    {"nue_lep_E", HighFive::AtomicType<float>{}},
+    {"nue_reco_method", HighFive::AtomicType<int>{}},
+    {"nc_nu_E", HighFive::AtomicType<float>{}},
+    {"nc_had_E", HighFive::AtomicType<float>{}},
+    {"nc_lep_E", HighFive::AtomicType<float>{}},
+    {"nc_reco_method", HighFive::AtomicType<int>{}}
+  };
+}
+
+HIGHFIVE_REGISTER_TYPE(packet3d, make_packet3d)
+HIGHFIVE_REGISTER_TYPE(packetProj, make_packetProj)
+HIGHFIVE_REGISTER_TYPE(recoFD, make_recoFD)
+
+namespace extrapolation {
+  class AddFDData;
+}
+
+class extrapolation::AddFDData : public art::EDAnalyzer {
 public:
-  explicit AddFDReco(fhicl::ParameterSet const& p);
-  // The compiler-generated destructor is fine for non-base
-  // classes without bare pointers or other resource use.
-  // The line "hep_hpc::hdf5::File fFile;" somehow causes the destructor to have noexcept(false)
-  // then there is a build error "looser throw specifier ..." coming from the destructor being
-  // noexcept in EDAnalyzer. Defining the destructor as below is the only way I found to remove
-  // build error. duhduhduhhhhh code????
-  virtual ~AddFDReco() noexcept { };
+  explicit AddFDData(fhicl::ParameterSet const& p);
 
   // Plugins should not be copied or assigned.
-  AddFDReco(AddFDReco const&) = delete;
-  AddFDReco(AddFDReco&&) = delete;
-  AddFDReco& operator=(AddFDReco const&) = delete;
-  AddFDReco& operator=(AddFDReco&&) = delete;
+  AddFDData(AddFDData const&) = delete;
+  AddFDData(AddFDData&&) = delete;
+  AddFDData& operator=(AddFDData const&) = delete;
+  AddFDData& operator=(AddFDData&&) = delete;
 
   // Required functions.
   void analyze(art::Event const& e) override;
@@ -72,47 +191,13 @@ public:
 private:
   const geo::GeometryCore* fGeom;
 
-  hep_hpc::hdf5::File fFile;
+  HighFive::File* fFile;
 
-  hep_hpc::hdf5::Ntuple<
-    hep_hpc::hdf5::Column<float, 1>, // numu score
-    hep_hpc::hdf5::Column<float, 1>, // nue score
-    hep_hpc::hdf5::Column<float, 1>, // nc score
-    hep_hpc::hdf5::Column<float, 1>, // nutai score
-    hep_hpc::hdf5::Column<float, 1>, // antinu score
-    hep_hpc::hdf5::Column<float, 1>, // 0 p score
-    hep_hpc::hdf5::Column<float, 1>, // 1 p score
-    hep_hpc::hdf5::Column<float, 1>, // 2 p score
-    hep_hpc::hdf5::Column<float, 1>, // N p score
-    hep_hpc::hdf5::Column<float, 1>, // 0 pi score
-    hep_hpc::hdf5::Column<float, 1>, // 1 pi score
-    hep_hpc::hdf5::Column<float, 1>, // 2 pi score
-    hep_hpc::hdf5::Column<float, 1>, // N pi score
-    hep_hpc::hdf5::Column<float, 1>, // 0 pi0 score
-    hep_hpc::hdf5::Column<float, 1>, // 1 pi0 score
-    hep_hpc::hdf5::Column<float, 1>, // 2 pi0 score
-    hep_hpc::hdf5::Column<float, 1>, // N pi0 score
-    hep_hpc::hdf5::Column<float, 1>, // 0 n score
-    hep_hpc::hdf5::Column<float, 1>, // 1 n score
-    hep_hpc::hdf5::Column<float, 1>, // 2 n score
-    hep_hpc::hdf5::Column<float, 1>, // N n score
-    hep_hpc::hdf5::Column<float, 1>, // numu nu E
-    hep_hpc::hdf5::Column<float, 1>, // numu had E
-    hep_hpc::hdf5::Column<float, 1>, // numu lep E
-    hep_hpc::hdf5::Column<int, 1>,   // numu reco method
-    hep_hpc::hdf5::Column<int, 1>,   // numu longest track contained
-    hep_hpc::hdf5::Column<int, 1>,   // numu longest track momentum method
-    hep_hpc::hdf5::Column<float, 1>, // nue nu E
-    hep_hpc::hdf5::Column<float, 1>, // nue lep E
-    hep_hpc::hdf5::Column<float, 1>, // nue had E
-    hep_hpc::hdf5::Column<int, 1>,   // nue reco method
-    hep_hpc::hdf5::Column<float, 1>, // nc nu E
-    hep_hpc::hdf5::Column<float, 1>, // nc lep E
-    hep_hpc::hdf5::Column<float, 1>, // nc had E
-    hep_hpc::hdf5::Column<int, 1>    // nc reco method
-  >* fEventReco;
+  // std::vector<packetProj> fProjsZ;
+  std::vector<recoFD> fReco;
 
   // Labels from fcl
+  std::string fEventIDSEDLabel;
   std::string fCVNResultsLabel;
   std::string fNumuEResultsLabel;
   std::string fNueEResultsLabel;
@@ -122,25 +207,32 @@ private:
 };
 
 
-extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
+extrapolation::AddFDData::AddFDData(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
+    fEventIDSEDLabel   (p.get<std::string>("EventIDSEDLabel")),
     fCVNResultsLabel   (p.get<std::string>("CVNResultsLabel")),
     fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
     fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
     fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
     fNDH5FileLoc       (p.get<std::string>("NDH5FileLoc"))
 {
+  consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
+
+  consumes<std::vector<cvn::Result>>(fCVNResultsLabel);
+
   consumes<std::vector<cvn::Result>>(fCVNResultsLabel);
 
   consumes<dune::EnergyRecoOutput>(fNumuEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNueEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNCEResultsLabel);
-
-  consumes<std::vector<recob::Hit>>(fNCEResultsLabel);
 }
 
-void extrapolation::AddFDReco::analyze(art::Event const& e)
+void extrapolation::AddFDData::analyze(art::Event const& e)
 {
+  // Get eventID
+  const auto eventIDSED = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
+  int eventID = (*eventIDSED)[0].TrackID();
+
   // Get results from CVN
   const auto CVNResults = e.getValidHandle<std::vector<cvn::Result>>(fCVNResultsLabel);
 
@@ -193,7 +285,8 @@ void extrapolation::AddFDReco::analyze(art::Event const& e)
   float ncLepE = (float)NCEOut->fLepLorentzVector.E();
   int ncRecoMethod = (int)NCEOut->recoMethodUsed;
 
-  fEventReco->insert(
+  recoFD eventReco = {
+    eventID,
     numuScore,
     nueScore,
     ncScore,
@@ -229,62 +322,20 @@ void extrapolation::AddFDReco::analyze(art::Event const& e)
     ncHadE,
     ncLepE,
     ncRecoMethod
-  );
+  };
+  fReco.push_back(eventReco);
 }
 
-void extrapolation::AddFDReco::beginJob()
+void extrapolation::AddFDData::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
-  fFile = hep_hpc::hdf5::File(fNDH5FileLoc, H5F_ACC_RDWR);
-
-  fEventReco = new hep_hpc::hdf5::Ntuple(
-    hep_hpc::hdf5::make_ntuple(
-      {fFile, "fd_reco", 1000},
-      hep_hpc::hdf5::make_scalar_column<float>("numu_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("nue_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("nc_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("nutau_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("antinu_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("0_p_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("1_p_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("2_p_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("N_p_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("0_pi_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("1_pi_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("2_pi_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("N_pi_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("0_pi0_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("1_pi0_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("2_pi0_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("N_pi0_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("0_n_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("1_n_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("2_n_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("N_n_score"),
-      hep_hpc::hdf5::make_scalar_column<float>("numu_nu_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("numu_had_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("numu_lep_E"),
-      hep_hpc::hdf5::make_scalar_column<int>("numu_reco_method"),
-      hep_hpc::hdf5::make_scalar_column<int>("numu_longest_track_contained"),
-      hep_hpc::hdf5::make_scalar_column<int>("numu_longest_track_mom_method"),
-      hep_hpc::hdf5::make_scalar_column<float>("nue_nu_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("nue_had_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("nue_lep_E"),
-      hep_hpc::hdf5::make_scalar_column<int>("nue_reco_method"),
-      hep_hpc::hdf5::make_scalar_column<float>("nc_nu_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("nc_had_E"),
-      hep_hpc::hdf5::make_scalar_column<float>("nc_lep_E"),
-      hep_hpc::hdf5::make_scalar_column<int>("nc_reco_method")
-    )
-  );
-
+  fFile = new HighFive::File(fNDH5FileLoc, HighFive::File::ReadWrite);
 }
 
-void extrapolation::AddFDReco::endJob()
+void extrapolation::AddFDData::endJob()
 {
-  delete fEventReco;
-  fFile.close();
+  fFile->createDataSet("fd_reco", fReco);
 }
 
-DEFINE_ART_MODULE(extrapolation::AddFDReco)
+DEFINE_ART_MODULE(extrapolation::AddFDData)

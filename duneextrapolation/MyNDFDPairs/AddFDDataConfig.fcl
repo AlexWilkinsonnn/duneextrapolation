@@ -1,8 +1,10 @@
 BEGIN_PROLOG
 
-AddFDReco:
+AddFDData:
 {
-  module_type: "AddFDReco"
+  module_type: "AddFDData"
+
+  EventIDSEDLabel: "largeant:eventID:"
 
   CVNResultsLabel: "cvneva:cvnresult:"
 
