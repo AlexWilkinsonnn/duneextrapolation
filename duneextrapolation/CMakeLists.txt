@@ -1,5 +1,2 @@
-add_subdirectory(MyWork)
-add_subdirectory(MyCVN)
-add_subdirectory(MyNDFDTranslation)
-add_subdirectory(MyOtherWork)
-add_subdirectory(MyNDFDPairs)
+add_subdirectory(NDFDPairs)
+add_subdirectory(Misc)
