@@ -5,6 +5,7 @@ LoadFDDepos:
   module_type: "LoadFDDepos"
 
   NDFDH5FileLoc: ""
+  NDLArOnly: false
 }
 
 END_PROLOG

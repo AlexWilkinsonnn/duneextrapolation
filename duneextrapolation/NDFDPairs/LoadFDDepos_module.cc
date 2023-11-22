@@ -52,6 +52,8 @@ typedef struct depo {
   double dx;
   double dEdx;
   double dE;
+  int start_inndLAr;
+  int stop_inndLAr;
 } depo;
 
 HighFive::CompoundType make_depo() {
@@ -73,10 +75,29 @@ HighFive::CompoundType make_depo() {
     {"dx", HighFive::AtomicType<double>{}},
     {"dEdx", HighFive::AtomicType<double>{}},
     {"dE", HighFive::AtomicType<double>{}},
+    {"start_inndLAr", HighFive::AtomicType<int>{}},
+    {"stop_inndLAr", HighFive::AtomicType<int>{}}
+  };
+}
+
+typedef struct vertex {
+  int eventID;
+  double x_vert;
+  double y_vert;
+  double z_vert;
+} depoVtx;
+
+HighFive::CompoundType make_vertex() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"x_vert", HighFive::AtomicType<double>{}},
+    {"y_vert", HighFive::AtomicType<double>{}},
+    {"z_vert", HighFive::AtomicType<double>{}},
   };
 }
 
 HIGHFIVE_REGISTER_TYPE(depo, make_depo)
+HIGHFIVE_REGISTER_TYPE(vertex, make_vertex)
 
 namespace extrapolation {
   class LoadFDDepos;
@@ -114,11 +135,14 @@ private:
   std::vector<int> fEventIDs;
 
   std::string fNDFDH5FileLoc;
+
+  bool fNDLArOnly;
 };
 
 extrapolation::LoadFDDepos::LoadFDDepos(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDFDH5FileLoc (p.get<std::string>("NDFDH5FileLoc"))
+    fNDFDH5FileLoc (p.get<std::string>("NDFDH5FileLoc")),
+    fNDLArOnly     (p.get<bool>("NDLArOnly"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>("LArG4DetectorServicevolTPCActive");
   produces<std::vector<sim::SimEnergyDeposit>>("eventID");
@@ -146,7 +170,10 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   evNum->push_back(ID);
 
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
-  for (const depo dep : eventDepos) { 
+  for (const depo dep : eventDepos) {
+    if (fNDLArOnly && (!dep.stop_inndLAr || !dep.start_inndLAr)) {
+      continue;
+    }
     geo::Point_t posStart(dep.x_start, dep.y_start, dep.z_start);
     geo::Point_t posEnd(dep.x_end, dep.y_end, dep.z_end);
     sim::SimEnergyDeposit SED = sim::SimEnergyDeposit(
@@ -165,9 +192,9 @@ void extrapolation::LoadFDDepos::beginJob()
   fFile = new HighFive::File(fNDFDH5FileLoc, HighFive::File::ReadOnly);
 
   // Read in depos and vertices
-  std::vector<throwVtx> readThrowVtx;
-  HighFive::DataSet datasetThrowVtx = fFile->getDataSet("fd_vertices");
-  datasetThrowVtx.read(readThrowVtx);
+  std::vector<vertex> readVtx;
+  HighFive::DataSet datasetVtx = fFile->getDataSet("fd_vertices");
+  datasetVtx.read(readVtx);
   std::vector<depo> readDepos;
   HighFive::DataSet datasetDepos = fFile->getDataSet("fd_deps");
   datasetDepos.read(readDepos);
@@ -176,9 +203,9 @@ void extrapolation::LoadFDDepos::beginJob()
   for (const depo dep : readDepos) {
     fDepos[dep.eventID].push_back(dep);
   }
-  
-  for (const throwVtx throwVtx : readThrowVtx) {
-    fEventIDs.push_back(throwVtx.eventID);
+
+  for (const vertex vtx : readVtx) {
+    fEventIDs.push_back(vtx.eventID);
   }
   if (!fEventIDs.size()) {
     throw cet::exception("LoadFDDepos")
