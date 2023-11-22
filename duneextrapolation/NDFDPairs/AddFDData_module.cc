@@ -42,7 +42,7 @@
 
 typedef struct packet3d {
   int eventID;
-  double adc;
+  int adc;
   double x;
   double x_module;
   double y;
@@ -53,7 +53,7 @@ typedef struct packet3d {
 HighFive::CompoundType make_packet3d() {
   return {
     {"eventID", HighFive::AtomicType<int>{}},
-    {"adc", HighFive::AtomicType<double>{}},
+    {"adc", HighFive::AtomicType<int>{}},
     {"x", HighFive::AtomicType<double>{}},
     {"x_module", HighFive::AtomicType<double>{}},
     {"y", HighFive::AtomicType<double>{}},
@@ -80,19 +80,21 @@ HighFive::CompoundType make_vertex() {
 
 typedef struct packetProj {
   int eventID;
-  float adc;
+  int adc;
   int local_ch;
   int tick;
   float drift_dist;
+  int apa_num;
 } packetProj;
 
 HighFive::CompoundType make_packetProj() {
   return {
     {"eventID", HighFive::AtomicType<int>{}},
-    {"adc", HighFive::AtomicType<float>{}},
+    {"adc", HighFive::AtomicType<int>{}},
     {"local_ch", HighFive::AtomicType<int>{}},
     {"tick", HighFive::AtomicType<int>{}},
-    {"drift_dist", HighFive::AtomicType<float>{}}
+    {"drift_dist", HighFive::AtomicType<float>{}},
+    {"apa_num", HighFive::AtomicType<int>{}}
   };
 }
 
@@ -218,9 +220,17 @@ private:
 
   HighFive::File* fFile;
 
-  // std::vector<packetProj> fProjsZ;
+  // Data to write out to hdf5
   std::vector<recoFD> fReco;
+  std::vector<packetProj> fPacketProjsZ;
+  std::vector<packetProj> fPacketProjsU;
+  std::vector<packetProj> fPacketProjsV;
 
+  // Data to read in from hdf5
+  std::map<int, vertex> fVertices;
+  std::map<int, std::vector<packet3d>> fNDPackets;
+
+  // Product labels
   std::string fEventIDSEDLabel;
   std::string fCVNResultsLabel;
   std::string fNumuEResultsLabel;
@@ -262,6 +272,19 @@ void extrapolation::AddFDData::analyze(art::Event const& e)
     e, eventID, fCVNResultsLabel, fNumuEResultsLabel, fNueEResultsLabel, fNCEResultsLabel
   );
   fReco.push_back(eventReco);
+
+  // std::vector<int> adcs1;
+  // for (int i = 0; i < 100; i++) {
+  //   adcs1.push_back(i);
+  // }
+  // std::string groupPath1 = "fd_resp/" + std::to_string(eventID) + "/" + std::to_string(10) + "/" + std::to_string(1);
+  // fFile->createDataSet(groupPath1, adcs1);
+  // int adcs2[100];
+  // for (int i = 0; i < 100; i++) {
+  //   adcs2[i] = 99 - i;
+  // }
+  // std::string groupPath2 = "fd_resp/" + std::to_string(eventID) + "/" + std::to_string(10) + "/" + std::to_string(2);
+  // fFile->createDataSet(groupPath2, adcs2);
 }
 
 void extrapolation::AddFDData::beginJob()
