@@ -62,6 +62,22 @@ HighFive::CompoundType make_packet3d() {
   };
 }
 
+typedef struct vertex {
+  int eventID;
+  double x;
+  double y;
+  double z;
+} vertex;
+
+HighFive::CompoundType make_vertex() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"x", HighFive::AtomicType<double>{}},
+    {"y", HighFive::AtomicType<double>{}},
+    {"z", HighFive::AtomicType<double>{}}
+  };
+}
+
 typedef struct packetProj {
   int eventID;
   float adc;
@@ -161,6 +177,7 @@ HighFive::CompoundType make_recoFD() {
 }
 
 HIGHFIVE_REGISTER_TYPE(packet3d, make_packet3d)
+HIGHFIVE_REGISTER_TYPE(vertex, make_vertex)
 HIGHFIVE_REGISTER_TYPE(packetProj, make_packetProj)
 HIGHFIVE_REGISTER_TYPE(recoFD, make_recoFD)
 
@@ -185,10 +202,18 @@ public:
   void beginJob() override;
   void endJob() override;
 
-  // My function.
-  void reset();
-
 private:
+  // Methods
+  recoFD getReco(
+    art::Event const& e,
+    int eventID,
+    std::string& CVNResultsLabel,
+    std::string& numuEResultsLabel,
+    std::string& nueEResultsLabel,
+    std::string& NCEResultsLabel
+  );
+
+  // Members
   const geo::GeometryCore* fGeom;
 
   HighFive::File* fFile;
@@ -196,7 +221,6 @@ private:
   // std::vector<packetProj> fProjsZ;
   std::vector<recoFD> fReco;
 
-  // Labels from fcl
   std::string fEventIDSEDLabel;
   std::string fCVNResultsLabel;
   std::string fNumuEResultsLabel;
@@ -233,40 +257,71 @@ void extrapolation::AddFDData::analyze(art::Event const& e)
   const auto eventIDSED = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
   int eventID = (*eventIDSED)[0].TrackID();
 
+  // Store reco for this event
+  recoFD eventReco = getReco(
+    e, eventID, fCVNResultsLabel, fNumuEResultsLabel, fNueEResultsLabel, fNCEResultsLabel
+  );
+  fReco.push_back(eventReco);
+}
+
+void extrapolation::AddFDData::beginJob()
+{
+  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
+
+  fFile = new HighFive::File(fNDH5FileLoc, HighFive::File::ReadWrite);
+}
+
+void extrapolation::AddFDData::endJob()
+{
+  // Write reco to hdf5
+  fFile->createDataSet("fd_reco", fReco);
+}
+
+recoFD extrapolation::AddFDData::getReco(
+  art::Event const& e,
+  int eventID,
+  std::string& CVNResultsLabel,
+  std::string& numuEResultsLabel,
+  std::string& nueEResultsLabel,
+  std::string& NCEResultsLabel
+)
+{
   // Get results from CVN
-  const auto CVNResults = e.getValidHandle<std::vector<cvn::Result>>(fCVNResultsLabel);
+  const auto CVNResults = e.getValidHandle<std::vector<cvn::Result>>(CVNResultsLabel);
+  // Happens rarely, I guess its when the pixel map producer fails (too few hits maybe?)
+  const bool validCVN = CVNResults->size() != 0;
 
   // Get flavour scores
-  float numuScore = CVNResults->at(0).GetNumuProbability();
-  float nueScore = CVNResults->at(0).GetNueProbability();
-  float ncScore = CVNResults->at(0).GetNCProbability();
-  float nutauScore = CVNResults->at(0).GetNutauProbability();
+  float numuScore = validCVN ? CVNResults->at(0).GetNumuProbability() : -1;
+  float nueScore = validCVN ? CVNResults->at(0).GetNueProbability() : -1;
+  float ncScore = validCVN ? CVNResults->at(0).GetNCProbability() : -1;
+  float nutauScore = validCVN ? CVNResults->at(0).GetNutauProbability() : -1;
 
   // Get antineutrino score
-  float antiNuScore = CVNResults->at(0).GetIsAntineutrinoProbability();
+  float antiNuScore = validCVN ? CVNResults->at(0).GetIsAntineutrinoProbability() : -1;
 
   // Get CVN doodads
-  float proton0Score = CVNResults->at(0).Get0protonsProbability();
-  float proton1Score = CVNResults->at(0).Get1protonsProbability();
-  float proton2Score = CVNResults->at(0).Get2protonsProbability();
-  float protonNScore = CVNResults->at(0).GetNprotonsProbability();
-  float pion0Score = CVNResults->at(0).Get0pionsProbability();
-  float pion1Score = CVNResults->at(0).Get1pionsProbability();
-  float pion2Score = CVNResults->at(0).Get2pionsProbability();
-  float pionNScore = CVNResults->at(0).GetNpionsProbability();
-  float pionZero0Score = CVNResults->at(0).Get0pizerosProbability();
-  float pionZero1Score = CVNResults->at(0).Get1pizerosProbability();
-  float pionZero2Score = CVNResults->at(0).Get2pizerosProbability();
-  float pionZeroNScore = CVNResults->at(0).GetNpizerosProbability();
-  float neutron0Score = CVNResults->at(0).Get0neutronsProbability();
-  float neutron1Score = CVNResults->at(0).Get1neutronsProbability();
-  float neutron2Score = CVNResults->at(0).Get2neutronsProbability();
-  float neutronNScore = CVNResults->at(0).GetNneutronsProbability();
+  float proton0Score = validCVN ? CVNResults->at(0).Get0protonsProbability() : -1;
+  float proton1Score = validCVN ? CVNResults->at(0).Get1protonsProbability() : -1;
+  float proton2Score = validCVN ? CVNResults->at(0).Get2protonsProbability() : -1;
+  float protonNScore = validCVN ? CVNResults->at(0).GetNprotonsProbability() : -1;
+  float pion0Score = validCVN ? CVNResults->at(0).Get0pionsProbability() : -1;
+  float pion1Score = validCVN ? CVNResults->at(0).Get1pionsProbability() : -1;
+  float pion2Score = validCVN ? CVNResults->at(0).Get2pionsProbability() : -1;
+  float pionNScore = validCVN ? CVNResults->at(0).GetNpionsProbability() : -1;
+  float pionZero0Score = validCVN ? CVNResults->at(0).Get0pizerosProbability() : -1;
+  float pionZero1Score = validCVN ? CVNResults->at(0).Get1pizerosProbability() : -1;
+  float pionZero2Score = validCVN ? CVNResults->at(0).Get2pizerosProbability() : -1;
+  float pionZeroNScore = validCVN ? CVNResults->at(0).GetNpizerosProbability() : -1;
+  float neutron0Score = validCVN ? CVNResults->at(0).Get0neutronsProbability() : -1;
+  float neutron1Score = validCVN ? CVNResults->at(0).Get1neutronsProbability() : -1;
+  float neutron2Score = validCVN ? CVNResults->at(0).Get2neutronsProbability() : -1;
+  float neutronNScore = validCVN ? CVNResults->at(0).GetNneutronsProbability() : -1;
 
   // Get nu reco information
-  const auto numuEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNumuEResultsLabel);
-  const auto nueEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNueEResultsLabel);
-  const auto NCEOut = e.getValidHandle<dune::EnergyRecoOutput>(fNCEResultsLabel);
+  const auto numuEOut = e.getValidHandle<dune::EnergyRecoOutput>(numuEResultsLabel);
+  const auto nueEOut = e.getValidHandle<dune::EnergyRecoOutput>(nueEResultsLabel);
+  const auto NCEOut = e.getValidHandle<dune::EnergyRecoOutput>(NCEResultsLabel);
 
   float numuNuE = (float)numuEOut->fNuLorentzVector.E();
   float numuHadE = (float)numuEOut->fHadLorentzVector.E();
@@ -323,19 +378,8 @@ void extrapolation::AddFDData::analyze(art::Event const& e)
     ncLepE,
     ncRecoMethod
   };
-  fReco.push_back(eventReco);
-}
 
-void extrapolation::AddFDData::beginJob()
-{
-  fGeom = art::ServiceHandle<geo::Geometry>()->provider();
-
-  fFile = new HighFive::File(fNDH5FileLoc, HighFive::File::ReadWrite);
-}
-
-void extrapolation::AddFDData::endJob()
-{
-  fFile->createDataSet("fd_reco", fReco);
+  return eventReco;
 }
 
 DEFINE_ART_MODULE(extrapolation::AddFDData)
