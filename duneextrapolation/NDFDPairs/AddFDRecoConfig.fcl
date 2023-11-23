@@ -1,0 +1,18 @@
+BEGIN_PROLOG
+
+AddFDReco:
+{
+  module_type: "AddFDReco"
+
+  EventIDSEDLabel: "largeant:eventID:"
+
+  CVNResultsLabel: "cvneva:cvnresult:"
+
+  NumuEResultsLabel: "energyrecnumu::"
+  NueEResultsLabel:  "energyrecnue::"
+  NCEResultsLabel:   "energyrecnc::"
+
+  NDH5FileLoc: ""
+}
+
+END_PROLOG

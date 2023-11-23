@@ -1,0 +1,34 @@
+#include "services_dune.fcl"
+#include "AddFDRespConfig.fcl"
+
+process_name: AddFDResp
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+physics:
+{
+  analyzers:
+  {
+    addresp: @local::AddFDResp
+  }
+
+  path0:     [ addresp ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v5_1x2x6"
+services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
+
+physics.analyzers.addresp.NDH5FileLoc: "/dune/app/users/awilkins/duneextrapolation_larsoft_updated/test_rotstrans_larndsim.h5"
+
