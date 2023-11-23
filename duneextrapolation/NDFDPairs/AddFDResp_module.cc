@@ -119,7 +119,8 @@ HighFive::CompoundType make_vertexProj() {
     {"eventID", HighFive::AtomicType<int>{}},
     {"local_ch", HighFive::AtomicType<int>{}},
     {"tick", HighFive::AtomicType<int>{}},
-    {"apa_num", HighFive::AtomicType<int>{}}
+    {"tpc_set", HighFive::AtomicType<int>{}},
+    {"readout", HighFive::AtomicType<int>{}}
   };
 }
 
