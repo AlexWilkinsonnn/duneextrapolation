@@ -20,13 +20,6 @@ defaultqual e20
 # Directories specific to this product
 gdmldir product_dir gdml
 fwdir  product_dir config_data
-wpdir product_dir wire-cell-cfg
-
-table_fragment_begin
-    envSet(WIRECELL_PATH, ${DUNE_PARDATA_DIR}/WireCellData)
-    pathPrepend(WIRECELL_PATH, ${WIRECELL_FQ_DIR}/share/wirecell)
-    pathPrepend(WIRECELL_PATH, ${UPS_PROD_DIR}/wire-cell-cfg)
-table_fragment_end
 
 # With "product  version" table below, we now define depdendencies
 
