@@ -49,19 +49,18 @@ export IFDH_DEBUG=0
 
 input_file=$(ifdh ls $INPUT_PAIR_H5_DIR | head -n $((PROCESS+2)) | tail -n -1)
 input_name=${input_file##*/}
-echo $input_file
-echo $input_name
 
 echo "input_file is ${input_file}"
 
 ifdh cp $input_file $input_name
+input_file_local=$PWD/$input_name
 
 # Prepare fcls
 cp srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
-sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file}\"#" run_LoadFDDepos.fcl
-sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file}\"#" run_LoadFDDepos_NDLAronly.fcl
-sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file}\"#" run_AddFDReco.fcl
-sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file}\"#" run_AddFDResp.fcl
+sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos.fcl
+sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_NDLAronly.fcl
+sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco.fcl
+sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDResp.fcl
 
 ls -lrt
 
