@@ -62,7 +62,7 @@ sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.large
 sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco.fcl
 sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDResp.fcl
 
-ls -lrt
+ls -lrth
 
 num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\)}/\1/p")
 echo "$input_name has $num_events events"
@@ -90,15 +90,14 @@ ls -lrth
 
 echo "Copying files to dCache..."
 if [ "$SAVE_FDRECO" = true ]; then
-  ifdh cp ${input_name%.*}_LoadedFDDeps_g4_detsimnoopt_reconoopt.root \
+  ifdh cp LoadedFDDeps_g4_detsimnoopt_reconoopt.root \
           ${FDRECO_PAIR_OUTPUT}/${input_name%.*}_LoadedFDDeps_g4_detsimnoopt_reconoopt.root
 fi
 if [ "$SAVE_FDRESP" = true ]; then
-  ifdh cp ${input_name%.*}_LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root \
+  ifdh cp LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root \
           ${FDRESP_PAIR_OUTPUT}/${input_name%.*}_LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root
 fi
 if [ "$SAVE_COMPLETE_PAIR" = true ]; then
-  ifdh cp ${input_name%.*}_fdreco_fdresp.h5 \
-          ${COMPLETE_PAIR_OUTPUT}/${input_name%.*}_fdreco_fdresp.h5
+  ifdh cp ${input_name} ${COMPLETE_PAIR_OUTPUT}/${input_name%.*}_fdreco_fdresp.h5
 fi
 
