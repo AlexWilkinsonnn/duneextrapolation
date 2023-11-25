@@ -12,7 +12,7 @@ AddFDReco:
   NueEResultsLabel:  "energyrecnue::"
   NCEResultsLabel:   "energyrecnc::"
 
-  NDH5FileLoc: ""
+  NDFDH5FileLoc: ""
 }
 
 END_PROLOG

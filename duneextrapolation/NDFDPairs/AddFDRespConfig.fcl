@@ -7,7 +7,7 @@ AddFDResp:
   EventIDSEDLabel: "largeant:eventID:"
   RawDigitLabel: "tpcrawdecoder:daq"
 
-  NDH5FileLoc: ""
+  NDFDH5FileLoc: ""
 
   ECCRotation: -0.202 # rad
   

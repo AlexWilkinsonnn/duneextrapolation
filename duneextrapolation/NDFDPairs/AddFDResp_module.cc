@@ -176,7 +176,7 @@ private:
   std::string fEventIDSEDLabel;
   std::string fRawDigitLabel;
 
-  std::string fNDH5FileLoc;
+  std::string fNDFDH5FileLoc;
   double fECCRotation;
   std::vector<std::vector<std::vector<double>>> fWireCellAPABoundingBoxes;
 };
@@ -186,7 +186,7 @@ extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel")),
     fRawDigitLabel            (p.get<std::string>("RawDigitLabel")),
-    fNDH5FileLoc              (p.get<std::string>("NDH5FileLoc")),
+    fNDFDH5FileLoc              (p.get<std::string>("NDFDH5FileLoc")),
     fECCRotation              (p.get<double>("ECCRotation")),
     fWireCellAPABoundingBoxes (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes"))
 {
@@ -355,7 +355,7 @@ void extrapolation::AddFDResp::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
-  fFile = new HighFive::File(fNDH5FileLoc, HighFive::File::ReadWrite);
+  fFile = new HighFive::File(fNDFDH5FileLoc, HighFive::File::ReadWrite);
 
   // Read in depos and vertices
   std::vector<vertex> FDVtxs;

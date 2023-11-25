@@ -169,7 +169,7 @@ private:
   std::string fNueEResultsLabel;
   std::string fNCEResultsLabel;
 
-  std::string fNDH5FileLoc;
+  std::string fNDFDH5FileLoc;
 };
 
 
@@ -180,7 +180,7 @@ extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
     fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
     fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
     fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
-    fNDH5FileLoc       (p.get<std::string>("NDH5FileLoc"))
+    fNDFDH5FileLoc       (p.get<std::string>("NDFDH5FileLoc"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
 
@@ -208,7 +208,7 @@ void extrapolation::AddFDReco::beginJob()
 {
   fGeom = art::ServiceHandle<geo::Geometry>()->provider();
 
-  fFile = new HighFive::File(fNDH5FileLoc, HighFive::File::ReadWrite);
+  fFile = new HighFive::File(fNDFDH5FileLoc, HighFive::File::ReadWrite);
 }
 
 void extrapolation::AddFDReco::endJob()
