@@ -13,11 +13,11 @@ COMPLETE_PAIR_OUTPUT="/pnfs/dune/scratch/users/awilkins/larbath_ndfd_pairs/test_
 FDRECO_PAIR_OUTPUT="/pnfs/dune/scratch/users/awilkins/larbath_ndfd_pairs/test_sample_20000/fdreco_artroot"
 FDRESP_PAIR_OUTPUT="/pnfs/dune/scratch/users/awilkins/larbath_ndfd_pairs/test_sample_20000/fdresp_artroot"
 
-SAVE_FDRECO=true
-SAVE_FDRESP=true # this will take a lot of disk
+SAVE_FDRECO=false
+SAVE_FDRESP=false # this will take a lot of disk
 SAVE_COMPLETE_PAIR=true # turn this on if not testing!
 
-INTERACTIVE=true # not running on grid to test (run from inside dir that would be in tarball)
+INTERACTIVE=false # not running on grid to test (run from inside dir that would be in tarball)
 
 INPUT_PAIR_H5_DIR=$1
 
@@ -27,14 +27,13 @@ if [ "$INTERACTIVE" = true ]; then
   PROCESS=0 # or 1?
   export INPUT_TAR_DIR_LOCAL=${PWD}
 else
-  echo "Running on $(hostname) at ${GLIDEIN_Site}. GLIDEIN_DUNESite = ${GLIDEIN_DUNESite}"
+  echo "Running on $(hostname) at ${GLIDEIN_Site}. GLIDEIN_DUNESite = ${GLIDEIN_DUNESite}. At ${PWD}"
 fi
 
 # Setup env
-cd $INPUT_TAR_DIR_LOCAL
-srcs/duneextrapolation/scripts/make_setup_grid.sh localProducts_larsoft_*/setup
+${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/scripts/make_setup_grid.sh localProducts_larsoft_*/setup
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
-source localProducts_larsoft_*/setup-grid
+source ${INPUT_TAR_DIR_LOCAL}/localProducts_larsoft_*/setup-grid
 setup dunesw v09_78_03d01 -q e20:prof
 setup duneprototypes v09_78_03d01 -q e20:prof
 setup duneana v09_78_03d01 -q e20:prof
@@ -56,7 +55,7 @@ ifdh cp $input_file $input_name
 input_file_local=$PWD/$input_name
 
 # Prepare fcls
-cp srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
+cp ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos.fcl
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_NDLAronly.fcl
 sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco.fcl
