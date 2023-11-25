@@ -325,7 +325,6 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     }
 
     raw::RawDigit::ADCvector_t adcs(dig.Samples());
-    std::cout << dig.Channel() << " " << adcs.size() << "\n";
     raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
     for (unsigned int tick = 0; tick < 6000; tick++) { 
