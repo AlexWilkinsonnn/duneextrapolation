@@ -30,5 +30,11 @@ services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v5_1x2x6"
 services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 
+# Trying to get detector properties to agree with wirecell on time tick is not working. Wirecell
+# has is own idea of what time depos arrive at the different planes that does not align with
+# DetectorPropertiesService (annoyingly).
+services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
+
 physics.analyzers.addresp.NDFDH5FileLoc: ""
+
 

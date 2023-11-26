@@ -170,7 +170,7 @@ private:
   std::map<int, std::vector<packet3d>> fNDPackets;
 
   // Compound data to write out to hdf5
-  std::vector<vertexProj> fNDVerticesProj;
+  std::vector<vertexProj> fNDFDVerticesProj;
 
   // Product labels
   std::string fEventIDSEDLabel;
@@ -211,26 +211,26 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
   std::vector<packet3d> packets = fNDPackets[eventID];
 
   // Shift the packets s.t. vertex is (0,0,0) to prepare for ECC rotation
-  for (auto packet : packets) {
-    packet.x = packet.x - NDVtx.x_vert;
-    packet.y = packet.y - NDVtx.y_vert;
-    packet.z = packet.z - NDVtx.z_vert;
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    packets[i].x = packets[i].x - NDVtx.x_vert;
+    packets[i].y = packets[i].y - NDVtx.y_vert;
+    packets[i].z = packets[i].z - NDVtx.z_vert;
   }
 
   // Apply ECC rotation to packets to fully align ND and FD responses
   // ECC rotation should be -0.202 rad (clockwise) about x (drift direction)
-  for (auto packet : packets) {
-    const double y = packet.y;
-    const double z = packet.z;
-    packet.y = y * cos(fECCRotation) - z * sin(fECCRotation);
-    packet.z = y * sin(fECCRotation) + z * cos(fECCRotation);
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    const double y = packets[i].y;
+    const double z = packets[i].z;
+    packets[i].y = y * cos(fECCRotation) - z * sin(fECCRotation);
+    packets[i].z = y * sin(fECCRotation) + z * cos(fECCRotation);
   }
 
   // Shift the packets s.t. the ND and FD vertices are align
-  for (auto packet : packets) {
-    packet.x = packet.x + FDVtx.x_vert;
-    packet.y = packet.y + FDVtx.y_vert;
-    packet.z = packet.z + FDVtx.z_vert;
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    packets[i].x = packets[i].x + FDVtx.x_vert;
+    packets[i].y = packets[i].y + FDVtx.y_vert;
+    packets[i].z = packets[i].z + FDVtx.z_vert;
   }
 
   // Get packet wire projections
@@ -249,7 +249,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
       const geo::PlaneGeo pGeo = fGeom->Plane(pID);
       const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
-
+    
       const raw::ChannelID_t ch = 
         fGeom->NearestChannel(packetLoc, pID) - fGeom->FirstChannelInROP(rID);
 
@@ -287,13 +287,13 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     fFile->createDataSet(groupPath, projs);
   }
 
-  // Find the projection for the ND vertex (if there is a valid one)
-  if (!inWireCellBoundingBox(NDVtx.x_vert, NDVtx.y_vert, NDVtx.z_vert)) {
-    const vertexProj NDVtxProj = { eventID, -1, -1, -1, -1 };
-    fNDVerticesProj.push_back(NDVtxProj);
+  // Find the projection for the ND-FD aligned vertex (if there is a valid one)
+  if (!inWireCellBoundingBox(FDVtx.x_vert, FDVtx.y_vert, FDVtx.z_vert)) {
+    const vertexProj FDVtxProj = { eventID, -1, -1, -1, -1 };
+    fNDFDVerticesProj.push_back(FDVtxProj);
   }
   else {
-    const geo::Point_t vtxLoc(NDVtx.x_vert, NDVtx.y_vert, NDVtx.z_vert);
+    const geo::Point_t vtxLoc(FDVtx.x_vert, FDVtx.y_vert, FDVtx.z_vert);
 
     const geo::TPCID tID = fGeom->PositionToTPCID(vtxLoc);
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
@@ -302,10 +302,10 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       const raw::ChannelID_t ch = 
         fGeom->NearestChannel(vtxLoc, pID) - fGeom->FirstChannelInROP(rID);
 
-      const int tick = (int)detProp.ConvertXToTicks(NDVtx.x_vert, pID);
+      const int tick = (int)detProp.ConvertXToTicks(FDVtx.x_vert, pID);
 
-      const vertexProj NDVtxProj = { eventID, (int)ch, tick, (int)rID.TPCset, (int)rID.ROP };
-      fNDVerticesProj.push_back(NDVtxProj);
+      const vertexProj FDVtxProj = { eventID, (int)ch, tick, (int)rID.TPCset, (int)rID.ROP };
+      fNDFDVerticesProj.push_back(FDVtxProj);
     }
   }
 
@@ -368,13 +368,13 @@ void extrapolation::AddFDResp::beginJob()
   HighFive::DataSet datasetNDPackets = fFile->getDataSet("3d_packets");
   datasetNDPackets.read(NDPackets);
 
-  for (packet3d packet : NDPackets) {
+  for (std::size_t i = 0; i < NDPackets.size(); i++) {
     // ND packets use z for drift coordinate, swap this here to align with FD things
-    const double x = packet.x;
-    const double z = packet.z;
-    packet.x = z;
-    packet.z = x;
-    fNDPackets[packet.eventID].push_back(packet);
+    const double x = NDPackets[i].x;
+    const double z = NDPackets[i].z;
+    NDPackets[i].x = z;
+    NDPackets[i].z = x;
+    fNDPackets[NDPackets[i].eventID].push_back(NDPackets[i]);
   }
   for (const vertex NDVtx : NDVtxs) {
     fNDVertices[NDVtx.eventID] = NDVtx;
@@ -387,7 +387,7 @@ void extrapolation::AddFDResp::beginJob()
 void extrapolation::AddFDResp::endJob()
 {
   // Write out the projected ND vertices
-  fFile->createDataSet("nd_vertices_projs", fNDVerticesProj);
+  fFile->createDataSet("ndfd_vertices_projs", fNDFDVerticesProj);
 }
 
 bool extrapolation::AddFDResp::inWireCellBoundingBox(
