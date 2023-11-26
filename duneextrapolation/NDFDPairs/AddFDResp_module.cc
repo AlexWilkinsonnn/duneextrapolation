@@ -186,7 +186,7 @@ extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel")),
     fRawDigitLabel            (p.get<std::string>("RawDigitLabel")),
-    fNDFDH5FileLoc              (p.get<std::string>("NDFDH5FileLoc")),
+    fNDFDH5FileLoc            (p.get<std::string>("NDFDH5FileLoc")),
     fECCRotation              (p.get<double>("ECCRotation")),
     fWireCellAPABoundingBoxes (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes"))
 {
