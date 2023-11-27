@@ -5,7 +5,8 @@ LoadFDDepos:
   module_type: "LoadFDDepos"
 
   NDFDH5FileLoc: ""
-  NDDriftedOnly: false
+  InsideNDOnly: false
+  TargetSEDLen:  0.04 # cm. split depos into steps approximately this size, 0.0 turns this off
 }
 
 END_PROLOG
