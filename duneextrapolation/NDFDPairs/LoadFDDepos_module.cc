@@ -33,9 +33,55 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 typedef struct depo {
   int eventID;
+  int uniqID;
+  double x_end;
+  double x_start;
+  double y_end;
+  double y_start;
+  double z_end;
+  double z_start;
+  double x;
+  double y;
+  double z;
+  double t0_end;
+  double t0_start;
+  double t0;
+  double dx;
+  double dEdx;
+  double dE;
+} depo;
+
+HighFive::CompoundType make_depo() {
+  return {
+    {"eventID", HighFive::AtomicType<int>{}},
+    {"uniqID", HighFive::AtomicType<int>{}},
+    {"x_end", HighFive::AtomicType<double>{}},
+    {"x_start", HighFive::AtomicType<double>{}},
+    {"y_end", HighFive::AtomicType<double>{}},
+    {"y_start", HighFive::AtomicType<double>{}},
+    {"z_end", HighFive::AtomicType<double>{}},
+    {"z_start", HighFive::AtomicType<double>{}},
+    {"x", HighFive::AtomicType<double>{}},
+    {"y", HighFive::AtomicType<double>{}},
+    {"z", HighFive::AtomicType<double>{}},
+    {"t0_end", HighFive::AtomicType<double>{}},
+    {"t0_start", HighFive::AtomicType<double>{}},
+    {"t0", HighFive::AtomicType<double>{}},
+    {"dx", HighFive::AtomicType<double>{}},
+    {"dEdx", HighFive::AtomicType<double>{}},
+    {"dE", HighFive::AtomicType<double>{}}
+  };
+}
+
+typedef struct track { // ND-LAr depo have different structure because of larnd-sim
+  int eventID;
+  int trackID;
+  int uniqID;
+  int pdgID;
   double x_end;
   double x_start;
   double y_end;
@@ -46,19 +92,27 @@ typedef struct depo {
   double y;
   double z;
   double t_start;
+  double t_end;
+  double t;
   double t0_end;
   double t0_start;
   double t0;
+  int n_electrons;
+  int n_photons;
+  double tran_diff;
+  double long_diff;
   double dx;
   double dEdx;
   double dE;
-  int start_inndLAr;
-  int stop_inndLAr;
-} depo;
+  int pixel_plane;
+} track;
 
-HighFive::CompoundType make_depo() {
+HighFive::CompoundType make_track() {
   return {
     {"eventID", HighFive::AtomicType<int>{}},
+    {"trackID", HighFive::AtomicType<int>{}},
+    {"uniqID", HighFive::AtomicType<int>{}},
+    {"pdgID", HighFive::AtomicType<int>{}},
     {"x_end", HighFive::AtomicType<double>{}},
     {"x_start", HighFive::AtomicType<double>{}},
     {"y_end", HighFive::AtomicType<double>{}},
@@ -69,14 +123,19 @@ HighFive::CompoundType make_depo() {
     {"y", HighFive::AtomicType<double>{}},
     {"z", HighFive::AtomicType<double>{}},
     {"t_start", HighFive::AtomicType<double>{}},
+    {"t_end", HighFive::AtomicType<double>{}},
+    {"t", HighFive::AtomicType<double>{}},
     {"t0_end", HighFive::AtomicType<double>{}},
-    {"t0_start", HighFive::AtomicType<double>{}},
+    {"t0_end", HighFive::AtomicType<double>{}},
     {"t0", HighFive::AtomicType<double>{}},
+    {"n_electrons", HighFive::AtomicType<int>{}},
+    {"n_photons", HighFive::AtomicType<int>{}},
+    {"tran_diff", HighFive::AtomicType<double>{}},
+    {"long_diff", HighFive::AtomicType<double>{}},
     {"dx", HighFive::AtomicType<double>{}},
     {"dEdx", HighFive::AtomicType<double>{}},
     {"dE", HighFive::AtomicType<double>{}},
-    {"start_inndLAr", HighFive::AtomicType<int>{}},
-    {"stop_inndLAr", HighFive::AtomicType<int>{}}
+    {"pixel_plane", HighFive::AtomicType<int>{}}
   };
 }
 
@@ -97,6 +156,7 @@ HighFive::CompoundType make_vertex() {
 }
 
 HIGHFIVE_REGISTER_TYPE(depo, make_depo)
+HIGHFIVE_REGISTER_TYPE(track, make_track)
 HIGHFIVE_REGISTER_TYPE(vertex, make_vertex)
 
 namespace extrapolation {
@@ -132,17 +192,18 @@ public:
 private:
   HighFive::File* fFile;
   std::map<int, std::vector<depo>> fDepos;
+  std::map<int, std::set<int>> fNDDriftedUniqIDs;
   std::vector<int> fEventIDs;
 
   std::string fNDFDH5FileLoc;
 
-  bool fNDLArOnly;
+  bool fNDDriftedOnly;
 };
 
 extrapolation::LoadFDDepos::LoadFDDepos(fhicl::ParameterSet const& p)
   : EDProducer{p},
     fNDFDH5FileLoc (p.get<std::string>("NDFDH5FileLoc")),
-    fNDLArOnly     (p.get<bool>("NDLArOnly"))
+    fNDDriftedOnly (p.get<bool>("NDDriftedOnly"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>("LArG4DetectorServicevolTPCActive");
   produces<std::vector<sim::SimEnergyDeposit>>("eventID");
@@ -158,6 +219,13 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   int currEventID = fEventIDs.back();
   fEventIDs.pop_back();
   const std::vector<depo> eventDepos = fDepos[currEventID];
+  const std::set<int> eventNDDriftedUniqIDs = fNDDriftedUniqIDs[currEventID];
+
+  std::cout << "eventID = " << currEventID << ": Loading " << eventDepos.size() << " depos";
+  if (fNDDriftedOnly){
+    std::cout << " (dropping " << eventDepos.size() - eventNDDriftedUniqIDs.size() << ")";
+  }
+  std::cout << "\n";
 
   // SED vector with single SED that stores the eventID for matching with ND data later
   // eventID is being stored in the trackID member
@@ -171,7 +239,7 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
 
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
   for (const depo dep : eventDepos) {
-    if (fNDLArOnly && (!dep.stop_inndLAr || !dep.start_inndLAr)) {
+    if (fNDDriftedOnly && !eventNDDriftedUniqIDs.count(dep.uniqID)) {
       continue;
     }
     geo::Point_t posStart(dep.x_start, dep.y_start, dep.z_start);
@@ -191,17 +259,25 @@ void extrapolation::LoadFDDepos::beginJob()
   std::cout << "Readng data from " << fNDFDH5FileLoc << "\n";
   fFile = new HighFive::File(fNDFDH5FileLoc, HighFive::File::ReadOnly);
 
-  // Read in depos and vertices
+  // Read in data
   std::vector<vertex> readVtx;
   HighFive::DataSet datasetVtx = fFile->getDataSet("fd_vertices");
   datasetVtx.read(readVtx);
   std::vector<depo> readDepos;
   HighFive::DataSet datasetDepos = fFile->getDataSet("fd_deps");
   datasetDepos.read(readDepos);
+  std::vector<track> readTracks;
+  HighFive::DataSet datasetTracks = fFile->getDataSet("tracks");
+  datasetTracks.read(readTracks);
 
-  // Create maps betwen depos and eventIDs
+  // Create maps eventIDs and data
   for (const depo dep : readDepos) {
     fDepos[dep.eventID].push_back(dep);
+  }
+  for (const track t : readTracks) {
+    if (t.pixel_plane != -1) {
+      fNDDriftedUniqIDs[t.eventID].insert(t.uniqID);
+    }
   }
 
   for (const vertex vtx : readVtx) {

@@ -51,7 +51,7 @@ services.Geometry.Name: "dune10kt_v5_1x2x6"
 services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 
 physics.producers.largeant.NDFDH5FileLoc: ""
-physics.producers.largeant.NDLArOnly: true
+physics.producers.largeant.NDDriftedOnly: true
 
 outputs.out1.fileName: "LoadedFDDepsNDLArOnly.root"
 
