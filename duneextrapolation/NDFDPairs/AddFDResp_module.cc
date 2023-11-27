@@ -54,6 +54,7 @@ typedef struct packet3d {
   double y;
   double z;
   double z_module;
+  unsigned int forward_facing_anode;
 } packet3d;
 
 HighFive::CompoundType make_packet3d() {
@@ -64,7 +65,8 @@ HighFive::CompoundType make_packet3d() {
     {"x_module", HighFive::AtomicType<double>{}},
     {"y", HighFive::AtomicType<double>{}},
     {"z", HighFive::AtomicType<double>{}},
-    {"z_module", HighFive::AtomicType<double>{}}
+    {"z_module", HighFive::AtomicType<double>{}},
+    {"forward_facing_anode", HighFive::AtomicType<unsigned int>{}}
   };
 }
 
@@ -92,6 +94,7 @@ typedef struct packetProj {
   double fd_drift_dist;
   double nd_x_module;
   double wire_dist;
+  int forward_facing_anode;
 } packetProj;
 
 HighFive::CompoundType make_packetProj() {
@@ -102,7 +105,8 @@ HighFive::CompoundType make_packetProj() {
     {"nd_drift_dist", HighFive::AtomicType<double>{}},
     {"fd_drift_dist", HighFive::AtomicType<double>{}},
     {"nd_x_module", HighFive::AtomicType<double>{}},
-    {"wire_dist", HighFive::AtomicType<double>{}}
+    {"wire_dist", HighFive::AtomicType<double>{}},
+    {"forward_facing_anode", HighFive::AtomicType<int>{}}
   };
 }
 
@@ -174,24 +178,34 @@ private:
 
   // Product labels
   std::string fEventIDSEDLabel;
+  std::string fFDSEDLabel;
   std::string fRawDigitLabel;
 
   std::string fNDFDH5FileLoc;
   double fECCRotation;
   std::vector<std::vector<std::vector<double>>> fWireCellAPABoundingBoxes;
+  double fNDProjTickShift;
+  bool fProjectFDDepos;
 };
 
 
 extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel")),
+    fFDSEDLabel               (p.get<std::string>("FDSEDLabel")),
     fRawDigitLabel            (p.get<std::string>("RawDigitLabel")),
     fNDFDH5FileLoc            (p.get<std::string>("NDFDH5FileLoc")),
     fECCRotation              (p.get<double>("ECCRotation")),
-    fWireCellAPABoundingBoxes (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes"))
+    fWireCellAPABoundingBoxes (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes")),
+    fNDProjTickShift          (p.get<double>("NDProjTickShift")),
+    fProjectFDDepos           (p.get<bool>("ProjectNDDepos"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
   consumes<std::vector<raw::RawDigit>>(fRawDigitLabel);
+
+  if (fProjectFDDepos) {
+    consumes<std::vector<sim::SimEnergyDeposit>>(fFDSEDLabel);
+  }
 }
 
 void extrapolation::AddFDResp::analyze(art::Event const& e)
@@ -253,7 +267,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       const raw::ChannelID_t ch = 
         fGeom->NearestChannel(packetLoc, pID) - fGeom->FirstChannelInROP(rID);
 
-      const int tick = (int)detProp.ConvertXToTicks(packet.x, pID);
+      const int tick = (int)(detProp.ConvertXToTicks(packet.x, pID) + fNDProjTickShift);
 
       const float driftDistanceFD = pGeo.DistanceFromPlane(packetLoc);
 
@@ -268,7 +282,8 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
         packet.z_module,
         driftDistanceFD,
         packet.x_module,
-        wireDistance
+        wireDistance,
+        (int)packet.forward_facing_anode
       };
       eventPacketProjs[rID].push_back(p);
     }
@@ -348,6 +363,64 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     props.add(HighFive::Chunking(std::vector<hsize_t>{100, 750}));
     props.add(HighFive::Deflate(9));
     fFile->createDataSet(groupPath, adcs, props);
+  }
+
+  if (fProjectFDDepos) {
+    std::map<readout::ROPID, std::vector<packetProj>> eventFDSEDProjs;
+    const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fFDSEDLabel);
+
+    for (const auto SED : *SEDs) { 
+      if (!inWireCellBoundingBox(SED.X(), SED.Y(), SED.Z())) {
+        continue;
+      }
+
+      const geo::Point_t SEDLoc = SED.MidPoint();
+
+      const geo::TPCID tID = fGeom->PositionToTPCID(SEDLoc);
+      for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
+        const geo::PlaneGeo pGeo = fGeom->Plane(pID);
+        const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
+      
+        const raw::ChannelID_t ch = 
+          fGeom->NearestChannel(SEDLoc, pID) - fGeom->FirstChannelInROP(rID);
+
+        const int tick = (int)(detProp.ConvertXToTicks(SED.X(), pID) + fNDProjTickShift);
+
+        const float driftDistanceFD = pGeo.DistanceFromPlane(SEDLoc);
+
+        // Gets the distance in the direction perpendicular to wire to the closest wire
+        const double wireCoord = pGeo.WireCoordinate(SEDLoc);
+        const double wireDistance = (wireCoord - (double)(int)(0.5 + wireCoord)) * pGeo.WirePitch();
+
+        const packetProj p = {
+          SED.NumElectrons(),
+          (int)ch,
+          tick,
+          -1,
+          driftDistanceFD,
+          -1,
+          wireDistance,
+          -1
+        };
+        eventFDSEDProjs[rID].push_back(p);
+      }
+    }
+
+    for (const auto rID_projs : eventFDSEDProjs) {
+      const readout::ROPID rID = rID_projs.first;
+      const std::vector<packetProj> projs = rID_projs.second;
+
+      if (eventPacketProjs.find(rID) == eventPacketProjs.end()) {
+        continue;
+      }
+
+      const std::string groupPath =
+        "fd_deps_wire_projs/" +
+        std::to_string(eventID) + "/" +
+        std::to_string(rID.TPCset) + "/" +
+        std::to_string(rID.ROP);
+      fFile->createDataSet(groupPath, projs);
+    }
   }
 }
 

@@ -5,14 +5,23 @@ AddFDResp:
   module_type: "AddFDResp"
 
   EventIDSEDLabel: "largeant:eventID:"
+  FDSEDLabel: "IonAndScint"
   RawDigitLabel: "tpcrawdecoder:daq"
 
   NDFDH5FileLoc: ""
 
   ECCRotation: -0.202 # rad
+
+  # DetectorPropertiesService's ConvertXToTick (with IncludeInterPlanePitchInXTickOffsets=true)
+  # does not mactch where WireCell generates RawDigits exactly. This constant is just an empiracal
+  # fix so that they line up better. This value may need to be changed manually as WireCell evolves
+  NDProjTickShift: 0.0
+
+  # Project FD depositions to wires also (for validation)
+  ProjectNDDepos: false
   
   # Taken from geom terminal dump wirecell does, cm
-  # Wirecell does not drift charge depositions outside of these bounding boxes, annoyingly these
+  # WireCell does not drift charge depositions outside of these bounding boxes, annoyingly these
   # are slight different from the geometry service bounding boxes. Need to use this to remove
   # ND packets that will not correspond to FD response due to these boxes.
   WireCellAPABoundingBoxes:
