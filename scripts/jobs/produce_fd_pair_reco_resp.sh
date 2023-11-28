@@ -57,7 +57,7 @@ input_file_local=$PWD/$input_name
 # Prepare fcls
 cp ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos.fcl
-sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_NDLAronly.fcl
+sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_InsideNDOnly.fcl
 sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco.fcl
 sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDResp.fcl
 
@@ -79,11 +79,11 @@ ls -lrth
 
 # Generate FD detector response
 lar -c ./run_LoadFDDepos_NDLAronly.fcl -n $num_events
-lar -c ionandscint_dune10kt_1x2x6.fcl -s LoadedFDDepsNDLArOnly.root -n -1
-lar -c detsim_dune10kt_1x2x6_notpcsigproc_nooptdet.fcl -s LoadedFDDepsNDLArOnly_g4.root -n -1
+lar -c ionandscint_dune10kt_1x2x6.fcl -s LoadedFDDepsInsideNDOnly -n -1
+lar -c detsim_dune10kt_1x2x6_notpcsigproc_nooptdet.fcl -s LoadedFDDepsInsideNDOnly_g4.root -n -1
 
 # Add FD detector response and wire projected and aligned packets to H5 file
-lar -c ./run_AddFDResp.fcl -s LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root -n -1
+lar -c ./run_AddFDResp.fcl -s LoadedFDDepsInsideNDOnly_g4_detsimnooptnosp.root -n -1
 
 ls -lrth
 
@@ -93,8 +93,8 @@ if [ "$SAVE_FDRECO" = true ]; then
           ${FDRECO_PAIR_OUTPUT}/${input_name%.*}_LoadedFDDeps_g4_detsimnoopt_reconoopt.root
 fi
 if [ "$SAVE_FDRESP" = true ]; then
-  ifdh cp LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root \
-          ${FDRESP_PAIR_OUTPUT}/${input_name%.*}_LoadedFDDepsNDLArOnly_g4_detsimnooptnosp.root
+  ifdh cp LoadedFDDepsInsideNDOnly_g4_detsimnooptnosp.root \
+          ${FDRESP_PAIR_OUTPUT}/${input_name%.*}_LoadedFDDepsInsideNDOnly_g4_detsimnooptnosp.root
 fi
 if [ "$SAVE_COMPLETE_PAIR" = true ]; then
   ifdh cp ${input_name} ${COMPLETE_PAIR_OUTPUT}/${input_name%.*}_fdreco_fdresp.h5
