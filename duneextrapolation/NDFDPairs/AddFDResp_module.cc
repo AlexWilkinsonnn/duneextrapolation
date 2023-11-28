@@ -157,6 +157,7 @@ public:
 private:
   // Methods
   bool inWireCellBoundingBox(const double x, const double y, const double z);
+  void alignNDWithFD(std::vector<packet3d> &packets, const vertex& NDVtx, const vertex& FDVtx);
 
   // Members
   const geo::GeometryCore* fGeom;
@@ -184,21 +185,25 @@ private:
   std::string fNDFDH5FileLoc;
   double fECCRotation;
   std::vector<std::vector<std::vector<double>>> fWireCellAPABoundingBoxes;
-  double fNDProjTickShift;
+  double fNDProjForwardAnodeXShift;
+  double fNDProjBackwardAnodeXShift;
   bool fProjectFDDepos;
+  unsigned int fMaxTick;
 };
 
 
 extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fEventIDSEDLabel          (p.get<std::string>("EventIDSEDLabel")),
-    fFDSEDLabel               (p.get<std::string>("FDSEDLabel")),
-    fRawDigitLabel            (p.get<std::string>("RawDigitLabel")),
-    fNDFDH5FileLoc            (p.get<std::string>("NDFDH5FileLoc")),
-    fECCRotation              (p.get<double>("ECCRotation")),
-    fWireCellAPABoundingBoxes (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes")),
-    fNDProjTickShift          (p.get<double>("NDProjTickShift")),
-    fProjectFDDepos           (p.get<bool>("ProjectNDDepos"))
+    fEventIDSEDLabel           (p.get<std::string>("EventIDSEDLabel")),
+    fFDSEDLabel                (p.get<std::string>("FDSEDLabel")),
+    fRawDigitLabel             (p.get<std::string>("RawDigitLabel")),
+    fNDFDH5FileLoc             (p.get<std::string>("NDFDH5FileLoc")),
+    fECCRotation               (p.get<double>("ECCRotation")),
+    fWireCellAPABoundingBoxes  (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes")),
+    fNDProjForwardAnodeXShift  (p.get<double>("NDProjForwardAnodeXShift")),
+    fNDProjBackwardAnodeXShift (p.get<double>("NDProjBackwardAnodeXShift")),
+    fProjectFDDepos            (p.get<bool>("ProjectNDDepos")),
+    fMaxTick                   (p.get<unsigned int>("MaxTick"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
   consumes<std::vector<raw::RawDigit>>(fRawDigitLabel);
@@ -206,6 +211,8 @@ extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
   if (fProjectFDDepos) {
     consumes<std::vector<sim::SimEnergyDeposit>>(fFDSEDLabel);
   }
+
+  fMaxTick = std::min(fMaxTick, (unsigned int)6000);
 }
 
 void extrapolation::AddFDResp::analyze(art::Event const& e)
@@ -224,28 +231,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
   const vertex FDVtx = fFDVertices[eventID];
   std::vector<packet3d> packets = fNDPackets[eventID];
 
-  // Shift the packets s.t. vertex is (0,0,0) to prepare for ECC rotation
-  for (std::size_t i = 0; i < packets.size(); i++) {
-    packets[i].x = packets[i].x - NDVtx.x_vert;
-    packets[i].y = packets[i].y - NDVtx.y_vert;
-    packets[i].z = packets[i].z - NDVtx.z_vert;
-  }
-
-  // Apply ECC rotation to packets to fully align ND and FD responses
-  // ECC rotation should be -0.202 rad (clockwise) about x (drift direction)
-  for (std::size_t i = 0; i < packets.size(); i++) {
-    const double y = packets[i].y;
-    const double z = packets[i].z;
-    packets[i].y = y * cos(fECCRotation) - z * sin(fECCRotation);
-    packets[i].z = y * sin(fECCRotation) + z * cos(fECCRotation);
-  }
-
-  // Shift the packets s.t. the ND and FD vertices are align
-  for (std::size_t i = 0; i < packets.size(); i++) {
-    packets[i].x = packets[i].x + FDVtx.x_vert;
-    packets[i].y = packets[i].y + FDVtx.y_vert;
-    packets[i].z = packets[i].z + FDVtx.z_vert;
-  }
+  alignNDWithFD(packets, NDVtx, FDVtx);
 
   // Get packet wire projections
   std::map<readout::ROPID, std::vector<packetProj>> eventPacketProjs;
@@ -267,7 +253,23 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       const raw::ChannelID_t ch = 
         fGeom->NearestChannel(packetLoc, pID) - fGeom->FirstChannelInROP(rID);
 
-      const int tick = (int)(detProp.ConvertXToTicks(packet.x, pID) + fNDProjTickShift);
+      double xShift = 0.0;
+      if (packet.forward_facing_anode == 1) {
+        xShift += fNDProjForwardAnodeXShift;
+      }
+      else if (packet.forward_facing_anode == 0) {
+        xShift += fNDProjBackwardAnodeXShift;
+      }
+      else {
+        throw cet::exception("AddFDResp")
+          << "Packet has unset forward_facing_anode"
+          << " - Line " << __LINE__ << " in file " << __FILE__ << "\n";
+      }
+
+      const int tick = (int)detProp.ConvertXToTicks(packet.x + xShift, pID);
+      if (tick >= (int)fMaxTick) {
+        continue;
+      }
 
       const float driftDistanceFD = pGeo.DistanceFromPlane(packetLoc);
 
@@ -336,13 +338,13 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
 
     if (eventRawDigits.find(rID) == eventRawDigits.end()) {
       eventRawDigits[rID] = 
-        std::vector<std::vector<short>>(fGeom->Nchannels(rID), std::vector<short>(6000, 0));
+        std::vector<std::vector<short>>(fGeom->Nchannels(rID), std::vector<short>(fMaxTick, 0));
     }
 
     raw::RawDigit::ADCvector_t adcs(dig.Samples());
     raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
-    for (unsigned int tick = 0; tick < 6000; tick++) { 
+    for (unsigned int tick = 0; tick < fMaxTick; tick++) { 
       const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
       eventRawDigits[rID][dig.Channel() - fGeom->FirstChannelInROP(rID)][tick] = adc;
     }
@@ -384,7 +386,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
         const raw::ChannelID_t ch = 
           fGeom->NearestChannel(SEDLoc, pID) - fGeom->FirstChannelInROP(rID);
 
-        const int tick = (int)(detProp.ConvertXToTicks(SED.X(), pID) + fNDProjTickShift);
+        const int tick = (int)detProp.ConvertXToTicks(SED.X(), pID);
 
         const float driftDistanceFD = pGeo.DistanceFromPlane(SEDLoc);
 
@@ -461,6 +463,34 @@ void extrapolation::AddFDResp::endJob()
 {
   // Write out the projected ND vertices
   fFile->createDataSet("ndfd_vertices_projs", fNDFDVerticesProj);
+}
+
+void extrapolation::AddFDResp::alignNDWithFD(
+  std::vector<packet3d> &packets, const vertex& NDVtx, const vertex& FDVtx
+)
+{
+  // Shift the packets s.t. vertex is (0,0,0) to prepare for ECC rotation
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    packets[i].x = packets[i].x - NDVtx.x_vert;
+    packets[i].y = packets[i].y - NDVtx.y_vert;
+    packets[i].z = packets[i].z - NDVtx.z_vert;
+  }
+
+  // Apply ECC rotation to packets to fully align ND and FD responses
+  // ECC rotation should be -0.202 rad (clockwise) about x (drift direction)
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    const double y = packets[i].y;
+    const double z = packets[i].z;
+    packets[i].y = y * cos(fECCRotation) - z * sin(fECCRotation);
+    packets[i].z = y * sin(fECCRotation) + z * cos(fECCRotation);
+  }
+
+  // Shift the packets s.t. the ND and FD vertices are align
+  for (std::size_t i = 0; i < packets.size(); i++) {
+    packets[i].x = packets[i].x + FDVtx.x_vert;
+    packets[i].y = packets[i].y + FDVtx.y_vert;
+    packets[i].z = packets[i].z + FDVtx.z_vert;
+  }
 }
 
 bool extrapolation::AddFDResp::inWireCellBoundingBox(

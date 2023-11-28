@@ -12,13 +12,20 @@ AddFDResp:
 
   ECCRotation: -0.202 # rad
 
-  # DetectorPropertiesService's ConvertXToTick (with IncludeInterPlanePitchInXTickOffsets=true)
-  # does not mactch where WireCell generates RawDigits exactly. This constant is just an empiracal
-  # fix so that they line up better. This value may need to be changed manually as WireCell evolves
-  NDProjTickShift: 0.0
+  # Reconstructing the drift coordinate from ND-LAr packets always seems to put the packet a bit
+  # closer than the true depo. Cannot figure out why from the code so just correcting it here.
+  # Might need to change these values if using different larnd-sim/larpixsoft. Need to correct
+  # the drift coordinate not the tick because depos can drif in different directions in ND
+  # and FD
+  NDProjForwardAnodeXShift: 0.38 # cm
+  NDProjBackwardAnodeXShift: -0.38 # cm
 
   # Project FD depositions to wires also (for validation)
   ProjectNDDepos: false
+
+  # Waste of disk to write 6000 tick adc vectors as maximum drift is covered in ~4525 ticks
+  # Like to use 4492 as I have ML code that expects this size
+  MaxTick: 4492
   
   # Taken from geom terminal dump wirecell does, cm
   # WireCell does not drift charge depositions outside of these bounding boxes, annoyingly these
