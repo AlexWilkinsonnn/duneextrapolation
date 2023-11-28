@@ -78,8 +78,8 @@ lar -c ./run_AddFDReco.fcl -s LoadedFDDeps_g4_detsimnoopt_reconoopt.root -n -1
 ls -lrth
 
 # Generate FD detector response
-lar -c ./run_LoadFDDepos_NDLAronly.fcl -n $num_events
-lar -c ionandscint_dune10kt_1x2x6.fcl -s LoadedFDDepsInsideNDOnly -n -1
+lar -c ./run_LoadFDDepos_InsideNDOnly.fcl -n $num_events
+lar -c ionandscint_dune10kt_1x2x6.fcl -s LoadedFDDepsInsideNDOnly.root -n -1
 lar -c detsim_dune10kt_1x2x6_notpcsigproc_nooptdet.fcl -s LoadedFDDepsInsideNDOnly_g4.root -n -1
 
 # Add FD detector response and wire projected and aligned packets to H5 file

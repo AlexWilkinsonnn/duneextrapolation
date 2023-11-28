@@ -37,4 +37,3 @@ services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
 
 physics.analyzers.addresp.NDFDH5FileLoc: ""
 
-
