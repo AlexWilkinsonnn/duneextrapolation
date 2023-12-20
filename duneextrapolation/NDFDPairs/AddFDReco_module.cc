@@ -44,7 +44,7 @@ typedef struct recoFD {
   int eventID;
   float numu_score;
   float nue_score;
-  float nuc_score;
+  float nc_score;
   float nutau_score;
   float antinu_score;
   float p_0_score;
@@ -84,7 +84,7 @@ HighFive::CompoundType make_recoFD() {
     {"eventID", HighFive::AtomicType<int>{}},
     {"numu_score", HighFive::AtomicType<float>{}},
     {"nue_score", HighFive::AtomicType<float>{}},
-    {"nuc_score", HighFive::AtomicType<float>{}},
+    {"nc_score", HighFive::AtomicType<float>{}},
     {"nutau_score", HighFive::AtomicType<float>{}},
     {"antinu_score", HighFive::AtomicType<float>{}},
     {"0_p_score", HighFive::AtomicType<float>{}},
