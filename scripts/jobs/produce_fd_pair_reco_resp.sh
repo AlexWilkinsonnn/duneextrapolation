@@ -31,7 +31,7 @@ else
 fi
 
 # Setup env
-${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/scripts/make_setup_grid.sh localProducts_larsoft_*/setup \
+${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/scripts/make_setup_grid.sh ${INPUT_TAR_DIR_LOCAL}/localProducts_larsoft_*/setup \
                                                                          setup-grid
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
 source setup-grid
