@@ -180,7 +180,7 @@ extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
     fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
     fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
     fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
-    fNDFDH5FileLoc       (p.get<std::string>("NDFDH5FileLoc"))
+    fNDFDH5FileLoc     (p.get<std::string>("NDFDH5FileLoc"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
 
