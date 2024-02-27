@@ -1,0 +1,34 @@
+#include "services_dune.fcl"
+#include "AddFDSimChannelsConfig.fcl"
+
+process_name: AddFDSimChannels
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+physics:
+{
+  analyzers:
+  {
+    addreco: @local::AddFDSimChannels
+  }
+
+  path0:     [ addsc ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v2_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v2_1x2x6"
+services.Geometry.ROOT: "dune10kt_v2_1x2x6.gdml"
+
+physics.analyzers.addsc.NDFDH5FileLoc: ""
+
