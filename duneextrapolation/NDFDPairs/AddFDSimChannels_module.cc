@@ -102,7 +102,7 @@ private:
 extrapolation::AddFDSimChannels::AddFDSimChannels(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fEventIDSEDLabel  (p.get<std::string>("EventIDSEDLabel")),
-    fSimChannelsLabel (p.get<std::string>("CVNResultsLabel")),
+    fSimChannelsLabel (p.get<std::string>("SimChannelsLabel")),
     fNDFDH5FileLoc    (p.get<std::string>("NDFDH5FileLoc"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);

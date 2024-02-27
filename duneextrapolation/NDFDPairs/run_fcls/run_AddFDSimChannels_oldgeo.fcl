@@ -18,7 +18,7 @@ physics:
 {
   analyzers:
   {
-    addreco: @local::AddFDSimChannels
+    addsc: @local::AddFDSimChannels
   }
 
   path0:     [ addsc ]
