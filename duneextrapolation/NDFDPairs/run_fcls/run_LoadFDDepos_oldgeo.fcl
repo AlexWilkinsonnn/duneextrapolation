@@ -49,6 +49,8 @@ services.Geometry: @local::dune10kt_1x2x6_geo
 services.Geometry.GDML: "dune10kt_v2_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v2_1x2x6"
 services.Geometry.ROOT: "dune10kt_v2_1x2x6.gdml"
+# TDR geant used a voxel grid with size 0.03cm. This is as close as we can get to emulating this.
+physics.producers.largeant.TargetSEDLen: 0.03
 
 physics.producers.largeant.NDFDH5FileLoc: ""
 
