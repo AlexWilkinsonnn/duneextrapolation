@@ -1,0 +1,123 @@
+# Try to make as similar to what happens in the old LArG4 code of dunetpc v07_06_02
+# Use old geometry and change services parameters that might be relevant to this part of time
+# simulation to their values in the old fcls. Found by comparing fhicl-dumps of old g4 fcl and new
+# g4 fcl.
+
+#include "ionandscint_elecdrift_dune10kt.fcl"
+
+services: {
+    @table::services
+    @table::dunefd_1x2x6_simulation_services
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v2_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v2_1x2x6"
+services.Geometry.ROOT: "dune10kt_v2_1x2x6.gdml"
+services.LArG4Detector.gdmlFileName_: "dune10kt_v2_1x2x6.gdml"
+
+services.DetectorPropertiesService.Electronlifetime: 3000
+services.LArG4Parameters.LongitudinalDiffusion: 6.2e-9
+services.LArG4Parameters.TransverseDiffusion: 1.63e-8
+services.LArPropertiesService.FastScintEnergies: [
+    6, 6.7, 7.1, 7.4, 7.7, 7.9, 8.1, 8.4, 8.5, 8.6, 8.8, 9, 9.1, 9.4, 9.8, 1.04e1, 1.07e1
+]
+services.LArPropertiesService.RIndexEnergies: [
+    1.9,
+    2.934,
+    3.592,
+    5.566,
+    6.694,
+    7.54,
+    8.574,
+    9.044,
+    9.232,
+    9.42,
+    9.514,
+    9.608,
+    9.702,
+    9.796,
+    9.89,
+    9.984,
+    1.008e1,
+    1.027e1,
+    1.045e1,
+    1.074e1,
+    1.092e1
+]
+services.LArPropertiesService.RIndexSpectrum: [
+    1.232,
+    1.236,
+    1.24,
+    1.261,
+    1.282,
+    1.306,
+    1.353,
+    1.387,
+    1.404,
+    1.423,
+    1.434,
+    1.446,
+    1.459,
+    1.473,
+    1.488,
+    1.505,
+    1.524,
+    1.569,
+    1.627,
+    1.751,
+    1.879
+]
+services.LArPropertiesService.RayleighEnergies: [
+    2.8,
+    3,
+    3.5,
+    4,
+    5,
+    6,
+    7,
+    8,
+    8.5,
+    9,
+    9.2,
+    9.4,
+    9.5,
+    9.6,
+    9.7,
+    9.8,
+    9.9,
+    10,
+    1.02e1,
+    1.04e1,
+    1.06e1,
+    1.08e1
+]
+services.LArPropertiesService.RayleighSpectrum: [
+    47923,
+    35981,
+    18825,
+    10653,
+    3972,
+    1681,
+    7.509e2,
+    3.347e2,
+    2.168e2,
+    135,
+    1.097e2,
+    8.806e1,
+    7.832e1,
+    6.934e1,
+    6.106e1,
+    5.346e1,
+    4.65e1,
+    4.013e1,
+    2.891e1,
+    1.981e1,
+    1.261e1,
+    7.2
+]
+services.LArPropertiesService.ScintPreScale: 2.87e-2
+services.LArPropertiesService.ScintYieldRatio: 3e-1
+services.LArPropertiesService.SlowScintEnergies: [
+    6, 6.7, 7.1, 7.4, 7.7, 7.9, 8.1, 8.4, 8.5, 8.6, 8.8, 9, 9.1, 9.4, 9.8, 1.04e1, 1.07e1
+
