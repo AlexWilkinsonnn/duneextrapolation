@@ -292,7 +292,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
   }
 
   // Write projections to the HDF5
-  for (const auto rID_projs : eventPacketProjs) {
+  for (const auto& rID_projs : eventPacketProjs) {
     const readout::ROPID rID = rID_projs.first;
     const std::vector<packetProj> projs = rID_projs.second;
 
@@ -351,7 +351,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
   }
 
   // Write RawDigits to the HDF5
-  for (const auto rID_adcs : eventRawDigits) { 
+  for (const auto& rID_adcs : eventRawDigits) { 
     const readout::ROPID rID = rID_adcs.first;
     const std::vector<std::vector<short>> adcs = rID_adcs.second;
 
@@ -371,7 +371,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     std::map<readout::ROPID, std::vector<packetProj>> eventFDSEDProjs;
     const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fFDSEDLabel);
 
-    for (const auto SED : *SEDs) { 
+    for (const auto& SED : *SEDs) { 
       if (!inWireCellBoundingBox(SED.X(), SED.Y(), SED.Z())) {
         continue;
       }
@@ -408,7 +408,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       }
     }
 
-    for (const auto rID_projs : eventFDSEDProjs) {
+    for (const auto& rID_projs : eventFDSEDProjs) {
       const readout::ROPID rID = rID_projs.first;
       const std::vector<packetProj> projs = rID_projs.second;
 
@@ -497,7 +497,7 @@ bool extrapolation::AddFDResp::inWireCellBoundingBox(
   const double x, const double y, const double z
 )
 {
-  for (const std::vector<std::vector<double>> range : fWireCellAPABoundingBoxes) {
+  for (const std::vector<std::vector<double>>& range : fWireCellAPABoundingBoxes) {
     if (
       x >= range[0][0] && x <= range[1][0] &&
       y >= range[0][1] && y <= range[1][1] &&
