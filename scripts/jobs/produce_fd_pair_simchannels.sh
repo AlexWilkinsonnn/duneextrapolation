@@ -26,11 +26,13 @@ else
   echo "Running on $(hostname) at ${GLIDEIN_Site}. GLIDEIN_DUNESite = ${GLIDEIN_DUNESite}. At ${PWD}"
 fi
 
+echo $INPUT_TAR_DIR_LOCAL
+
 # Setup env
 ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/scripts/make_setup_grid.sh ${INPUT_TAR_DIR_LOCAL}/localProducts_larsoft_*/setup \
                                                                          setup-grid
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
-source /exp/dune/app/users/awilkins/duneextrapolation_larsoft_updated_upsdeps/localProducts_larsoft_v09_78_04_e20_prof/setup
+source setup-grid
 setup dunesw v09_78_03d01 -q e20:prof
 setup duneprototypes v09_78_03d01 -q e20:prof
 setup duneana v09_78_03d01 -q e20:prof
