@@ -4,6 +4,5 @@ setup dunesw v09_78_03d01 -q e20:prof
 setup duneprototypes v09_78_03d01 -q e20:prof
 setup duneana v09_78_03d01 -q e20:prof
 setup dunesim v09_78_03d01 -q e20:prof
-setup dunecore v09_78_03d01 -q e20:prof
 mrbslp
 

@@ -1,6 +1,2 @@
-Build with larsoft v09.78.04 e20:prof and a local copy of `dunereco` at the tag `v09_78_03d01` (needed for the CVN thinks). The other dependencies will be setup from the script `scripts/dev/setup.sh`.
-
-This branch also requires a old tag of larsim with a hotfix. Clone `git@github.com:AlexWilkinsonnn/larsim.git` and checkout the branch `v09_38_01-elecdrift_fix`.
-
-NOTE: comment out L241 & L243 in dunereco/CVN/art/PixelMapProducer.cxx for 1view cvn to work.
+Build with larsoft v09\_78\_03 e20:prof and a local copies `dunecore` at tag `v09_78_03d01`, `larsoft` at tag `v09_78_03`, and `larexamples` at tag `v09_08_05`. This branch also requires a local copy of an old tag of larsim with a hotfix. Clone `git@github.com:AlexWilkinsonnn/larsim.git` and checkout the branch `v09_38_01-elecdrift_fix`. The other ups dependencies will be setup from the script `scripts/dev/setup.sh`. This branch requires thes additional local dependencies to connect to `larsim` on the dependency graph.
 
