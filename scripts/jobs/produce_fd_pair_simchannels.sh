@@ -75,7 +75,7 @@ ls -lrth
 echo "Copying files to dCache..."
 if [ "$SAVE_FDSC" = true ]; then
   ifdh cp LoadedFDDeps_g4.root \
-          ${FD_SIMCHANNELS_OUTPUT}/${input_name%.*}_LoadedFDDeps_g4root
+          ${FD_SIMCHANNELS_OUTPUT}/${input_name%.*}_LoadedFDDeps_g4.root
 fi
 if [ "$SAVE_PAIR_SC" = true ]; then
   ifdh cp ${input_name} ${FD_PAIR_SIMCHANNELS_OUTPUT}/${input_name%.*}_fdsimchannels.h5
