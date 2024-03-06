@@ -164,7 +164,7 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   std::cout << "eventID = " << currEventID << ": Loading " << eventDepos.size() << " depos";
   if (fInsideNDOnly){
     int numDropping = 0;
-    for (const depo dep : eventDepos) {
+    for (const depo& dep : eventDepos) {
       if (dep.outsideNDLAr == 1) {
         numDropping++;
       }
@@ -184,7 +184,7 @@ void extrapolation::LoadFDDepos::produce(art::Event& e)
   evNum->push_back(ID);
 
   auto SEDs = std::make_unique<std::vector<sim::SimEnergyDeposit>>();
-  for (const depo dep : eventDepos) {
+  for (const depo& dep : eventDepos) {
     if (fInsideNDOnly && dep.outsideNDLAr == 1) {
       continue;
     }
@@ -245,11 +245,11 @@ void extrapolation::LoadFDDepos::beginJob()
   datasetDepos.read(readDepos);
 
   // Create maps eventIDs and data
-  for (const depo dep : readDepos) {
+  for (const depo& dep : readDepos) {
     fDepos[dep.eventID].push_back(dep);
   }
 
-  for (const vertex vtx : readVtx) {
+  for (const vertex& vtx : readVtx) {
     fEventIDs.push_back(vtx.eventID);
   }
   if (!fEventIDs.size()) {
