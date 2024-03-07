@@ -37,7 +37,6 @@ setup dunesw v09_78_03d01 -q e20:prof
 setup duneprototypes v09_78_03d01 -q e20:prof
 setup duneana v09_78_03d01 -q e20:prof
 setup dunesim v09_78_03d01 -q e20:prof
-setup dunecore v09_78_03d01 -q e20:prof
 mrbslp
 
 # Don't try over and over again to copy a file when it isn't going to work
@@ -60,7 +59,7 @@ sed -i "s#physics.analyzers.addsc.NDFDH5FileLoc: \"\"#physics.analyzers.addsc.ND
 
 ls -lrth
 
-num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\)}/\1/p")
+num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\).*/\1/p")  
 echo "$input_name has $num_events events"
 
 # Generate FD SimChannels

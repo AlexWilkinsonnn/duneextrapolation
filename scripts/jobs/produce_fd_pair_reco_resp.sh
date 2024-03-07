@@ -64,7 +64,7 @@ sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addres
 
 ls -lrth
 
-num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\)}/\1/p")
+num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\).*/\1/p")
 echo "$input_name has $num_events events"
 
 # Generate FD reco
