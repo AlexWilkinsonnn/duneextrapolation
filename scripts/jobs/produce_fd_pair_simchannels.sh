@@ -59,7 +59,7 @@ sed -i "s#physics.analyzers.addsc.NDFDH5FileLoc: \"\"#physics.analyzers.addsc.ND
 
 ls -lrth
 
-num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\).*/\1/p")  
+num_events=$(h5ls-shared $input_name | sed -n "s/^vertices.*Dataset {\([0-9]\+\).*/\1/p")
 echo "$input_name has $num_events events"
 
 # Generate FD SimChannels
