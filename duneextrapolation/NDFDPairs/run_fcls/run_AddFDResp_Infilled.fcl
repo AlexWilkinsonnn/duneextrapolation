@@ -1,0 +1,47 @@
+#include "services_dune.fcl"
+#include "AddFDRespConfig.fcl"
+
+process_name: AddFDResp
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   -1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+physics:
+{
+  analyzers:
+  {
+    addresp: @local::AddFDResp
+  }
+
+  path0:     [ addresp ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v5_1x2x6"
+services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
+
+# Trying to get detector properties to agree with wirecell on time tick is not working. Wirecell
+# has is own idea of what time depos arrive at the different planes that does not align with
+# DetectorPropertiesService (annoyingly).
+# XXX Is this still true or was this a consequence of the early induction of pixel current for the 
+# drifting charge in the ND? If so this is already addressed with
+# NDProj{Forward,Backward}AnodeXShift params.
+services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
+
+physics.analyzers.addresp.PacketsH5DataSetName: "3d_packets_infilled"
+# We would've already applied this shift in order to run infill network
+physics.analyzers.addresp.NDProjForwardAnodeXShift: 0.0
+physics.analyzers.addresp.NDProjBackwardAnodeXShift: 0.0
+
+physics.analyzers.addresp.NDFDH5FileLoc: ""
+

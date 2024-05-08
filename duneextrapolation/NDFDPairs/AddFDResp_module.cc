@@ -54,7 +54,8 @@ typedef struct packet3d {
   double y;
   double z;
   double z_module;
-  unsigned int forward_facing_anode;
+  int forward_facing_anode;
+  int infilled;
 } packet3d;
 
 HighFive::CompoundType make_packet3d() {
@@ -66,7 +67,8 @@ HighFive::CompoundType make_packet3d() {
     {"y", HighFive::AtomicType<double>{}},
     {"z", HighFive::AtomicType<double>{}},
     {"z_module", HighFive::AtomicType<double>{}},
-    {"forward_facing_anode", HighFive::AtomicType<unsigned int>{}}
+    {"forward_facing_anode", HighFive::AtomicType<int>{}},
+    {"infilled", HighFive::AtomicType<int>{}}
   };
 }
 
@@ -95,6 +97,7 @@ typedef struct packetProj {
   double nd_x_module;
   double wire_dist;
   int forward_facing_anode;
+  int infilled;
 } packetProj;
 
 HighFive::CompoundType make_packetProj() {
@@ -106,7 +109,8 @@ HighFive::CompoundType make_packetProj() {
     {"fd_drift_dist", HighFive::AtomicType<double>{}},
     {"nd_x_module", HighFive::AtomicType<double>{}},
     {"wire_dist", HighFive::AtomicType<double>{}},
-    {"forward_facing_anode", HighFive::AtomicType<int>{}}
+    {"forward_facing_anode", HighFive::AtomicType<int>{}},
+    {"infilled", HighFive::AtomicType<int>{}}
   };
 }
 
@@ -182,6 +186,7 @@ private:
   std::string fFDSEDLabel;
   std::string fRawDigitLabel;
 
+  // See config fcl for description of these members
   std::string fNDFDH5FileLoc;
   double fECCRotation;
   std::vector<std::vector<std::vector<double>>> fWireCellAPABoundingBoxes;
@@ -189,6 +194,7 @@ private:
   double fNDProjBackwardAnodeXShift;
   bool fProjectFDDepos;
   unsigned int fMaxTick;
+  std::string fPacketsH5DataSetName;
 };
 
 
@@ -202,8 +208,9 @@ extrapolation::AddFDResp::AddFDResp(fhicl::ParameterSet const& p)
     fWireCellAPABoundingBoxes  (p.get<std::vector<std::vector<std::vector<double>>>>("WireCellAPABoundingBoxes")),
     fNDProjForwardAnodeXShift  (p.get<double>("NDProjForwardAnodeXShift")),
     fNDProjBackwardAnodeXShift (p.get<double>("NDProjBackwardAnodeXShift")),
-    fProjectFDDepos            (p.get<bool>("ProjectNDDepos")),
-    fMaxTick                   (p.get<unsigned int>("MaxTick"))
+    fProjectFDDepos            (p.get<bool>("ProjectFDDepos")),
+    fMaxTick                   (p.get<unsigned int>("MaxTick")),
+    fPacketsH5DataSetName      (p.get<std::string>("PacketsH5DataSetName"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
   consumes<std::vector<raw::RawDigit>>(fRawDigitLabel);
@@ -260,7 +267,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       else if (packet.forward_facing_anode == 0) {
         xShift += fNDProjBackwardAnodeXShift;
       }
-      else {
+      else if (packet.infilled == 0) { // Only expected to be valid for non-infilled
         throw cet::exception("AddFDResp")
           << "Packet has unset forward_facing_anode"
           << " - Line " << __LINE__ << " in file " << __FILE__ << "\n";
@@ -285,7 +292,8 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
         driftDistanceFD,
         packet.x_module,
         wireDistance,
-        (int)packet.forward_facing_anode
+        packet.forward_facing_anode,
+        packet.infilled
       };
       eventPacketProjs[rID].push_back(p);
     }
@@ -402,6 +410,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
           driftDistanceFD,
           -1,
           wireDistance,
+          -1,
           -1
         };
         eventFDSEDProjs[rID].push_back(p);
@@ -440,7 +449,7 @@ void extrapolation::AddFDResp::beginJob()
   HighFive::DataSet datasetNDVtxs = fFile->getDataSet("vertices");
   datasetNDVtxs.read(NDVtxs);
   std::vector<packet3d> NDPackets;
-  HighFive::DataSet datasetNDPackets = fFile->getDataSet("3d_packets");
+  HighFive::DataSet datasetNDPackets = fFile->getDataSet(fPacketsH5DataSetName);
   datasetNDPackets.read(NDPackets);
 
   for (std::size_t i = 0; i < NDPackets.size(); i++) {

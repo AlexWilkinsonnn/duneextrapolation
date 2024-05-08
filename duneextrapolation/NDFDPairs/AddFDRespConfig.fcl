@@ -10,6 +10,8 @@ AddFDResp:
 
   NDFDH5FileLoc: ""
 
+  PacketsH5DataSetName: "3d_packets"
+
   ECCRotation: -0.202 # rad
 
   # Reconstructing the drift coordinate from ND-LAr packets always seems to put the packet a bit
@@ -21,7 +23,7 @@ AddFDResp:
   NDProjBackwardAnodeXShift: -0.38 # cm
 
   # Project FD depositions to wires also (for validation)
-  ProjectNDDepos: false
+  ProjectFDDepos: false
 
   # Waste of disk to write 6000 tick adc vectors as maximum drift is covered in ~4525 ticks
   # Like to use 4492 as I have ML code that expects this size
