@@ -19,6 +19,14 @@ SAVE_COMPLETE_PAIR=true # turn this on if not testing!
 
 INTERACTIVE=false # not running on grid to test (run from inside dir that would be in tarball)
 
+# run_AddFDResp.fcl:
+#   - uses "3d_packets" for H5 group name
+#   - applies a forward/backward anode x shift
+# run_AddFDResp_Infilled.fcl:
+#   - uses "3d_packets_infilled" for H5 group name
+#   - does not apply a forward/backward anode x shift
+ADDRESP_FCL="run_AddFDResp.fcl"
+
 INPUT_PAIR_H5_DIR=$1
 
 ################################################################################
@@ -60,7 +68,7 @@ cp ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/NDFDPairs/run
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos.fcl
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_InsideNDOnly.fcl
 sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco.fcl
-sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDResp.fcl
+sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" ${ADDRESP_FCL}
 
 ls -lrth
 
@@ -84,7 +92,7 @@ lar -c ionandscint_dune10kt_1x2x6.fcl -s LoadedFDDepsInsideNDOnly.root -n -1
 lar -c detsim_dune10kt_1x2x6_notpcsigproc_nooptdet.fcl -s LoadedFDDepsInsideNDOnly_g4.root -n -1
 
 # Add FD detector response and wire projected and aligned packets to H5 file
-lar -c ./run_AddFDResp.fcl -s LoadedFDDepsInsideNDOnly_g4_detsimnooptnosp.root -n -1
+lar -c ./${ADDRESP_FCL} -s LoadedFDDepsInsideNDOnly_g4_detsimnooptnosp.root -n -1
 
 ls -lrth
 
