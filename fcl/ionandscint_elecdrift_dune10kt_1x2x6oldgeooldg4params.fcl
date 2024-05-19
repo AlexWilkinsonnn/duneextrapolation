@@ -116,8 +116,12 @@ services.LArPropertiesService.RayleighSpectrum: [
     1.261e1,
     7.2
 ]
-services.LArPropertiesService.ScintPreScale: 2.87e-2
+# Setting this parameter to the old version gives the error:
+#  Quantum efficiency set in OpDetResponse_service, 0.035 is too large. It is larger than the prescaling applied during simulation, 0.03 (fQE=1.16667). Final QE must be equal to or smaller than the QE applied at simulation time.
+# I hope this is only relevant for scintillation and not ionisation
+# services.LArPropertiesService.ScintPreScale: 2.87e-2
 services.LArPropertiesService.ScintYieldRatio: 3e-1
 services.LArPropertiesService.SlowScintEnergies: [
     6, 6.7, 7.1, 7.4, 7.7, 7.9, 8.1, 8.4, 8.5, 8.6, 8.8, 9, 9.1, 9.4, 9.8, 1.04e1, 1.07e1
 ]
+services.LArPropertiesService.LoadExtraMatProperties: false
