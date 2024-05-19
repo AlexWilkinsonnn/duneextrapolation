@@ -64,7 +64,7 @@ echo "$input_name has $num_events events"
 
 # Generate FD SimChannels
 lar -c ./run_LoadFDDepos_oldgeo.fcl -n $num_events
-lar -c ionandscint_elecdrift_dune10kt_1x2x6oldgeo.fcl -s LoadedFDDeps.root -n -1
+lar -c ionandscint_elecdrift_dune10kt_1x2x6oldgeooldg4params.fcl -s LoadedFDDeps.root -n -1
 
 # Add FD SimChannels to H5 file
 lar -c ./run_AddFDSimChannels_oldgeo.fcl -s LoadedFDDeps_g4.root -n -1
