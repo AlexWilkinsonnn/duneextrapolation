@@ -120,4 +120,4 @@ services.LArPropertiesService.ScintPreScale: 2.87e-2
 services.LArPropertiesService.ScintYieldRatio: 3e-1
 services.LArPropertiesService.SlowScintEnergies: [
     6, 6.7, 7.1, 7.4, 7.7, 7.9, 8.1, 8.4, 8.5, 8.6, 8.8, 9, 9.1, 9.4, 9.8, 1.04e1, 1.07e1
-
+]
