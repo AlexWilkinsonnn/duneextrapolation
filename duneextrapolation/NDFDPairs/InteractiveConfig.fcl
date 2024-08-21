@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+InteractiveSession:
+{
+  module_type: "Interactive"
+
+  SEDLabel:    "none"
+  DigitsLabel: "none"
+  ERecProcess: "none"
+}
+
+END_PROLOG

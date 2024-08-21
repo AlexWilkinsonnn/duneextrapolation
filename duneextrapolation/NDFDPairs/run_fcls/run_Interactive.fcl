@@ -1,0 +1,31 @@
+#include "services_dune.fcl"
+#include "InteractiveConfig.fcl"
+
+process_name: InteractiveSession
+
+source:
+{
+  module_type: EmptyEvent
+  maxEvents: 1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+physics:
+{
+  analyzers:
+  {
+    sess: @local::InteractiveSession
+  }
+  path0:     [ sess ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v4_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v4_1x2x6"
+services.Geometry.ROOT: "dune10kt_v4_refactored_1x2x6.gdml"
+
