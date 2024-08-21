@@ -1,0 +1,28 @@
+#include "services_dune.fcl"
+#include "ExportPDDataDigitsConfig.fcl"
+
+process_name: ExportDigits
+
+source:
+{
+  module_type: RootInput
+               maxEvents: -1
+}
+
+services:
+{
+  @table::protodune_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  TFileService: { fileName: "%ifb_digitsdump.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    exportdigits: @local::ExportPDDataDigits
+  }
+  path0:     [ exportdigits ]
+  end_paths: [ path0 ]
+}

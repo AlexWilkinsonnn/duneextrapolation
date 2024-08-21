@@ -1,0 +1,10 @@
+BEGIN_PROLOG
+
+ExportPDDataDigits:
+{
+  module_type: "ExportPDDataDigits"
+  CryoIndex:  0
+  TpcIndex:   1
+}
+
+END_PROLOG
