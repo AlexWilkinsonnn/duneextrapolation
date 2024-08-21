@@ -62,8 +62,11 @@ private:
   TTree*                        fTreeDigits;
   // Need to use int instead of short to avoid providing a definition file for ROOT
   std::vector<std::vector<int>> fDigitsZ;
+  std::vector<int>              fPedsZ;
   std::vector<std::vector<int>> fDigitsU;
+  std::vector<int>              fPedsU;
   std::vector<std::vector<int>> fDigitsV;
+  std::vector<int>              fPedsV;
   int                           fEventNum;
 
   unsigned int fCIndex;
@@ -87,8 +90,11 @@ extrapolation::ExportPDDataDigits::ExportPDDataDigits(fhicl::ParameterSet const&
 
   fTreeDigits = tfs->make<TTree>("digits", "digits");
   fTreeDigits->Branch("digit_vecsZ", &fDigitsZ);
+  fTreeDigits->Branch("digit_pedZ", &fPedsZ);
   fTreeDigits->Branch("digit_vecsU", &fDigitsU);
+  fTreeDigits->Branch("digit_pedU", &fPedsU);
   fTreeDigits->Branch("digit_vecsV", &fDigitsV);
+  fTreeDigits->Branch("digit_pedV", &fPedsV);
   fTreeDigits->Branch("eventid", &fEventNum);
 }
 
@@ -99,11 +105,15 @@ void extrapolation::ExportPDDataDigits::analyze(art::Event const& e)
   art::Handle<std::vector<raw::RawDigit>> digs;
   e.getByLabel(art::InputTag("tpcrawdecoder", "daq"), digs);
 
+  std::cout << e.run() << " - " << e.subRun() << " - " << e.event() << "\n";
   fEventNum = (int)e.event();
 
   fDigitsZ = std::vector<std::vector<int>>(480);
   fDigitsU = std::vector<std::vector<int>>(800);
   fDigitsV = std::vector<std::vector<int>>(800);
+  fPedsZ = std::vector<int>(480);
+  fPedsU = std::vector<int>(800);
+  fPedsV = std::vector<int>(800);
   raw::ChannelID_t firstChZ = fGeom->FirstChannelInROP(fRIDZ);
   raw::ChannelID_t firstChU = fGeom->FirstChannelInROP(fRIDU);
   raw::ChannelID_t firstChV = fGeom->FirstChannelInROP(fRIDV);
@@ -114,6 +124,7 @@ void extrapolation::ExportPDDataDigits::analyze(art::Event const& e)
 
       // WC detsim still set to 6000 readout window, cannot be changed in fcl (v09_42_00)
       fDigitsZ[dig.Channel() - firstChZ] = std::vector<int>(4492);
+      fPedsZ[dig.Channel() - firstChZ] = (int)dig.GetPedestal();
       for (unsigned int tick = 0; tick < 4492; tick++) {
         // const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
         const short adc = adcs[tick];
@@ -127,6 +138,7 @@ void extrapolation::ExportPDDataDigits::analyze(art::Event const& e)
 
       // WC detsim still set to 6000 readout window, cannot be changed in fcl (v09_42_00)
       fDigitsU[dig.Channel() - firstChU] = std::vector<int>(4492);
+      fPedsU[dig.Channel() - firstChU] = (int)dig.GetPedestal();
       for (unsigned int tick = 0; tick < 4492; tick++) {
         // const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
         const short adc = adcs[tick];
@@ -140,6 +152,7 @@ void extrapolation::ExportPDDataDigits::analyze(art::Event const& e)
 
       // WC detsim still set to 6000 readout window, cannot be changed in fcl (v09_42_00)
       fDigitsV[dig.Channel() - firstChV] = std::vector<int>(4492);
+      fPedsV[dig.Channel() - firstChV] = (int)dig.GetPedestal();
       for (unsigned int tick = 0; tick < 4492; tick++) {
         // const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
         const short adc = adcs[tick];
