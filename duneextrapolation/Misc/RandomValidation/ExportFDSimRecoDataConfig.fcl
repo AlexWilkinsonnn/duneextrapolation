@@ -1,0 +1,9 @@
+BEGIN_PROLOG
+
+ExportFDSimRecoData:
+{
+  module_type: "ExportFDSimRecoData"
+  ExportDigits: true
+}
+
+END_PROLOG

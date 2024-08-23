@@ -1,0 +1,33 @@
+#include "services_dune.fcl"
+#include "ExportFDSimRecoDataConfig.fcl"
+
+process_name: ExportFDSimReco
+
+source:
+{
+  module_type: RootInput
+  maxEvents: -1
+}
+
+services:
+{
+  @table::dunefd_services
+  TimeTracker:           {}
+  MemoryTracker:         {} # default is one
+  TFileService: { fileName: "%ifb_simrecodump.root" }
+}
+
+physics:
+{
+  analyzers:
+  {
+    exportsimreco: @local::ExportFDSimRecoData
+  }
+  path0:     [ exportsimreco ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v5_1x2x6"
+services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
