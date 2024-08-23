@@ -62,10 +62,10 @@ private:
   TTree*                        fTreeDigits;
   // Need to use int instead of short to avoid providing a definition file for ROOT
   std::vector<std::vector<int>> fDigitsZ;
-  std::vector<int>              fPedsZ;
   std::vector<std::vector<int>> fDigitsU;
-  std::vector<int>              fPedsU;
   std::vector<std::vector<int>> fDigitsV;
+  std::vector<int>              fPedsZ;
+  std::vector<int>              fPedsU;
   std::vector<int>              fPedsV;
   int                           fEventNum;
 
@@ -90,10 +90,10 @@ extrapolation::ExportPDDataDigits::ExportPDDataDigits(fhicl::ParameterSet const&
 
   fTreeDigits = tfs->make<TTree>("digits", "digits");
   fTreeDigits->Branch("digit_vecsZ", &fDigitsZ);
-  fTreeDigits->Branch("digit_pedZ", &fPedsZ);
   fTreeDigits->Branch("digit_vecsU", &fDigitsU);
-  fTreeDigits->Branch("digit_pedU", &fPedsU);
   fTreeDigits->Branch("digit_vecsV", &fDigitsV);
+  fTreeDigits->Branch("digit_pedZ", &fPedsZ);
+  fTreeDigits->Branch("digit_pedU", &fPedsU);
   fTreeDigits->Branch("digit_pedV", &fPedsV);
   fTreeDigits->Branch("eventid", &fEventNum);
 }
@@ -199,6 +199,9 @@ void extrapolation::ExportPDDataDigits::reset()
   fDigitsZ.clear();
   fDigitsU.clear();
   fDigitsV.clear();
+  fPedsZ.clear();
+  fPedsU.clear();
+  fPedsV.clear();
   fEventNum = -1;
 }
 
