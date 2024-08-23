@@ -23,14 +23,13 @@
 // LArSoft
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
-#include "art_root_io/TFileService.h"
-#include "art_root_io/TFileDirectory.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/Simulation/SimChannel.h"
 #include "lardataobj/Simulation/SimEnergyDeposit.h"
 #include "lardataobj/RawData/RawDigit.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/RecoBase/Wire.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -70,35 +69,48 @@ private:
     const art::Event &e, readout::ROPID &rIDZ, readout::ROPID &rIDU, readout::ROPID &rIDV
   );
   void fillDigits(const raw::RawDigit &dig, std::vector<int> &digVec);
+  void fillWires(const recob::Wire &wire, std::vector<float> &wireVec);
 
   const geo::GeometryCore* fGeom;
 
   bool fExportDigits;
+  bool fExportSPWires;
 
   TTree*                        fTreeSimReco;
   // Need to use int instead of short to avoid providing a definition file for ROOT
-  std::vector<std::vector<int>> fDigitsZ;
-  std::vector<std::vector<int>> fDigitsU;
-  std::vector<std::vector<int>> fDigitsV;
+  std::vector<std::vector<int>>   fDigitsZ;
+  std::vector<std::vector<int>>   fDigitsU;
+  std::vector<std::vector<int>>   fDigitsV;
+  std::vector<std::vector<float>> fWiresZ;
+  std::vector<std::vector<float>> fWiresU;
+  std::vector<std::vector<float>> fWiresV;
   int                           fEventNum;
 };
 
 extrapolation::ExportFDSimRecoData::ExportFDSimRecoData(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
-    fExportDigits (p.get<bool>("ExportDigits"))
+    fExportDigits  (p.get<bool>("ExportDigits")),
+    fExportSPWires (p.get<bool>("ExportSPWires"))
 {
   consumes<std::vector<simb::MCTruth>>(art::InputTag("generator"));
 
   art::ServiceHandle<art::TFileService> tfs;
 
   fTreeSimReco = tfs->make<TTree>("simreco", "simreco");
+  fTreeSimReco->Branch("eventid", &fEventNum);
 
   if (fExportDigits) {
     consumes<std::vector<raw::RawDigit>>(art::InputTag("tpcrawdecoder", "daq"));
     fTreeSimReco->Branch("digit_vecsZ", &fDigitsZ);
     fTreeSimReco->Branch("digit_vecsU", &fDigitsU);
     fTreeSimReco->Branch("digit_vecsV", &fDigitsV);
-    fTreeSimReco->Branch("eventid", &fEventNum);
+  }
+
+  if (fExportSPWires) {
+    consumes<std::vector<recob::Wire>>(art::InputTag("tpcrawdecoder", "wiener"));
+    fTreeSimReco->Branch("wire_vecsZ", &fWiresZ);
+    fTreeSimReco->Branch("wire_vecsU", &fWiresU);
+    fTreeSimReco->Branch("wire_vecsV", &fWiresV);
   }
 }
 
@@ -111,10 +123,13 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
 
   readout::ROPID rIDZ, rIDU, rIDV;
   getVtxROPs(e, rIDZ, rIDU, rIDV);
-
   if (!fGeom->HasROP(rIDZ) || !fGeom->HasROP(rIDU) || !fGeom->HasROP(rIDV)) {
     return;
   }
+  raw::ChannelID_t firstChZ = fGeom->FirstChannelInROP(rIDZ);
+  raw::ChannelID_t firstChU = fGeom->FirstChannelInROP(rIDU);
+  raw::ChannelID_t firstChV = fGeom->FirstChannelInROP(rIDV);
+
   
   if (fExportDigits) {
     art::Handle<std::vector<raw::RawDigit>> digs;
@@ -123,9 +138,6 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
     fDigitsZ = std::vector<std::vector<int>>(480);
     fDigitsU = std::vector<std::vector<int>>(800);
     fDigitsV = std::vector<std::vector<int>>(800);
-    raw::ChannelID_t firstChZ = fGeom->FirstChannelInROP(rIDZ);
-    raw::ChannelID_t firstChU = fGeom->FirstChannelInROP(rIDU);
-    raw::ChannelID_t firstChV = fGeom->FirstChannelInROP(rIDV);
     for (const raw::RawDigit& dig : *digs) {
       if (fGeom->ChannelToROP(dig.Channel()) == rIDZ) {
         // WC detsim still set to 6000 readout window, cannot be changed in fcl (v09_42_00)
@@ -139,6 +151,29 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
       else if (fGeom->ChannelToROP(dig.Channel()) == rIDV) {
         fDigitsV[dig.Channel() - firstChV] = std::vector<int>(4492);
         fillDigits(dig, fDigitsV[dig.Channel() - firstChV]);
+      }
+    }
+  }
+
+  if (fExportSPWires) {
+    art::Handle<std::vector<recob::Wire>> wires;
+    e.getByLabel(art::InputTag("tpcrawdecoder", "wiener"), wires);
+
+    fWiresZ = std::vector<std::vector<float>>(480);
+    fWiresU = std::vector<std::vector<float>>(800);
+    fWiresV = std::vector<std::vector<float>>(800);
+    for (const recob::Wire wire : *wires) {
+      if (fGeom->ChannelToROP(wire.Channel()) == rIDZ) {
+        fWiresZ[wire.Channel() - firstChZ] = std::vector<float>(4492);
+        fillWires(wire, fWiresZ[wire.Channel() - firstChZ]);
+      }
+      else if (fGeom->ChannelToROP(wire.Channel()) == rIDU) {
+        fWiresU[wire.Channel() - firstChU] = std::vector<float>(4492);
+        fillWires(wire, fWiresU[wire.Channel() - firstChU]);
+      }
+      else if (fGeom->ChannelToROP(wire.Channel()) == rIDV) {
+        fWiresV[wire.Channel() - firstChV] = std::vector<float>(4492);
+        fillWires(wire, fWiresV[wire.Channel() - firstChV]);
       }
     }
   }
@@ -160,6 +195,9 @@ void extrapolation::ExportFDSimRecoData::reset()
   fDigitsZ.clear();
   fDigitsU.clear();
   fDigitsV.clear();
+  fWiresZ.clear();
+  fWiresU.clear();
+  fWiresV.clear();
   fEventNum = -1;
 }
 
@@ -196,10 +234,19 @@ void extrapolation::ExportFDSimRecoData::fillDigits(
 {
   raw::RawDigit::ADCvector_t adcs(dig.Samples());
   raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
-
   for (unsigned int tick = 0; tick < digVec.size(); tick++) {
     const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
     digVec[tick] = (int)adc;
+  }
+}
+
+void extrapolation::ExportFDSimRecoData::fillWires(
+  const recob::Wire &wire, std::vector<float> &wireVec
+)
+{
+  const std::vector<float> sigVec = wire.Signal();
+  for (unsigned int tick = 0; tick < wireVec.size(); tick++) {
+    wireVec[tick] = (float)sigVec[tick];
   }
 }
 

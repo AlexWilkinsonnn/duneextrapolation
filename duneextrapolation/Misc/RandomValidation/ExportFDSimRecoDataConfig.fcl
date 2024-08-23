@@ -3,7 +3,9 @@ BEGIN_PROLOG
 ExportFDSimRecoData:
 {
   module_type: "ExportFDSimRecoData"
-  ExportDigits: true
+
+  ExportDigits:  true
+  ExportSPWires: true
 }
 
 END_PROLOG
