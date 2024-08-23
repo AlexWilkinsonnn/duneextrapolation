@@ -71,9 +71,6 @@ private:
 
   unsigned int fCIndex;
   unsigned int fTIndex;
-  geo::PlaneID   fPIDZ;
-  geo::PlaneID   fPIDU;
-  geo::PlaneID   fPIDV;
   readout::ROPID fRIDZ;
   readout::ROPID fRIDU;
   readout::ROPID fRIDV;
@@ -174,17 +171,14 @@ void extrapolation::ExportPDDataDigits::beginJob()
   for (geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
     if (fGeom->View(pID) == geo::kZ) {
       std::cout << "Z plane: " << pID << "\n";
-      fPIDZ = pID;
       fRIDZ = fGeom->WirePlaneToROP(pID);
     }
     else if (fGeom->View(pID) == geo::kU) {
       std::cout << "U plane: " << pID << "\n";
-      fPIDU = pID;
       fRIDU = fGeom->WirePlaneToROP(pID);
     }
     else if (fGeom->View(pID) == geo::kV) {
       std::cout << "V plane: " << pID << "\n";
-      fPIDV = pID;
       fRIDV = fGeom->WirePlaneToROP(pID);
     }
   }
