@@ -30,6 +30,7 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RawData/raw.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -75,6 +76,7 @@ private:
 
   bool fExportDigits;
   bool fExportSPWires;
+  bool fExportHits;
 
   TTree*                        fTreeSimReco;
   // Need to use int instead of short to avoid providing a definition file for ROOT
@@ -84,13 +86,20 @@ private:
   std::vector<std::vector<float>> fWiresZ;
   std::vector<std::vector<float>> fWiresU;
   std::vector<std::vector<float>> fWiresV;
-  int                           fEventNum;
+  std::vector<int>                fHitROPs;
+  std::vector<int>                fHitChs;
+  std::vector<float>              fHitPeakTimes;
+  std::vector<float>              fHitPeakSigmas;
+  std::vector<float>              fHitRMSs;
+  std::vector<float>              fHitPeakAmplitudes;
+  int                             fEventNum;
 };
 
 extrapolation::ExportFDSimRecoData::ExportFDSimRecoData(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
     fExportDigits  (p.get<bool>("ExportDigits")),
-    fExportSPWires (p.get<bool>("ExportSPWires"))
+    fExportSPWires (p.get<bool>("ExportSPWires")),
+    fExportHits    (p.get<bool>("ExportHits"))
 {
   consumes<std::vector<simb::MCTruth>>(art::InputTag("generator"));
 
@@ -112,6 +121,16 @@ extrapolation::ExportFDSimRecoData::ExportFDSimRecoData(fhicl::ParameterSet cons
     fTreeSimReco->Branch("wire_vecsU", &fWiresU);
     fTreeSimReco->Branch("wire_vecsV", &fWiresV);
   }
+
+  if (fExportHits) {
+    consumes<std::vector<recob::Hit>>(art::InputTag("hitfd"));
+    fTreeSimReco->Branch("hit_planes", &fHitROPs);
+    fTreeSimReco->Branch("hit_chs", &fHitChs);
+    fTreeSimReco->Branch("hit_peaktimes", &fHitPeakTimes);
+    fTreeSimReco->Branch("hit_peaksigmas", &fHitPeakSigmas);
+    fTreeSimReco->Branch("hit_rmss", &fHitRMSs);
+    fTreeSimReco->Branch("hit_peakamplitudes", &fHitPeakAmplitudes);
+  }
 }
 
 void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
@@ -129,7 +148,6 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
   raw::ChannelID_t firstChZ = fGeom->FirstChannelInROP(rIDZ);
   raw::ChannelID_t firstChU = fGeom->FirstChannelInROP(rIDU);
   raw::ChannelID_t firstChV = fGeom->FirstChannelInROP(rIDV);
-
   
   if (fExportDigits) {
     art::Handle<std::vector<raw::RawDigit>> digs;
@@ -162,7 +180,7 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
     fWiresZ = std::vector<std::vector<float>>(480);
     fWiresU = std::vector<std::vector<float>>(800);
     fWiresV = std::vector<std::vector<float>>(800);
-    for (const recob::Wire wire : *wires) {
+    for (const recob::Wire& wire : *wires) {
       if (fGeom->ChannelToROP(wire.Channel()) == rIDZ) {
         fWiresZ[wire.Channel() - firstChZ] = std::vector<float>(4492);
         fillWires(wire, fWiresZ[wire.Channel() - firstChZ]);
@@ -175,6 +193,30 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
         fWiresV[wire.Channel() - firstChV] = std::vector<float>(4492);
         fillWires(wire, fWiresV[wire.Channel() - firstChV]);
       }
+    }
+  }
+
+  if (fExportHits) {
+    art::Handle<std::vector<recob::Hit>> hits;
+    e.getByLabel(art::InputTag("hitfd"), hits);
+
+    for (const recob::Hit& hit : *hits) {
+      if (fGeom->ChannelToROP(hit.Channel()) == rIDU) {
+        fHitROPs.push_back(0);
+        fHitChs.push_back((int)(hit.Channel() - firstChU));
+      }
+      else if (fGeom->ChannelToROP(hit.Channel()) == rIDV) {
+        fHitROPs.push_back(1);
+        fHitChs.push_back((int)(hit.Channel() - firstChV));
+      }
+      else if (fGeom->ChannelToROP(hit.Channel()) == rIDZ) {
+        fHitROPs.push_back(2);
+        fHitChs.push_back((int)(hit.Channel() - firstChZ));
+      }
+      fHitPeakTimes.push_back(hit.PeakTime());
+      fHitPeakSigmas.push_back(hit.SigmaPeakTime());
+      fHitRMSs.push_back(hit.RMS());
+      fHitPeakAmplitudes.push_back(hit.PeakAmplitude());
     }
   }
 
@@ -198,6 +240,12 @@ void extrapolation::ExportFDSimRecoData::reset()
   fWiresZ.clear();
   fWiresU.clear();
   fWiresV.clear();
+  fHitROPs.clear();
+  fHitChs.clear();
+  fHitPeakTimes.clear();
+  fHitPeakSigmas.clear();
+  fHitRMSs.clear();
+  fHitPeakAmplitudes.clear();
   fEventNum = -1;
 }
 
