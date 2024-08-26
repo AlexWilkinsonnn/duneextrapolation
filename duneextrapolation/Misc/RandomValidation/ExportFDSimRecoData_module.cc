@@ -35,8 +35,6 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 
 // STL
-#include <memory>
-#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -74,6 +72,8 @@ private:
 
   const geo::GeometryCore* fGeom;
 
+  std::string fSPLabel;
+
   bool fExportDigits;
   bool fExportSPWires;
   bool fExportHits;
@@ -89,6 +89,8 @@ private:
   std::vector<int>                fHitROPs;
   std::vector<int>                fHitChs;
   std::vector<float>              fHitPeakTimes;
+  std::vector<int>                fHitStartTicks;
+  std::vector<int>                fHitEndTicks;
   std::vector<float>              fHitPeakSigmas;
   std::vector<float>              fHitRMSs;
   std::vector<float>              fHitPeakAmplitudes;
@@ -97,6 +99,7 @@ private:
 
 extrapolation::ExportFDSimRecoData::ExportFDSimRecoData(fhicl::ParameterSet const& p)
   : EDAnalyzer{p},
+    fSPLabel       (p.get<std::string>("SPLabel")),
     fExportDigits  (p.get<bool>("ExportDigits")),
     fExportSPWires (p.get<bool>("ExportSPWires")),
     fExportHits    (p.get<bool>("ExportHits"))
@@ -116,17 +119,20 @@ extrapolation::ExportFDSimRecoData::ExportFDSimRecoData(fhicl::ParameterSet cons
   }
 
   if (fExportSPWires) {
-    consumes<std::vector<recob::Wire>>(art::InputTag("tpcrawdecoder", "wiener"));
+    consumes<std::vector<recob::Wire>>(fSPLabel);
     fTreeSimReco->Branch("wire_vecsZ", &fWiresZ);
     fTreeSimReco->Branch("wire_vecsU", &fWiresU);
     fTreeSimReco->Branch("wire_vecsV", &fWiresV);
   }
 
   if (fExportHits) {
-    consumes<std::vector<recob::Hit>>(art::InputTag("hitfd"));
+    consumes<std::vector<recob::Hit>>(art::InputTag("gaushit"));
     fTreeSimReco->Branch("hit_planes", &fHitROPs);
     fTreeSimReco->Branch("hit_chs", &fHitChs);
     fTreeSimReco->Branch("hit_peaktimes", &fHitPeakTimes);
+    fTreeSimReco->Branch("hit_peaktimes", &fHitPeakTimes);
+    fTreeSimReco->Branch("hit_startticks", &fHitStartTicks);
+    fTreeSimReco->Branch("hit_endticks", &fHitEndTicks);
     fTreeSimReco->Branch("hit_peaksigmas", &fHitPeakSigmas);
     fTreeSimReco->Branch("hit_rmss", &fHitRMSs);
     fTreeSimReco->Branch("hit_peakamplitudes", &fHitPeakAmplitudes);
@@ -175,7 +181,7 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
 
   if (fExportSPWires) {
     art::Handle<std::vector<recob::Wire>> wires;
-    e.getByLabel(art::InputTag("tpcrawdecoder", "wiener"), wires);
+    e.getByLabel(fSPLabel, wires);
 
     fWiresZ = std::vector<std::vector<float>>(480);
     fWiresU = std::vector<std::vector<float>>(800);
@@ -198,7 +204,7 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
 
   if (fExportHits) {
     art::Handle<std::vector<recob::Hit>> hits;
-    e.getByLabel(art::InputTag("hitfd"), hits);
+    e.getByLabel(art::InputTag("gaushit"), hits);
 
     for (const recob::Hit& hit : *hits) {
       if (fGeom->ChannelToROP(hit.Channel()) == rIDU) {
@@ -214,6 +220,8 @@ void extrapolation::ExportFDSimRecoData::analyze(art::Event const& e)
         fHitChs.push_back((int)(hit.Channel() - firstChZ));
       }
       fHitPeakTimes.push_back(hit.PeakTime());
+      fHitStartTicks.push_back(hit.StartTick());
+      fHitEndTicks.push_back(hit.EndTick());
       fHitPeakSigmas.push_back(hit.SigmaPeakTime());
       fHitRMSs.push_back(hit.RMS());
       fHitPeakAmplitudes.push_back(hit.PeakAmplitude());
@@ -243,6 +251,8 @@ void extrapolation::ExportFDSimRecoData::reset()
   fHitROPs.clear();
   fHitChs.clear();
   fHitPeakTimes.clear();
+  fHitStartTicks.clear();
+  fHitEndTicks.clear();
   fHitPeakSigmas.clear();
   fHitRMSs.clear();
   fHitPeakAmplitudes.clear();

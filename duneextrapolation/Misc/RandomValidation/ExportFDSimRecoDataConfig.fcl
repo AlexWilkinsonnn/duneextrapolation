@@ -4,6 +4,8 @@ ExportFDSimRecoData:
 {
   module_type: "ExportFDSimRecoData"
 
+  SPLabel: "tpcrawdecoder:gauss"
+
   ExportDigits:  true
   ExportSPWires: true
   ExportHits:    true
