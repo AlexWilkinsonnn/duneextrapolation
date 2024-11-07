@@ -75,7 +75,7 @@ ls -lrth
 # Load FD info into to art to make the next analyser work
 lar -c ./run_LoadFDDepos_InsideNDOnly.fcl -n $num_events
 # Add wire projected and aligned packets to H5 file
-lar -c ./run_AddNDProj.fcl -s LoadedFDDepsInsideNDOnly -n -1
+lar -c ./run_AddNDProj.fcl -s LoadedFDDepsInsideNDOnly.root -n -1
 
 ls -lrth
 
