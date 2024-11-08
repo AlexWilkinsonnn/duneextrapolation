@@ -43,7 +43,7 @@
 
 typedef struct packet3d {
   int eventID;
-  int adc;
+  int adc; // NOTE better as float, used int in training dataset so keep as int for now
   double x;
   double x_module;
   double y;
@@ -237,8 +237,8 @@ void extrapolation::AddNDProj::analyze(art::Event const& e)
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
       const geo::PlaneGeo pGeo = fGeom->Plane(pID);
       const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
-    
-      const raw::ChannelID_t ch = 
+
+      const raw::ChannelID_t ch =
         fGeom->NearestChannel(packetLoc, pID) - fGeom->FirstChannelInROP(rID);
 
       double xShift = 0.0;
@@ -305,7 +305,7 @@ void extrapolation::AddNDProj::analyze(art::Event const& e)
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
       const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
 
-      const raw::ChannelID_t ch = 
+      const raw::ChannelID_t ch =
         fGeom->NearestChannel(vtxLoc, pID) - fGeom->FirstChannelInROP(rID);
 
       const int tick = (int)detProp.ConvertXToTicks(FDVtx.x_vert, pID);
