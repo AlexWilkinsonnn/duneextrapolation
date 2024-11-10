@@ -1,0 +1,50 @@
+#include "wirecell_dune.fcl"
+#include "services_dune.fcl"
+
+process_name: sigproc
+
+services:
+{
+  TimeTracker:           {}
+  MemoryTracker:         {}
+  RandomNumberGenerator: {}
+  FileCatalogMetadata:   @local::art_file_catalog_mc
+
+  @table::dunefd_1x2x6_simulation_services
+}
+
+source:
+{
+  module_type: RootInput
+  maxEvents:  -1
+}
+
+physics:
+{
+
+  producers:
+  {
+     tpcrawdecoder: @local::dune10kt_1x2x6_mc_nfsp # tpcrawdecoder to  avoid needing to change loads
+                                                   # of labels in the reco fcl
+     rns:           { module_type: "RandomNumberSaver" }
+  }
+
+  simulate: [ rns, tpcrawdecoder ]
+  stream1:  [ out1 ]
+  trigger_paths: [simulate] 
+  end_paths:     [stream1]  
+}
+
+outputs:
+{
+  out1:
+  {
+    module_type: RootOutput
+    fileName:    "%ifb_sigproc.root"
+    dataTier:    "reconstructed"
+    compressionLevel: 1
+  }
+}
+
+physics.producers.tpcrawdecoder.wcls_main.params.raw_input_label: "loadresp:NDTranslated"
+
