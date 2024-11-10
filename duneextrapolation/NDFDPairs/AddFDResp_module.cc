@@ -45,6 +45,7 @@
 #include <vector>
 #include <map>
 #include <math.h>
+#include <iomanip>
 
 typedef struct packet3d {
   int eventID;
@@ -162,6 +163,7 @@ private:
   // Methods
   bool inWireCellBoundingBox(const double x, const double y, const double z);
   void alignNDWithFD(std::vector<packet3d> &packets, const vertex& NDVtx, const vertex& FDVtx);
+  double roundDoubleSigFigs(const double val, const int nSigfigs);
 
   // Members
   const geo::GeometryCore* fGeom;
@@ -256,8 +258,8 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
       const geo::PlaneGeo pGeo = fGeom->Plane(pID);
       const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
-    
-      const raw::ChannelID_t ch = 
+
+      const raw::ChannelID_t ch =
         fGeom->NearestChannel(packetLoc, pID) - fGeom->FirstChannelInROP(rID);
 
       double xShift = 0.0;
@@ -324,7 +326,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
       const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
 
-      const raw::ChannelID_t ch = 
+      const raw::ChannelID_t ch =
         fGeom->NearestChannel(vtxLoc, pID) - fGeom->FirstChannelInROP(rID);
 
       const int tick = (int)detProp.ConvertXToTicks(FDVtx.x_vert, pID);
@@ -336,7 +338,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
 
   // Read in relevant RawDigits
   std::map<readout::ROPID, std::vector<std::vector<short>>> eventRawDigits;
-  for (const raw::RawDigit& dig : *digits) { 
+  for (const raw::RawDigit& dig : *digits) {
     const readout::ROPID rID = fGeom->ChannelToROP(dig.Channel());
 
     // Skip if no ND packets for this ROP
@@ -345,21 +347,21 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     }
 
     if (eventRawDigits.find(rID) == eventRawDigits.end()) {
-      eventRawDigits[rID] = 
+      eventRawDigits[rID] =
         std::vector<std::vector<short>>(fGeom->Nchannels(rID), std::vector<short>(fMaxTick, 0));
     }
 
     raw::RawDigit::ADCvector_t adcs(dig.Samples());
     raw::Uncompress(dig.ADCs(), adcs, dig.Compression());
 
-    for (unsigned int tick = 0; tick < fMaxTick; tick++) { 
+    for (unsigned int tick = 0; tick < fMaxTick; tick++) {
       const short adc = adcs[tick] ? short(adcs[tick]) - dig.GetPedestal() : 0;
       eventRawDigits[rID][dig.Channel() - fGeom->FirstChannelInROP(rID)][tick] = adc;
     }
   }
 
   // Write RawDigits to the HDF5
-  for (const auto& rID_adcs : eventRawDigits) { 
+  for (const auto& rID_adcs : eventRawDigits) {
     const readout::ROPID rID = rID_adcs.first;
     const std::vector<std::vector<short>> adcs = rID_adcs.second;
 
@@ -379,7 +381,7 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
     std::map<readout::ROPID, std::vector<packetProj>> eventFDSEDProjs;
     const auto SEDs = e.getValidHandle<std::vector<sim::SimEnergyDeposit>>(fFDSEDLabel);
 
-    for (const auto& SED : *SEDs) { 
+    for (const auto& SED : *SEDs) {
       if (!inWireCellBoundingBox(SED.X(), SED.Y(), SED.Z())) {
         continue;
       }
@@ -390,8 +392,8 @@ void extrapolation::AddFDResp::analyze(art::Event const& e)
       for (const geo::PlaneID pID : fGeom->Iterate<geo::PlaneID>(tID)) {
         const geo::PlaneGeo pGeo = fGeom->Plane(pID);
         const readout::ROPID rID = fGeom->WirePlaneToROP(pID);
-      
-        const raw::ChannelID_t ch = 
+
+        const raw::ChannelID_t ch =
           fGeom->NearestChannel(SEDLoc, pID) - fGeom->FirstChannelInROP(rID);
 
         const int tick = (int)detProp.ConvertXToTicks(SED.X(), pID);
@@ -506,6 +508,10 @@ bool extrapolation::AddFDResp::inWireCellBoundingBox(
   const double x, const double y, const double z
 )
 {
+  // WireCell bounding box is only known to 6 significant figures
+  const double xRounded = roundDoubleSigFigs(x, 6);
+  const double yRounded = roundDoubleSigFigs(y, 6);
+  const double zRounded = roundDoubleSigFigs(z, 6);
   for (const std::vector<std::vector<double>>& range : fWireCellAPABoundingBoxes) {
     if (
       x >= range[0][0] && x <= range[1][0] &&
@@ -516,6 +522,14 @@ bool extrapolation::AddFDResp::inWireCellBoundingBox(
     }
   }
   return false;
+}
+
+double extrapolation::AddNDProj::roundDoubleSigFigs(const double val, const int nSigFigs)
+{
+  // *yoink* (https://cplusplus.com/forum/beginner/274016/)
+  std::stringstream ss;
+  ss << std::scientific << std::setprecision(nSigFigs - 1) << val;
+  return stod(ss.str());
 }
 
 DEFINE_ART_MODULE(extrapolation::AddFDResp)
