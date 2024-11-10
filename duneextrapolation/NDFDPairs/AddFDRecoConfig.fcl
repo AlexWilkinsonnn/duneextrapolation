@@ -12,6 +12,8 @@ AddFDReco:
   NueEResultsLabel:  "energyrecnue::"
   NCEResultsLabel:   "energyrecnc::"
 
+  OutputDatasetName: "fd_reco"
+
   NDFDH5FileLoc: ""
 }
 

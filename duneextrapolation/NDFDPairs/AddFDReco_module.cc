@@ -170,6 +170,7 @@ private:
   std::string fNCEResultsLabel;
 
   std::string fNDFDH5FileLoc;
+  std::string fOutputDatasetName;
 };
 
 
@@ -180,7 +181,8 @@ extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
     fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
     fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
     fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
-    fNDFDH5FileLoc     (p.get<std::string>("NDFDH5FileLoc"))
+    fNDFDH5FileLoc     (p.get<std::string>("NDFDH5FileLoc")),
+    fOutputDatasetName (p.get<std::string>("OutputDatasetName"))
 {
   consumes<std::vector<sim::SimEnergyDeposit>>(fEventIDSEDLabel);
 
@@ -214,7 +216,7 @@ void extrapolation::AddFDReco::beginJob()
 void extrapolation::AddFDReco::endJob()
 {
   // Write reco to hdf5
-  fFile->createDataSet("fd_reco", fReco);
+  fFile->createDataSet(fOutputDatasetName, fReco);
 }
 
 recoFD extrapolation::AddFDReco::getReco(
