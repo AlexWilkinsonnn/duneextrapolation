@@ -40,6 +40,7 @@
 #include <vector>
 #include <map>
 #include <math.h>
+#include <iomanip>
 
 typedef struct packet3d {
   int eventID;
@@ -157,6 +158,7 @@ private:
   // Methods
   bool inWireCellBoundingBox(const double x, const double y, const double z);
   void alignNDWithFD(std::vector<packet3d> &packets, const vertex& NDVtx, const vertex& FDVtx);
+  double roundDoubleSigFigs(const double val, const int nSigfigs);
 
   // Members
   const geo::GeometryCore* fGeom;
@@ -387,16 +389,28 @@ bool extrapolation::AddNDProj::inWireCellBoundingBox(
   const double x, const double y, const double z
 )
 {
+  // WireCell bounding box is only known to 6 significant figures
+  const double xRounded = roundDoubleSigFigs(x, 6);
+  const double yRounded = roundDoubleSigFigs(y, 6);
+  const double zRounded = roundDoubleSigFigs(z, 6);
   for (const std::vector<std::vector<double>>& range : fWireCellAPABoundingBoxes) {
     if (
-      x >= range[0][0] && x <= range[1][0] &&
-      y >= range[0][1] && y <= range[1][1] &&
-      z >= range[0][2] && z <= range[1][2]
+      xRounded > range[0][0] && xRounded < range[1][0] &&
+      yRounded > range[0][1] && yRounded < range[1][1] &&
+      zRounded > range[0][2] && zRounded < range[1][2]
     ) {
       return true;
     }
   }
   return false;
+}
+
+double extrapolation::AddNDProj::roundDoubleSigFigs(const double val, const int nSigFigs)
+{
+  // *yoink* (https://cplusplus.com/forum/beginner/274016/)
+  std::stringstream ss;
+  ss << std::scientific << std::setprecision(nSigFigs - 1) << val;
+  return stod(ss.str());
 }
 
 DEFINE_ART_MODULE(extrapolation::AddNDProj)
