@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+LoadFDResp:
+{
+  module_type: "LoadFDResp"
+
+  DigTickWindow: 6000 // Model usually predicts with window of 4492,
+                      // think simulation is usually 6000 though
+  NDFDH5FileLoc: ""
+}
+
+END_PROLOG
