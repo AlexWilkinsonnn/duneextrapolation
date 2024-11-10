@@ -1,7 +1,8 @@
 #!/bin/bash
 ################################################################################
-# Script to take ND-FD pair HDF5 with truth information for ND and FD and add
-# the FD reconstruction and ND wire plane projections.
+# Script to take ND-FD pair HDF5 with truth information for FD and add the
+# FD reconstruction where all FD depos originally outside of ND-LAr are masked
+# out
 ################################################################################
 # Options
 
@@ -70,7 +71,7 @@ lar -c ./run_AddFDReco_InsideNDOnly.fcl -s LoadedFDDepsInsideNDOnly_g4_detsimnoo
 
 echo "Copying files to dCache..."
 if [ "$SAVE_FDRECO" = true ]; then
-  ifdh cp LoadedFDDeps_g4_detsimnoopt_reconoopt.root \
+  ifdh cp LoadedFDDepsInsideNDOnly_g4_detsimnoopt_reconoopt.root \
           ${FDRECO_OUTPUT}/${input_name%.*}_LoadedFDDepsInsideNDOnly_g4_detsimnoopt_reconoopt.root
 fi
 if [ "$SAVE_FDRECO_PAIR" = true ]; then
