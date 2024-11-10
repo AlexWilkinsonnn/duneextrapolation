@@ -18,10 +18,10 @@ physics:
 {
   analyzers:
   {
-    addresp: @local::AddNDProj
+    addproj: @local::AddNDProj
   }
 
-  path0:     [ addresp ]
+  path0:     [ addproj ]
   end_paths: [ path0 ]
 }
 
@@ -38,10 +38,10 @@ services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 # NDProj{Forward,Backward}AnodeXShift params.
 services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
 
-physics.analyzers.addresp.PacketsH5DataSetName: "3d_packets_infilled"
+physics.analyzers.addproj.PacketsH5DataSetName: "3d_packets_infilled"
 # We would've already applied this shift in order to run infill network
-physics.analyzers.addresp.NDProjForwardAnodeXShift: 0.0
-physics.analyzers.addresp.NDProjBackwardAnodeXShift: 0.0
+physics.analyzers.addproj.NDProjForwardAnodeXShift: 0.0
+physics.analyzers.addproj.NDProjBackwardAnodeXShift: 0.0
 
-physics.analyzers.addresp.NDFDH5FileLoc: ""
+physics.analyzers.addproj.NDFDH5FileLoc: ""
 
