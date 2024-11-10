@@ -35,10 +35,10 @@ physics:
 {
   producers:
   {
-    translate: @local::LoadFDResp
+    loadresp: @local::LoadFDResp
     rns:      { module_type: "RandomNumberSaver" }
   }
-  simulate:      [ rns, translate ]
+  simulate:      [ rns, loadresp ]
   stream1:       [ out1 ]
   trigger_paths: [simulate]
   end_paths:     [stream1]
@@ -49,5 +49,5 @@ services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
 services.Geometry.Name: "dune10kt_v5_1x2x6"
 services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 
-physics.producers.translate.NDFDH5FileLoc: ""
+physics.producers.loadresp.NDFDH5FileLoc: ""
 
