@@ -28,6 +28,7 @@
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardataobj/RecoBase/Hit.h"
 
 #include "highfive/H5DataSet.hpp"
 #include "highfive/H5File.hpp"
@@ -77,6 +78,15 @@ typedef struct recoFD {
   float nc_had_E;
   float nc_lep_E;
   int nc_reco_method;
+  int n_hits_z;
+  int n_hits_u;
+  int n_hits_v;
+  float sum_hits_summedadc_z;
+  float sum_hits_summedadc_u;
+  float sum_hits_summedadc_v;
+  float sum_hits_integral_z;
+  float sum_hits_integral_u;
+  float sum_hits_integral_v;
 } recoFD;
 
 HighFive::CompoundType make_recoFD() {
@@ -116,7 +126,16 @@ HighFive::CompoundType make_recoFD() {
     {"nc_nu_E", HighFive::AtomicType<float>{}},
     {"nc_had_E", HighFive::AtomicType<float>{}},
     {"nc_lep_E", HighFive::AtomicType<float>{}},
-    {"nc_reco_method", HighFive::AtomicType<int>{}}
+    {"nc_reco_method", HighFive::AtomicType<int>{}},
+    {"n_hits_z", HighFive::AtomicType<int>{}},
+    {"n_hits_u", HighFive::AtomicType<int>{}},
+    {"n_hits_v", HighFive::AtomicType<int>{}},
+    {"sum_hits_summedadc_z", HighFive::AtomicType<float>{}},
+    {"sum_hits_summedadc_u", HighFive::AtomicType<float>{}},
+    {"sum_hits_summedadc_v", HighFive::AtomicType<float>{}},
+    {"sum_hits_integral_z", HighFive::AtomicType<float>{}},
+    {"sum_hits_integral_u", HighFive::AtomicType<float>{}},
+    {"sum_hits_integral_v", HighFive::AtomicType<float>{}}
   };
 }
 
@@ -151,7 +170,8 @@ private:
     std::string& CVNResultsLabel,
     std::string& numuEResultsLabel,
     std::string& nueEResultsLabel,
-    std::string& NCEResultsLabel
+    std::string& NCEResultsLabel,
+    std::string& HitLabel
   );
 
   // Members
@@ -168,6 +188,7 @@ private:
   std::string fNumuEResultsLabel;
   std::string fNueEResultsLabel;
   std::string fNCEResultsLabel;
+  std::string fHitLabel;
 
   std::string fNDFDH5FileLoc;
   std::string fOutputDatasetName;
@@ -181,6 +202,7 @@ extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
     fNumuEResultsLabel (p.get<std::string>("NumuEResultsLabel")),
     fNueEResultsLabel  (p.get<std::string>("NueEResultsLabel")),
     fNCEResultsLabel   (p.get<std::string>("NCEResultsLabel")),
+    fHitLabel          (p.get<std::string>("HitLabel")),
     fNDFDH5FileLoc     (p.get<std::string>("NDFDH5FileLoc")),
     fOutputDatasetName (p.get<std::string>("OutputDatasetName"))
 {
@@ -191,6 +213,8 @@ extrapolation::AddFDReco::AddFDReco(fhicl::ParameterSet const& p)
   consumes<dune::EnergyRecoOutput>(fNumuEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNueEResultsLabel);
   consumes<dune::EnergyRecoOutput>(fNCEResultsLabel);
+
+  consumes<std::vector<recob::Hit>>(fHitLabel);
 }
 
 void extrapolation::AddFDReco::analyze(art::Event const& e)
@@ -201,7 +225,9 @@ void extrapolation::AddFDReco::analyze(art::Event const& e)
 
   // Store reco for this event
   recoFD eventReco = getReco(
-    e, eventID, fCVNResultsLabel, fNumuEResultsLabel, fNueEResultsLabel, fNCEResultsLabel
+    e,
+    eventID,
+    fCVNResultsLabel, fNumuEResultsLabel, fNueEResultsLabel, fNCEResultsLabel, fHitLabel
   );
   fReco.push_back(eventReco);
 }
@@ -225,7 +251,8 @@ recoFD extrapolation::AddFDReco::getReco(
   std::string& CVNResultsLabel,
   std::string& numuEResultsLabel,
   std::string& nueEResultsLabel,
-  std::string& NCEResultsLabel
+  std::string& NCEResultsLabel,
+  std::string& HitLabel
 )
 {
   // Get results from CVN
@@ -282,6 +309,30 @@ recoFD extrapolation::AddFDReco::getReco(
   float ncLepE = (float)NCEOut->fLepLorentzVector.E();
   int ncRecoMethod = (int)NCEOut->recoMethodUsed;
 
+  // Get info at for each view
+  const auto hits = e.getValidHandle<std::vector<recob::Hit>>(HitLabel);
+
+  int n_hits_z = 0, n_hits_u = 0, n_hits_v = 0;
+  float sum_hits_summedadc_z = 0.0, sum_hits_summedadc_u = 0.0, sum_hits_summedadc_v = 0.0;
+  float sum_hits_integral_z = 0.0, sum_hits_integral_u = 0.0, sum_hits_integral_v = 0.0;
+  for (const recob::Hit hit : *hits) {
+    if (hit.View() == geo::kZ) {
+      n_hits_z++;
+      sum_hits_summedadc_z += hit.SummedADC();
+      sum_hits_integral_z += hit.Integral();
+    }
+    else if (hit.View() == geo::kU) {
+      n_hits_u++;
+      sum_hits_summedadc_u += hit.SummedADC();
+      sum_hits_integral_u += hit.Integral();
+    }
+    else if (hit.View() == geo::kV) {
+      n_hits_v++;
+      sum_hits_summedadc_v += hit.SummedADC();
+      sum_hits_integral_v += hit.Integral();
+    }
+  }
+
   recoFD eventReco = {
     eventID,
     numuScore,
@@ -318,7 +369,16 @@ recoFD extrapolation::AddFDReco::getReco(
     ncNuE,
     ncHadE,
     ncLepE,
-    ncRecoMethod
+    ncRecoMethod,
+    n_hits_z,
+    n_hits_u,
+    n_hits_v,
+    sum_hits_summedadc_z,
+    sum_hits_summedadc_u,
+    sum_hits_summedadc_v,
+    sum_hits_integral_z,
+    sum_hits_integral_u,
+    sum_hits_integral_v
   };
 
   return eventReco;
