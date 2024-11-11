@@ -32,5 +32,7 @@ services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 
 physics.analyzers.addreco.EventIDSEDLabel:   "loadresp:eventID"
 physics.analyzers.addreco.OutputDatasetName: "predresp_fd_reco"
-physics.analyzers.addreco.NDFDH5FileLoc:     ""
+
+# XXX Don't mess with this line, the format is relied upon by sed commands in job scripts
+physics.analyzers.addreco.NDFDH5FileLoc: ""
 

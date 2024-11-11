@@ -35,5 +35,6 @@ services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
 # DetectorPropertiesService (annoyingly).
 services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
 
+# XXX Don't mess with this line, the format is relied upon by sed commands in job scripts
 physics.analyzers.addresp.NDFDH5FileLoc: ""
 
