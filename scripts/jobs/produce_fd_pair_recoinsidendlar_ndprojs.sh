@@ -55,7 +55,7 @@ input_file_local=$PWD/$input_name
 cp ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_InsideNDOnly.fcl
 sed -i "s#physics.analyzers.addreco.NDFDH5FileLoc: \"\"#physics.analyzers.addreco.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDReco_InsideNDOnly.fcl
-sed -i "s#physics.analyzers.addresp.NDFDH5FileLoc: \"\"#physics.analyzers.addresp.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddNDProj.fcl
+sed -i "s#physics.analyzers.addproj.NDFDH5FileLoc: \"\"#physics.analyzers.addproj.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddNDProj.fcl
 
 ls -lrth
 
