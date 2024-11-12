@@ -124,7 +124,7 @@ void extrapolation::LoadFDResp::produce(art::Event& e)
 
         for (unsigned int tick = 0; tick < fDigTickWindow; tick++) {
           // Pad with zeros if desired tick window is longer
-          if (tick < ropResp.size()) {
+          if (tick < ropResp[chNumLocal].size()) {
             adcVec[tick] = (short)ropResp[chNumLocal][tick];
           }
           else {
