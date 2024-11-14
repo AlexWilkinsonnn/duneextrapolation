@@ -1,0 +1,40 @@
+#include "services_dune.fcl"
+#include "GetNoiseConfig.fcl"
+
+process_name: GetNoise
+
+source:
+{
+  module_type: RootInput
+  maxEvents:   1
+}
+
+services:
+{
+  @table::dunefd_services
+}
+
+physics:
+{
+  analyzers:
+  {
+    getnoise: @local::GetNoise
+  }
+
+  path0:     [ getnoise ]
+  end_paths: [ path0 ]
+}
+
+services.Geometry: @local::dune10kt_1x2x6_geo
+services.Geometry.GDML: "dune10kt_v5_refactored_1x2x6.gdml"
+services.Geometry.Name: "dune10kt_v5_1x2x6"
+services.Geometry.ROOT: "dune10kt_v5_refactored_1x2x6.gdml"
+
+# Trying to get detector properties to agree with wirecell on time tick is not working. Wirecell
+# has is own idea of what time depos arrive at the different planes that does not align with
+# DetectorPropertiesService (annoyingly).
+services.DetectorPropertiesService.IncludeInterPlanePitchInXTickOffsets: true
+
+# XXX Don't mess with this line, the format is relied upon by sed commands in job scripts
+physics.analyzers.getnoise.NDFDH5FileName: ""
+
