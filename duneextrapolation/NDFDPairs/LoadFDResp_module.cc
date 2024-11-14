@@ -35,6 +35,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 namespace extrapolation {
   class LoadFDResp;
@@ -65,20 +66,36 @@ private:
   const geo::GeometryCore* fGeom;
 
   HighFive::File* fFile;
+
   std::vector<int> fEventIDs;
+
+  std::map<geo::View_t, std::vector<std::vector<short>>> fNoiseAdcs;
+  std::map<geo::View_t, bool> fAddNoise;
 
   // Set from fcl
   std::string fNDFDH5FileLoc;
   unsigned int fDigTickWindow;
+  bool fAddNoiseU;
+  bool fAddNoiseV;
+  bool fAddNoiseZ;
+  std::string fNoiseH5FileLoc;
 };
 
 extrapolation::LoadFDResp::LoadFDResp(fhicl::ParameterSet const& p)
   : EDProducer{p},
-    fNDFDH5FileLoc (p.get<std::string>("NDFDH5FileLoc")),
-    fDigTickWindow (p.get<unsigned int>("DigTickWindow"))
+    fNDFDH5FileLoc  (p.get<std::string>("NDFDH5FileLoc")),
+    fDigTickWindow  (p.get<unsigned int>("DigTickWindow")),
+    fAddNoiseU      (p.get<bool>("AddNoiseU")),
+    fAddNoiseV      (p.get<bool>("AddNoiseV")),
+    fAddNoiseZ      (p.get<bool>("AddNoiseZ")),
+    fNoiseH5FileLoc (p.get<std::string>("NoiseH5FileLoc"))
 {
   produces<std::vector<sim::SimEnergyDeposit>>("eventID");
   produces<std::vector<raw::RawDigit>>("NDTranslated");
+
+  fAddNoise[geo::kU] = fAddNoiseU;
+  fAddNoise[geo::kV] = fAddNoiseV;
+  fAddNoise[geo::kZ] = fAddNoiseZ;
 }
 
 void extrapolation::LoadFDResp::produce(art::Event& e)
@@ -119,6 +136,7 @@ void extrapolation::LoadFDResp::produce(art::Event& e)
 
       // Write the vector from each channel into a RawDigit vector
       const readout::ROPID rID(0, std::stoi(tpcsetStr), std::stoi(ropStr));
+      const geo::View_t view = fGeom->View(rID);
       for (unsigned int chNumLocal = 0; chNumLocal < ropResp.size(); chNumLocal++) {
         raw::RawDigit::ADCvector_t adcVec(fDigTickWindow);
 
@@ -129,6 +147,9 @@ void extrapolation::LoadFDResp::produce(art::Event& e)
           }
           else {
             adcVec[tick] = 0;
+          }
+          if (fAddNoise[view]) {
+            adcVec[tick] += fNoiseAdcs[view][chNumLocal][tick];
           }
         }
 
@@ -174,6 +195,35 @@ void extrapolation::LoadFDResp::beginJob()
   }
   std::sort(fEventIDs.begin(), fEventIDs.end(), std::greater<>()); // sort desc so to pop from back
   std::cout << fEventIDs.size() << " unique eventIDs in input\n";
+
+  if (fAddNoiseU || fAddNoiseV || fAddNoiseZ) {
+    HighFive::File* noiseFile = new::HighFive::File(fNoiseH5FileLoc, HighFive::File::ReadOnly);
+    std::vector<std::vector<short>> noiseU;
+    HighFive::DataSet datasetNoiseU = noiseFile->getDataSet("noises/U");
+    datasetNoiseU.read(noiseU);
+    std::vector<std::vector<short>> noiseV;
+    HighFive::DataSet datasetNoiseV = noiseFile->getDataSet("noises/V");
+    datasetNoiseV.read(noiseV);
+    std::vector<std::vector<short>> noiseZ;
+    HighFive::DataSet datasetNoiseZ = noiseFile->getDataSet("noises/Z");
+    datasetNoiseZ.read(noiseZ);
+
+    if (
+      noiseU[0].size() != fDigTickWindow ||
+      noiseV[0].size() != fDigTickWindow ||
+      noiseZ[0].size() != fDigTickWindow
+    ) {
+      throw cet::exception("LoadFDResp")
+        << "Tick dimension of noise does not match desired tick window: "
+        << noiseU[0].size() << ", " << noiseV[0].size() << ", " << noiseZ[0].size()
+        << " vs " << fDigTickWindow
+        << " - Line " << __LINE__ << " in file " << __FILE__ << "\n";
+    }
+
+    fNoiseAdcs[geo::kU] = noiseU;
+    fNoiseAdcs[geo::kV] = noiseV;
+    fNoiseAdcs[geo::kZ] = noiseZ;
+  }
 }
 
 void extrapolation::LoadFDResp::endJob()

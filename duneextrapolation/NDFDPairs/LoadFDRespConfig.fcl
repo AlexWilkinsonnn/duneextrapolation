@@ -4,8 +4,15 @@ LoadFDResp:
 {
   module_type: "LoadFDResp"
 
-  DigTickWindow: 6000 // Model usually predicts with window of 4492,
-                      // think simulation is usually 6000 though
+  DigTickWindow: 4492 // Model usually predicts with window of 4492,
+                      // simulation may expect 6000 sometimes?
+
+  // Add fake noise to loaded FD response
+  AddNoiseU:      false
+  AddNoiseV:      false
+  AddNoiseZ:      false
+  NoiseH5FileLoc: ""
+
   NDFDH5FileLoc: ""
 }
 
