@@ -17,7 +17,13 @@ def main(args):
     for f_h5_path in f_h5_paths:
         f_h5_name, f_caf_name = gather_inputs(f_h5_path, args.caf_dir)
 
-        f_h5 = h5py.File(f_h5_name)
+        try:
+            f_h5 = h5py.File(f_h5_name)
+        except Exception as e:
+            print("Failed to open h5 file with error:")
+            print(e)
+            print("Skipping")
+            continue
 
         f_caf = ROOT.TFile.Open(f_caf_name, "UPDATE")
         t_caf = f_caf.Get("caf")
