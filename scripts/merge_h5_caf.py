@@ -14,7 +14,7 @@ def main(args):
     ret = subprocess.run(["ifdh", "ls", args.h5_dir], stdout=subprocess.PIPE)
     f_h5_paths = ret.stdout.decode("utf-8").strip("\n").split("\n")[1:] # first is directory
 
-    for f_h5_path in f_h5_paths[:1]:
+    for f_h5_path in f_h5_paths:
         f_h5_name, f_caf_name = gather_inputs(f_h5_path, args.caf_dir)
 
         f_h5 = h5py.File(f_h5_name)
