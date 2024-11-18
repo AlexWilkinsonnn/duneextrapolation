@@ -25,6 +25,10 @@ def main(args):
             print("Skipping")
             continue
 
+        if "insidendlar_fd_reco" not in f_h5.keys() or "predresp_fd_reco" in f_h5.keys():
+            print("h5 file missing datasets, skipping")
+            continue
+
         f_caf = ROOT.TFile.Open(f_caf_name, "UPDATE")
         t_caf = f_caf.Get("caf")
         t_eventid = f_caf.Get("eventid")
@@ -514,7 +518,7 @@ def main(args):
                 b_true_sum_hits_summedadc_V[0] = -999.0
                 b_true_sum_hits_integral_V[0] = -999.0
 
-            t_fdreco.Fill() 
+            t_fdreco.Fill()
 
         t_caf.AddFriend("FDRecoFriend")
         f_caf.Write()
