@@ -23,10 +23,12 @@ def main(args):
             print("Failed to open h5 file with error:")
             print(e)
             print("Skipping")
+            gather_outputs(f_caf_name, f_h5_name)
             continue
 
-        if "insidendlar_fd_reco" not in f_h5.keys() or "predresp_fd_reco" in f_h5.keys():
+        if "insidendlar_fd_reco" not in f_h5.keys() or "predresp_fd_reco" not in f_h5.keys():
             print("h5 file missing datasets, skipping")
+            gather_outputs(f_caf_name, f_h5_name)
             continue
 
         f_caf = ROOT.TFile.Open(f_caf_name, "UPDATE")
@@ -525,7 +527,7 @@ def main(args):
         f_caf.Close()
         f_h5.close()
 
-        gather_outputs(f_caf_name, f_h5_name, args.output_dir)
+        gather_outputs(f_caf_name, f_h5_name, out_dir=args.output_dir)
 
 """ Helpers """
 
@@ -542,11 +544,12 @@ def gather_inputs(f_h5_path, caf_dir):
 
     return f_h5_name, f_caf_name
 
-def gather_outputs(f_caf_name, f_h5_name, out_dir):
-    f_caf_name_out = f_caf_name.rstrip(".root") + ".fdreco.fdresppredreco.root"
-    f_caf_path_out = os.path.join(out_dir, f_caf_name_out)
-    proc = subprocess.Popen(["ifdh", "cp", f_caf_name, f_caf_path_out], stdout=subprocess.PIPE)
-    proc.wait()
+def gather_outputs(f_caf_name, f_h5_name, out_dir=None):
+    if out_dir is not None:
+        f_caf_name_out = f_caf_name.rstrip(".root") + ".fdreco.fdresppredreco.root"
+        f_caf_path_out = os.path.join(out_dir, f_caf_name_out)
+        proc = subprocess.Popen(["ifdh", "cp", f_caf_name, f_caf_path_out], stdout=subprocess.PIPE)
+        proc.wait()
 
     proc = subprocess.Popen(["rm", "-v", f_h5_name], stdout=subprocess.PIPE)
     proc.wait()
