@@ -1,0 +1,12 @@
+BEGIN_PROLOG
+
+LoadFDDeposTrim:
+{
+  module_type: "LoadFDDeposTrim"
+
+  NDFDH5FileLoc: ""
+  InsideNDOnly: false
+  TargetSEDLen:  0.04 # cm. split depos into steps approximately this size, 0.0 turns this off
+}
+
+END_PROLOG

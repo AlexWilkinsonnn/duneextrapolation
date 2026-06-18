@@ -7,8 +7,8 @@
 ################################################################################
 # Options
 
-FD_PAIR_SIMCHANNELS_OUTPUT="/pnfs/dune/scratch/users/awilkins/larbath_ndfd_pairs/tdr_sample/pair_simchannels_ndfd"
-FD_SIMCHANNELS_OUTPUT="/pnfs/dune/scratch/users/awilkins/larbath_ndfd_pairs/tdr_sample/fdsimchannels_artroot"
+FD_PAIR_SIMCHANNELS_OUTPUT="/pnfs/dune/scratch/users/colweber/larbath_ndfd_pairs/tdr_sample/pair_simchannels_ndfd"
+FD_SIMCHANNELS_OUTPUT="/pnfs/dune/scratch/users/colweber/larbath_ndfd_pairs/tdr_sample/fdsimchannels_artroot"
 
 SAVE_FDSC=false
 SAVE_PAIR_SC=true # turn this on if not testing!
@@ -55,7 +55,9 @@ input_file_local=$PWD/$input_name
 # Prepare fcls
 cp ${INPUT_TAR_DIR_LOCAL}/srcs/duneextrapolation/duneextrapolation/NDFDPairs/run_fcls/*.fcl .
 sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDepos_oldgeo.fcl
+sed -i "s#physics.producers.largeant.NDFDH5FileLoc: \"\"#physics.producers.largeant.NDFDH5FileLoc: \"${input_file_local}\"#" run_LoadFDDeposTrim_oldgeo.fcl
 sed -i "s#physics.analyzers.addsc.NDFDH5FileLoc: \"\"#physics.analyzers.addsc.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDSimChannels_oldgeo.fcl
+sed -i "s#physics.analyzers.addsc.NDFDH5FileLoc: \"\"#physics.analyzers.addsc.NDFDH5FileLoc: \"${input_file_local}\"#" run_AddFDSimChannelsTrim_oldgeo.fcl
 
 ls -lrth
 
@@ -66,8 +68,13 @@ echo "$input_name has $num_events events"
 lar -c ./run_LoadFDDepos_oldgeo.fcl -n $num_events
 lar -c ionandscint_elecdrift_dune10kt_1x2x6oldgeooldg4params.fcl -s LoadedFDDeps.root -n -1
 
+# Generate FD SimChannels for trimmed events
+lar -c ./run_LoadFDDeposTrim_oldgeo.fcl -n $num_events
+lar -c ionandscint_elecdrift_dune10kt_1x2x6oldgeooldg4params.fcl -s LoadedFDDepsTrim.root -n -1
+
 # Add FD SimChannels to H5 file
 lar -c ./run_AddFDSimChannels_oldgeo.fcl -s LoadedFDDeps_g4.root -n -1
+lar -c ./run_AddFDSimChannelsTrim_oldgeo.fcl -s LoadedFDDepsTrim_g4.root -n -1
 
 ls -lrth
 

@@ -1,0 +1,13 @@
+BEGIN_PROLOG
+
+AddFDSimChannelsTrim:
+{
+  module_type: "AddFDSimChannelsTrim"
+
+  EventIDSEDLabel:  "largeant:eventID:"
+  SimChannelsLabel: "elecDrift"
+
+  NDFDH5FileLoc: ""
+}
+
+END_PROLOG
